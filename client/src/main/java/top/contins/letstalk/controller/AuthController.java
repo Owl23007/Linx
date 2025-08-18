@@ -249,4 +249,24 @@ public class AuthController {
         stage.setX(event.getScreenX() - xOffset);
         stage.setY(event.getScreenY() - yOffset);
     }
+
+    public void clearUsername(ActionEvent actionEvent) {
+        usernameField.clear();
+    }
+
+    public void clearEmail(ActionEvent actionEvent) {
+        emailField.clear();
+    }
+
+    public void clearPassword(ActionEvent actionEvent) {
+        passwordField.clear();
+    }
+
+    public void clearConfirmPassword(ActionEvent actionEvent) {
+        confirmPasswordField.clear();
+    }
+
+    public void clearCaptcha(ActionEvent actionEvent) {
+        captchaField.clear();
+    }
 }

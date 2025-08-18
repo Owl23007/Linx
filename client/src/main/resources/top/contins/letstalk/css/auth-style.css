@@ -138,3 +138,40 @@
     /* 不要应用 hover 的背景色 */
 }
 
+/*====================== 输入框样式 ======================*/
+/* 通用输入框样式 */
+.auth-input {
+    -fx-font-size: 14px;
+    -fx-padding: 10 12 10 12;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-background-color: white;
+    -fx-pref-height: 36;
+    -fx-border-width: 1;
+}
+
+.auth-input:focused {
+    -fx-border-color: #4f46e5;
+    -fx-effect: dropshadow(gaussian, rgba(79, 70, 229, 0.15), 6, 0.1, 0, 2);
+}
+
+/* 清除按钮样式 */
+.clear-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 20px;
+    -fx-padding: 0 4 0 0;
+    -fx-cursor: hand;
+    -fx-opacity: 0.85;
+    -fx-min-width: 24px;
+    -fx-min-height: 24px;
+    -fx-max-width: 24px;
+    -fx-max-height: 24px;
+    -fx-visible: true;
+}
+
+.clear-btn:hover {
+    -fx-text-fill: #000000;
+    -fx-opacity: 1.0;
+}
