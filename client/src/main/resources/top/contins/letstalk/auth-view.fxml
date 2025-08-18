@@ -29,7 +29,7 @@
         <vgap>8</vgap>
         <!-- 标题 -->
         <HBox GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="2"  alignment="CENTER">
-            <Label text="Let's Talk" GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="2"
+            <Label fx:id="titleLabel" GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="2"
                    styleClass="auth-title">
             </Label>
         </HBox>
@@ -80,7 +80,7 @@
         <Label text="验证码" GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="auth-label"/>
         <HBox GridPane.rowIndex="6" GridPane.columnIndex="1" spacing="5">
             <TextField fx:id="captchaField" styleClass="auth-input" prefWidth="120"/>
-            <Button fx:id="captchaBtn" text="获取验证码" onAction="#getCaptcha" styleClass="auth-btn-captcha"/>
+            <Button fx:id="captchaBtn" text="获取验证码" onAction="#refreshCaptcha" styleClass="auth-btn-captcha"/>
         </HBox>
 
         <!-- 状态消息 -->

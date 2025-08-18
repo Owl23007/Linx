@@ -1,0 +1,5 @@
+app:
+  name: Let's Talk
+  debug: true
+  baseUrl:
+    auth: http://localhost:8081

@@ -3,10 +3,11 @@ module top.contins.letstalk {
     requires javafx.fxml;
 
     requires java.sql;
-    // requires com.mysql.cj.jdbc;
     requires lombok;
     requires okhttp3;
     requires com.fasterxml.jackson.databind;
+    requires annotations;
+    requires org.yaml.snakeyaml;
 
     // 导出主包和 controller 包给 javafx.fxml
     exports top.contins.letstalk;

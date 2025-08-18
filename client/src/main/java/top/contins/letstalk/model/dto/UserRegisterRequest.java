@@ -33,7 +33,12 @@ public class UserRegisterRequest {
     private String email;
 
     /**
+     * 验证码ID
+     */
+    private String captchaId;
+
+    /**
      * 验证码
      */
-    private String captcha;
+    private String captchaCode;
 }
