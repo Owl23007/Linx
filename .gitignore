@@ -42,3 +42,6 @@ server/target/
 
 # Ignore client build output
 client/target/
+
+front/node_modules/
+front/package-lock.json
