@@ -3,15 +3,24 @@ const path = require('path')
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 380,
+    height: 500,
     frame: false, // 隐藏原生的标题栏和控制按钮
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
+      preload: path.join(__dirname, 'public/preload.js'),
     },
     show: false,
+  })
+  // 监听渲染进程的关闭窗口请求
+  const { ipcMain } = require('electron')
+  ipcMain.on('close-window', () => {
+    const wins = BrowserWindow.getAllWindows()
+    if (wins.length > 0) {
+      wins[0].close()
+    }
   })
 
   // 开发者工具（开发环境）
