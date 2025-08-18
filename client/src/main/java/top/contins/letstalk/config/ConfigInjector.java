@@ -26,9 +26,8 @@ public class ConfigInjector {
                         } else if (field.getType() == boolean.class || field.getType() == Boolean.class) {
                             field.set(target, Boolean.parseBoolean(configValue.toString()));
                         }
-                        // 可扩展更多类型
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        throw new RuntimeException("配置注入失败: " + key, e);
                     }
                 }
             }

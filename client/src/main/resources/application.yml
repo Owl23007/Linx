@@ -1,5 +1,8 @@
 app:
   name: Let's Talk
-  debug: true
   baseUrl:
     auth: http://localhost:8081
+  log:
+    enabled: true
+    level: debug
+    path: logs

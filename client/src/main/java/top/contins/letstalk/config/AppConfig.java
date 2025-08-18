@@ -76,10 +76,4 @@ public class AppConfig {
         Object val = get(path);
         return val instanceof List ? (List<?>) val : null;
     }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> getMap(String path) {
-        Object val = get(path);
-        return val instanceof Map ? (Map<String, Object>) val : null;
-    }
 }

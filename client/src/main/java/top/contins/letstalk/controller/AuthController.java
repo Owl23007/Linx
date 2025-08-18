@@ -19,14 +19,21 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import top.contins.letstalk.config.ConfigInjector;
 import top.contins.letstalk.config.Value;
-
+import top.contins.letstalk.util.ErrorDialogUtil;
+import top.contins.letstalk.util.LogUtil;
 
 public class AuthController {
+
     public Label passwordLabel;
+
     public HBox toggleContainer;
+
     public Region slider;
+
     public StackPane toggleStack;
+
     public Label titleLabel;
+
     @FXML
     private TextField usernameField;
 
@@ -70,6 +77,8 @@ public class AuthController {
 
     @Value("app.name")
     private String appName;
+
+    private static final LogUtil log = LogUtil.getLogger(AuthController.class);
 
     public void initialize() {
         // 初始化时切换到登录模式
@@ -130,23 +139,32 @@ public class AuthController {
         String password = passwordField.getText();
         String captcha = captchaField.getText().trim();
 
-        // 验证输入
-        if (username.isEmpty()) {
-            showStatus("请输入用户名", false);
-            return;
-        }
-        if (password.isEmpty()) {
-            showStatus("请输入密码", false);
-            return;
-        }
-        if (captcha.isEmpty()) {
-            showStatus("请输入验证码", false);
-            return;
-        }
+        log.info("用户尝试登录: " + username);
+        try {
+            // 验证输入
+            if (username.isEmpty()) {
+                showStatus("请输入用户名", false);
+                return;
+            }
+            if (password.isEmpty()) {
+                showStatus("请输入密码", false);
+                return;
+            }
+            if (captcha.isEmpty()) {
+                showStatus("请输入验证码", false);
+                return;
+            }
 
-        primaryActionBtn.setDisable(true);
-        primaryActionBtn.setText("登录��...");
-        showStatus("正在登录...", true);
+            primaryActionBtn.setDisable(true);
+            primaryActionBtn.setText("登录中...");
+            showStatus("正在登录...", true);
+        } catch (Exception e) {
+            log.error("登录异常", e);
+            ErrorDialogUtil.showError("登录失败", e.getMessage());
+        } finally {
+            primaryActionBtn.setDisable(false);
+            primaryActionBtn.setText("登录");
+        }
     }
 
     private void handleRegister() {
@@ -156,36 +174,48 @@ public class AuthController {
         String confirmPassword = confirmPasswordField.getText();
         String captcha = captchaField.getText().trim();
 
-        // 验证输入
-        if (username.isEmpty()) {
-            showStatus("请输入用户名", false);
-            return;
-        }
-        if (email.isEmpty()) {
-            showStatus("请输入邮箱", false);
-            return;
-        }
-        if (password.isEmpty()) {
-            showStatus("请输入密码", false);
-            return;
-        }
-        if (confirmPassword.isEmpty()) {
-            showStatus("请确认密码", false);
-            return;
-        }
-        if (!password.equals(confirmPassword)) {
-            showStatus("两次输入的密码不一致", false);
-            return;
-        }
-        if (captcha.isEmpty()) {
-            showStatus("请输入验证码", false);
-            return;
-        }
+        log.info("用户尝试注册: {}, 邮箱: {}", username, email);
 
-        primaryActionBtn.setDisable(true);
-        primaryActionBtn.setText("注册中...");
-        showStatus("正在注册...", true);
+        try {
+            // 验证输入
+            if (username.isEmpty()) {
+                showStatus("请输入用户名", false);
+                return;
+            }
+            if (email.isEmpty()) {
+                showStatus("请输入邮箱", false);
+                return;
+            }
+            if (password.isEmpty()) {
+                showStatus("请输入密码", false);
+                return;
+            }
+            if (confirmPassword.isEmpty()) {
+                showStatus("请确认密码", false);
+                return;
+            }
+            if (!password.equals(confirmPassword)) {
+                showStatus("两次输入的密码不一致", false);
+                return;
+            }
+            if (captcha.isEmpty()) {
+                showStatus("请输入验证码", false);
+                return;
+            }
 
+            primaryActionBtn.setDisable(true);
+            primaryActionBtn.setText("注册中...");
+            showStatus("正在注册...", true);
+            // ...业务逻辑...
+        } catch (Exception e) {
+
+            log.error("注册异常", e);
+
+            ErrorDialogUtil.showError("注册失败", e.getMessage());
+        } finally {
+            primaryActionBtn.setDisable(false);
+            primaryActionBtn.setText("注册");
+        }
     }
 
     private void showStatus(String message, boolean isSuccess) {
@@ -200,7 +230,7 @@ public class AuthController {
     }
 
     public void closeAction(ActionEvent event) {
-        // 获取当前窗口并关闭
+        // 获取当前窗口��关闭
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.close();
     }
