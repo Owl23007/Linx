@@ -8,7 +8,7 @@ declare global {
 }
 
 /**
- * 通过 Electron 的 contextBridge 预留的 window.electronApi 关闭窗口
+ * 通过 Electron 的 window.electronApi 关闭窗口
  */
 export function closeWindow() {
   if (window.electronApi && window.electronApi.closeWindow) {

@@ -3,16 +3,25 @@ const path = require('path')
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 380,
-    height: 500,
+    width: 350,
+    height: 450,
     frame: false, // 隐藏原生的标题栏和控制按钮
+    transparent: false,
+    resizable: false, // 禁止调整窗口大小
+    minimizable: true, // 允许最小化窗口
+    maximizable: false, // 禁止最大化窗口
+    closable: true, // 允许关闭窗口
+    alwaysOnTop: false, // 不总是位于最上层
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
       preload: path.join(__dirname, 'public/preload.js'),
+      webSecurity: true,
     },
     show: false,
+    autoHideMenuBar: true, // 隐藏菜单栏
+    titleBarStyle: 'hidden', // 隐藏标题栏
   })
   // 监听渲染进程的关闭窗口请求
   const { ipcMain } = require('electron')
