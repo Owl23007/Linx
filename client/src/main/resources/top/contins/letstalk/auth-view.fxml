@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.Scene?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="top.contins.letstalk.controller.AuthController"
-            prefHeight="450.0" prefWidth="350.0"
-            stylesheets="@css/global.css,@css/auth-style.css"
-            style="-fx-background-color: rgba(255, 255, 255, 0);"
+            prefHeight="600.0" prefWidth="380.0"
+            stylesheets="@css/auth-style.css"
+
             styleClass="root-pane"
             onMousePressed="#onMousePressed"
             onMouseDragged="#onMouseDragged">
@@ -23,30 +24,73 @@
               AnchorPane.topAnchor="0.0"
               styleClass="auth-card">
         <padding>
-            <Insets top="48" right="56" bottom="48" left="56"/>
+            <Insets top="35" right="56" bottom="48" left="56"/>
         </padding>
-        <vgap>10</vgap>
+        <vgap>8</vgap>
         <!-- 标题 -->
-        <Label text="Let's Talk" GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="2"
-               styleClass="auth-title">
-            <font>
-                <Font name="Segoe UI Bold" size="32"/>
-            </font>
-        </Label>
+        <HBox GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="2"  alignment="CENTER">
+            <Label text="Let's Talk" GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="2"
+                   styleClass="auth-title">
+            </Label>
+        </HBox>
+
+        <HBox GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.columnSpan="2"
+              styleClass="toggle-container"
+              fx:id="toggleContainer"
+              alignment="CENTER"
+        >
+
+            <!-- 叠层：滑块在下，按钮在上 -->
+            <StackPane fx:id="toggleStack">
+                <!-- 滑块（底层，可移动） -->
+                <Region fx:id="slider" styleClass="slider"/>
+
+                <!-- 上层按钮 -->
+                <HBox alignment="CENTER">
+                    <Button text="登录" fx:id="loginModeBtn" onAction="#switchToLogin" styleClass="auth-btn-mode" />
+                    <Button text="注册" fx:id="registerModeBtn" onAction="#switchToRegister" styleClass="auth-btn-mode" />
+                </HBox>
+            </StackPane>
+        </HBox>
+
         <!-- 用户名 -->
-        <Label text="用户名" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="auth-label"/>
-        <TextField fx:id="usernameField" GridPane.rowIndex="1" GridPane.columnIndex="1"
+        <Label text="用户名" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="auth-label"/>
+        <TextField fx:id="usernameField" GridPane.rowIndex="2" GridPane.columnIndex="1"
                    styleClass="auth-input"/>
+
+        <!-- 邮箱 (仅注册时显示) -->
+        <Label fx:id="emailLabel" text="邮箱" GridPane.rowIndex="3" GridPane.columnIndex="0"
+               styleClass="auth-label" visible="false"/>
+        <TextField fx:id="emailField" GridPane.rowIndex="3" GridPane.columnIndex="1"
+                   styleClass="auth-input" visible="false"/>
+
         <!-- 密码 -->
-        <Label text="密码" GridPane.rowIndex="2" GridPane.columnIndex="0"
+        <Label fx:id="passwordLabel" text="密码" GridPane.rowIndex="4" GridPane.columnIndex="0"
                styleClass="auth-label"/>
-        <PasswordField fx:id="passwordField" GridPane.rowIndex="2" GridPane.columnIndex="1"
+        <PasswordField fx:id="passwordField" GridPane.rowIndex="4" GridPane.columnIndex="1"
                        styleClass="auth-input"/>
-        <!-- 按钮 -->
-        <Button text="登录" onAction="#loginAction" GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2"
+
+        <!-- 确认密码 (仅注册时显示) -->
+        <Label fx:id="confirmPasswordLabel" text="确认密码" GridPane.rowIndex="5" GridPane.columnIndex="0"
+               styleClass="auth-label" visible="false"/>
+        <PasswordField fx:id="confirmPasswordField" GridPane.rowIndex="5" GridPane.columnIndex="1"
+                       styleClass="auth-input" visible="false"/>
+
+        <!-- 验证码 -->
+        <Label text="验证码" GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="auth-label"/>
+        <HBox GridPane.rowIndex="6" GridPane.columnIndex="1" spacing="5">
+            <TextField fx:id="captchaField" styleClass="auth-input" prefWidth="120"/>
+            <Button fx:id="captchaBtn" text="获取验证码" onAction="#getCaptcha" styleClass="auth-btn-captcha"/>
+        </HBox>
+
+        <!-- 状态消息 -->
+        <Label fx:id="statusLabel" GridPane.rowIndex="7" GridPane.columnIndex="0" GridPane.columnSpan="2"
+               styleClass="auth-status"/>
+
+        <!-- 主要操作按钮 -->
+        <Button fx:id="primaryActionBtn" text="登录" onAction="#handlePrimaryAction"
+                GridPane.rowIndex="8" GridPane.columnIndex="0" GridPane.columnSpan="2"
                 styleClass="auth-btn-primary-block"/>
-        <Button text="注册" onAction="#registerAction" GridPane.rowIndex="4" GridPane.columnIndex="0" GridPane.columnSpan="2"
-                styleClass="auth-btn-outline-block"/>
     </GridPane>
 
     <!-- 关闭按钮 -->

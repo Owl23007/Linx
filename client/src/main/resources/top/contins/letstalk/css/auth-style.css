@@ -1,33 +1,30 @@
-/* ====================== 颜色定义 ====================== */
-/* 主色: #0052d9 (primary), #2667e5 (hover), #003399 (active)            */
-/* 文本色: #222 (dark), #888 (light)                                     */
-/* 边框和背景: #e0e4ea (border), #f6f8fa (light bg), #e6f0ff (hover bg)  */
-
 /* ====================== 基础容器样式 ====================== */
 .root-pane {
-    -fx-background-color: rgba(0,0,0,0);
-    -fx-background-radius: 8;
+    -fx-background-radius: 118;
     -fx-border-radius: 8;
     -fx-border-color: transparent;
     -fx-clip: null;
-    -fx-transition: all 0.3s ease;
+    -fx-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-/* 主卡片容器 */
 .auth-card {
-    background-color: rgba(255, 255, 255, 0.98);
-    -fx-background-color: rgba(255, 255, 255, 0.98);
-    border-radius: 12px;
+    /* 玻璃拟态效果 */
+    -fx-background-color: rgb(175, 226, 255);
     -fx-background-radius: 8;
     -fx-border-radius: 8;
-    -fx-effect: dropshadow(gaussian, rgba(30,34,40,0.15), 24, 0.2, 0, 6);
-    -fx-border-color: transparent;
+    -fx-border-color: rgba(255, 255, 255, 0.3);
+    -fx-border-width: 1;
+    
+    /* 增强阴影效果 */
+    -fx-effect: dropshadow(gaussian, rgba(0, 82, 217, 0.15), 32, 0.4, 0, 8),
+                innershadow(gaussian, rgba(255, 255, 255, 0.8), 1, 1.0, 0, 1);
+    
     -fx-clip: null;
-    -fx-transition: all 0.3s ease;
+    -fx-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .auth-card:hover {
-    -fx-effect: dropshadow(gaussian, rgba(30,34,40,0.20), 28, 0.25, 0, 8);
+    -fx-effect: dropshadow(gaussian, rgba(0, 82, 217, 0.25), 40, 0.5, 0, 12),
+                innershadow(gaussian, rgba(255, 255, 255, 0.9), 2, 1.0, 0, 2);
 }
 
 /* ====================== 窗口样式 ====================== */
@@ -48,7 +45,7 @@
 }
 
 .close-icon {
-    -fx-font-size: 20px;
+    -fx-font-size: 14px;
     -fx-text-fill: #888;
     -fx-font-weight: bold;
     -fx-transition: all 0.2s ease;
@@ -63,172 +60,81 @@
 }
 
 .auth-btn-close:pressed {
-    -fx-background-color: rgba(0, 82, 217, 0.2);
+    -fx-background-color: rgb(255, 0, 0);
 }
 
 .auth-btn-close:pressed .close-icon {
-    -fx-text-fill: #003399;
+    -fx-text-fill: #ffffff;
+    -fx-background-color: rgb(255, 0, 0);
 }
 
-/* ====================== 标题样式 ====================== */
+/* ====================== 标题样式 - 艺术字效果 ====================== */
 .auth-title {
-    color: #222;
-    -fx-text-fill: #222;
-    font-size: 32px;
-    -fx-font-size: 32px;
-    font-weight: bold;
-    -fx-font-weight: bold;
-    padding: 0 0 28px 0;
-    -fx-padding: 0 0 28 0;
-    font-family: 'Segoe UI', Arial;
-    -fx-font-family: 'Segoe UI', Arial;
-    -fx-transition: all 0.3s ease;
+    -fx-text-alignment: center;
+    /* 渐变文字效果 */
+    -fx-text-fill: linear-gradient(to right, #008dd9, #2653e5, #4266f4, #0859df);
+    
+    /* 字体设置 */
+    -fx-font-size: 28px;
+    -fx-font-weight: 700;
+    -fx-font-family: sans-serif;
+    
+    /* 布局和间距 */
+    -fx-padding: 0 0 0 0;
+    -fx-alignment: center;
+    -fx-label-align: center;
+
+    /* 动画过渡 */
+    -fx-transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ====================== 表单元素 ====================== */
-.auth-label {
-    color: #888; 
-    -fx-text-fill: #888; 
-    font-size: 14px;
+/* ====================== 切换框样式 ====================== */
+/* 外容器：圆角白框 */
+.toggle-container {
+    -fx-background-color: #ffffff;
+    -fx-border-color: rgba(204, 204, 204, 0);
+    -fx-background-radius: 8px;
+    -fx-padding: 4px;
+    -fx-alignment: center;
+    -fx-pref-height: 40px;
+    -fx-max-width: 200px;
+}
+
+/* 滑块样式 */
+.slider {
+    -fx-background-color: #3d8bff;
+    -fx-background-radius: 6px;
+    -fx-max-width: 100px;
+}
+
+/* 按钮样式 */
+.toggle-container .auth-btn-mode {
+    -fx-background-color: transparent;
+    -fx-text-fill: #333;
     -fx-font-size: 14px;
-    padding: 0 12px 0 0;
-    -fx-padding: 0 12 0 0;
-    min-width: 60px;
-    -fx-min-width: 60px;
+    -fx-padding: 8px 20px;
+    -fx-pref-width: 100px;
+    -fx-min-width: 100px;
+    -fx-max-width: 100px;
+    -fx-alignment: center;
+    -fx-border-width: 0;
+    -fx-background-radius: 8px;
 }
 
-/* 输入框样式 */
-.auth-input {
-    background-color: transparent;
-    -fx-background-color: transparent;
-    border-width: 0 0 2px 0;
-    -fx-border-width: 0 0 2 0;
-    border-color: #e0e4ea; 
-    -fx-border-color: #e0e4ea; 
-    font-size: 16px;
-    -fx-font-size: 16px;
-    padding: 6px 0;
-    -fx-padding: 6 0;
-    -fx-focus-color: #0052d9; 
-    -fx-faint-focus-color: transparent;
-    color: #222; 
-    -fx-text-fill: #222; 
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
-    border-radius: 0;
-    -fx-border-radius: 0;
-    -fx-prompt-text-fill: #bfbfbf;
-    -fx-highlight-fill: #e6f0ff; 
-    -fx-highlight-text-fill: #222; 
-    cursor: text;
-    -fx-cursor: text;
-    -fx-transition: all 0.2s ease;
+.toggle-container:hover .auth-btn-mode:hover {
+    -fx-background-color: rgba(0, 0, 0, 0.05);
+    -fx-background-radius: 6px;           /* 可选：圆角匹配 */
+    -fx-background-insets: 0 8 0 8;       /* 上 右 下 左 */
 }
 
-.auth-input:focused {
-    -fx-border-color: #0052d9; 
-    border-color: #0052d9; 
-}
-
-/* ====================== 按钮样式 ====================== */
-/* 主按钮样式 */
-.auth-btn-primary {
-    background-color: #0052d9;
-    -fx-background-color: #0052d9; 
-    color: white;
+.auth-btn-mode.selected {
     -fx-text-fill: white;
-    border-color: transparent;
-    -fx-border-color: transparent;
+    -fx-font-weight: bold;
 }
 
-.auth-btn-primary:hover {
-    background-color: #2667e5; 
-    -fx-background-color: #2667e5;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 6, 0.3, 0, 3);
+/* 当按钮是 selected 时，禁用 hover 效果 */
+.auth-btn-mode.selected:hover {
+    -fx-background-color: transparent; /* 或保持原样 */
+    /* 不要应用 hover 的背景色 */
 }
 
-.auth-btn-primary:pressed {
-    background-color: #003399; 
-    -fx-background-color: #003399; /* primary-active */
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 2, 0.1, 0, 1);
-}
-
-/* 描边按钮样式 */
-.auth-btn-outline {
-    background-color: transparent;
-    -fx-background-color: transparent;
-    color: #0052d9; 
-    -fx-text-fill: #0052d9; 
-    border-color: #0052d9; 
-    -fx-border-color: #0052d9; 
-    border-width: 2px;
-    -fx-border-width: 2;
-}
-
-.auth-btn-outline:hover {
-    background-color: #e6f0ff; 
-    -fx-background-color: #e6f0ff; 
-    -fx-effect: dropshadow(gaussian, rgba(0,82,217,0.2), 6, 0.3, 0, 3);
-}
-
-/* 按钮聚焦状态 */
-.auth-btn:focused {
-    border-color: #0052d9; 
-    -fx-border-color: #0052d9; 
-    border-width: 2px;
-    -fx-border-width: 2;
-    background-color: #e6f0ff; 
-    -fx-background-color: #e6f0ff; 
-}
-
-/* 块级主按钮样式 */
-.auth-btn-primary-block {
-    -fx-min-width: 200px;
-    -fx-max-width: 240px;
-    -fx-pref-width: 220px;
-    -fx-background-radius: 20;
-    -fx-border-radius: 20;
-    -fx-background-color: #0052d9; 
-    -fx-text-fill: white;
-    -fx-border-color: transparent;
-}
-
-.auth-btn-primary-block:hover {
-    -fx-background-color: #2667e5;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 6, 0.3, 0, 3);
-}
-
-.auth-btn-primary-block:pressed {
-    -fx-background-color: #003399;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 2, 0.1, 0, 1);
-}
-
-/* 块级描边按钮样式 */
-.auth-btn-outline-block {
-    -fx-min-width: 200px;
-    -fx-max-width: 240px;
-    -fx-pref-width: 220px;
-    -fx-background-radius: 20;
-    -fx-border-radius: 20;
-    -fx-background-color: transparent;
-    -fx-text-fill: #0052d9; 
-    -fx-border-color: #0052d9; 
-    -fx-border-width: 2;
-}
-
-.auth-btn-outline-block:hover {
-    -fx-background-color: #e6f0ff; 
-    -fx-effect: dropshadow(gaussian, rgba(0,82,217,0.2), 6, 0.3, 0, 3);
-}
-
-/* 响应式调整 */
-@media screen and (max-width: 500px) {
-    .auth-card {
-        padding: 24px 12px 24px 12px;
-        -fx-padding: 24 12 24 12;
-    }
-    .auth-title {
-        font-size: 22px;
-        -fx-font-size: 22px;
-    }
-}
