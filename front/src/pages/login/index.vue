@@ -1,6 +1,6 @@
 <template>
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div class="w-full max-w-md">
+        <div class="w-full max-w-sm">
             <!-- 拖动区域和顶部操作按钮 -->
             <div class="absolute top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-10">
                 <!-- 左侧拖动区域 -->
@@ -8,28 +8,41 @@
                 <!-- 右侧操作按钮 -->
                 <div class="flex">
                     <el-button size="small" @click="handleMinimize" class="window-btn minimize-btn">
-                        <el-icon :size="20">
+                        <el-icon :size="16">
                             <Minus />
                         </el-icon>
                     </el-button>
                     <el-button size="small" @click="handleClose" class="window-btn close-btn">
-                        <el-icon :size="20">
+                        <el-icon :size="16">
                             <Close />
                         </el-icon>
                     </el-button>
                 </div>
             </div>
 
-            <!-- Title -->
-            <div class="text-center mb-8 mt-16">
-                <h1 class="text-3xl font-bold text-gray-800">Let's Talk</h1>
+            <!-- 标题组件 -->
+            <Title />
+
+
+            <!-- 为固定标题腾出空间 -->
+            <div class="h-16"></div>
+
+            <!-- 登录/注册表单卡片 -->
+
+            <!-- 自定义 Tab 头部和滑块 -->
+            <div class="custom-tabs">
+                <div class="tab-list" ref="tabListRef">
+                    <div v-for="(tab, idx) in tabs" :key="tab.name"
+                        :class="['tab-item', { active: activeTab === tab.name }]" @click="switchTab(tab.name, idx)"
+                        ref="el => tabRefs[idx] = el">
+                        {{ tab.label }}
+                    </div>
+                    <div class="tab-slider" :style="sliderStyle"></div>
+                </div>
             </div>
-
-            <!-- Login/Register Form Card -->
-
-            <el-tabs v-model="activeTab" class="login-tabs" @tab-change="handleTabChange">
-                <!-- Login Tab -->
-                <el-tab-pane label="登录" name="login">
+            <!-- Tab 内容区 -->
+            <div class="tab-content">
+                <div v-show="activeTab === 'login'">
                     <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="space-y-4">
                         <el-form-item prop="username">
                             <el-input v-model="loginForm.username" placeholder="请输入账号" size="large">
@@ -51,15 +64,13 @@
                             </el-input>
                         </el-form-item>
                         <el-form-item>
-                            <el-button type="primary" size="large" class="w-full" :loading="loginLoading">
+                            <el-button type="primary" size="small" class="w-full" :loading="loginLoading">
                                 登录
                             </el-button>
                         </el-form-item>
                     </el-form>
-                </el-tab-pane>
-
-                <!-- Register Tab -->
-                <el-tab-pane label="注册" name="register">
+                </div>
+                <div v-show="activeTab === 'register'">
                     <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" class="space-y-4">
                         <el-form-item prop="username">
                             <el-input v-model="registerForm.username" placeholder="请输入账号" size="large">
@@ -91,25 +102,32 @@
                             </el-input>
                         </el-form-item>
                         <el-form-item>
-                            <el-button type="primary" size="large" class="w-full" :loading="registerLoading">
+                            <el-button type="primary" size="small" class="w-full" :loading="registerLoading">
                                 注册
                             </el-button>
                         </el-form-item>
                     </el-form>
-                </el-tab-pane>
-            </el-tabs>
-
+                </div>
+            </div>
         </div>
     </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { closeWindow, minimizeWindow } from '@/utils/electron';
 import { type FormInstance, type FormRules } from 'element-plus';
 import { Close, User, Lock, Minus } from '@element-plus/icons-vue';
 import drag from '@/utils/drag';
+import Title from './components/title.vue';
 
+const tabs = [
+    { label: '登录', name: 'login' },
+    { label: '注册', name: 'register' }
+];
 const activeTab = ref('login');
+const tabRefs = ref<any[]>([]);
+const tabListRef = ref<HTMLElement | null>(null);
+const sliderStyle = ref({ left: '0px', width: '0px' });
 const loginLoading = ref(false);
 const registerLoading = ref(false);
 const dragAreaRef = ref<HTMLElement>();
@@ -177,9 +195,31 @@ const registerRules: FormRules = {
     ]
 };
 
-function handleTabChange(tabName: string) {
-    activeTab.value = tabName;
+
+function updateSlider(idx: number) {
+    nextTick(() => {
+        const el = tabRefs.value[idx];
+        if (el && tabListRef.value) {
+            const parentRect = tabListRef.value.getBoundingClientRect();
+            const rect = el.getBoundingClientRect();
+            sliderStyle.value = {
+                left: rect.left - parentRect.left + 'px',
+                width: rect.width + 'px'
+            };
+        }
+    });
 }
+
+function switchTab(tabName: string, idx: number) {
+    activeTab.value = tabName;
+    updateSlider(idx);
+}
+
+onMounted(() => {
+    // ...existing code...
+    // 初始化滑块位置
+    updateSlider(tabs.findIndex(t => t.name === activeTab.value));
+});
 
 function handleClose() {
     closeWindow();
@@ -192,6 +232,51 @@ function handleMinimize() {
 
 
 <style scoped lang="less">
+.custom-tabs {
+    margin-bottom: 24px;
+
+    .tab-list {
+        display: flex;
+        position: relative;
+        background: #f4f6fa;
+        border-radius: 8px;
+        padding: 4px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #888;
+            cursor: pointer;
+            border-radius: 6px;
+            position: relative;
+            z-index: 1;
+            transition: color 0.2s;
+        }
+
+        .tab-item.active {
+            color: #3b82f6;
+        }
+
+        .tab-slider {
+            position: absolute;
+            bottom: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6 60%, #6366f1 100%);
+            border-radius: 2px;
+            transition: left 0.3s cubic-bezier(.4, 0, .2, 1), width 0.3s cubic-bezier(.4, 0, .2, 1);
+            z-index: 0;
+        }
+    }
+}
+
+.tab-content {
+    margin-top: 8px;
+}
+
 .drag-area {
     user-select: none;
 

@@ -3,7 +3,19 @@
  * 参考：https://rmw.link/zh/log/2022-03-14.electron-drag.html
  */
 
-const IGNORE = new Set(['SELECT', 'BUTTON', 'A', 'INPUT', 'TEXTAREA'])
+// 需要忽略的元素标签名
+const IGNORE = new Set([
+  'SELECT', 'BUTTON', 'A', 'INPUT', 'TEXTAREA', 
+  'LABEL', 'FORM', 'FIELDSET', 'LEGEND',
+])
+
+// 需要忽略的 CSS 类名
+const IGNORE_CLASSES = new Set([
+  'el-input', 'el-button', 'el-form', 'el-form-item', 
+  'el-tabs', 'el-tab-pane', 'el-input__inner', 'el-input__wrapper',
+  'window-btn', 'minimize-btn', 'close-btn'
+])
+
 let moving = false
 
 export default function drag(elem: HTMLElement) {
@@ -25,14 +37,30 @@ export default function drag(elem: HTMLElement) {
     )
   }
 
+  const shouldIgnore = (element: HTMLElement): boolean => {
+    // 检查元素标签名
+    if (IGNORE.has(element.nodeName)) return true
+    
+    // 检查元素的类名
+    for (const className of element.classList) {
+      if (IGNORE_CLASSES.has(className)) return true
+      // 检查以 'el-' 开头的类名（Element Plus 组件）
+      if (className.startsWith('el-')) return true
+    }
+    
+    // 检查是否有 contenteditable 属性
+    if (element.contentEditable === 'true') return true
+    
+    return false
+  }
+
   const down = async (e: PointerEvent) => {
     if (moving || e.button !== 0) return // 只响应鼠标左键
     
     let p: HTMLElement | null = e.target as HTMLElement
-    // 检查是否点击在忽略的元素上
-    while (p) {
-      if (IGNORE.has(p.nodeName)) return
-      if (p.nodeName === 'BODY') break
+    // 检查是否点击在需要忽略的元素上
+    while (p && p !== elem) {
+      if (shouldIgnore(p)) return
       p = p.parentElement
     }
     
