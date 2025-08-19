@@ -1,11 +1,10 @@
 <template>
     <!-- 标题 -->
-    <div class="fixed top-16 left-1/2 transform -translate-x-1/2 z-20 text-center animate-float w-auto min-w-max">
+    <div
+        class="fixed top-16 left-1/2 transform -translate-x-1/2 z-20 text-center animate-float w-auto min-w-max select-none">
         <div class="relative px-4">
-
-
             <!-- 艺术字logo -->
-            <h1 class="logo-art">Let’s <span class="logo-art-talk">Talk</span></h1>
+            <h1 class="logo-art">Let's <span class="logo-art-talk">Talk</span></h1>
         </div>
     </div>
 </template>
