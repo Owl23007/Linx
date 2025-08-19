@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu } = require('electron')
 const path = require('path')
+const { ipcMain } = require('electron')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -23,8 +24,11 @@ function createWindow() {
     autoHideMenuBar: true, // 隐藏菜单栏
     titleBarStyle: 'hidden', // 隐藏标题栏
   })
-  // 监听渲染进程的关闭窗口请求
-  const { ipcMain } = require('electron')
+
+  // 拖动相关变量
+  let isDragging = false
+
+  // 关闭窗口
   ipcMain.on('close-window', () => {
     const wins = BrowserWindow.getAllWindows()
     if (wins.length > 0) {
@@ -32,10 +36,62 @@ function createWindow() {
     }
   })
 
-  // 开发者工具（开发环境）
-  if (!app.isPackaged) {
-    win.webContents.openDevTools()
-  }
+  // 最小化窗口
+  ipcMain.on('minimize-window', () => {
+    const wins = BrowserWindow.getAllWindows()
+    if (wins.length > 0) {
+      wins[0].minimize()
+    }
+  })
+
+  // 最大化/还原窗口
+  ipcMain.on('maximize-window', () => {
+    const wins = BrowserWindow.getAllWindows()
+    if (wins.length > 0) {
+      const win = wins[0]
+      if (win.isMaximized()) {
+        win.restore()
+      } else {
+        win.maximize()
+      }
+    }
+  })
+
+  // 开始拖动窗口
+  ipcMain.on('drag-start', () => {
+    isDragging = true
+  })
+
+  // 停止拖动窗口
+  ipcMain.on('drag-stop', () => {
+    isDragging = false
+  })
+
+  // 拖动窗口 - 使用绝对位置而不是增量
+  ipcMain.on('drag-move', (event, { x, y }) => {
+    if (isDragging) {
+      // 获取屏幕信息用于边界检查
+      const { screen } = require('electron')
+      const primaryDisplay = screen.getPrimaryDisplay()
+      const { width: screenWidth, height: screenHeight } =
+        primaryDisplay.workAreaSize
+      const { x: screenX, y: screenY } = primaryDisplay.workArea
+      const windowBounds = win.getBounds()
+
+      // 计算边界限制
+      const minX = screenX - windowBounds.width + 50 // 允许窗口部分移出左边界
+      const maxX = screenX + screenWidth - 50 // 保留至少50px在右边界内
+      const minY = screenY // 不允许移出上边界
+      const maxY = screenY + screenHeight - 50 // 保留至少50px在下边界内
+
+      // 应用边界限制
+      const boundedX = Math.max(minX, Math.min(x, maxX))
+      const boundedY = Math.max(minY, Math.min(y, maxY))
+
+      // 设置窗口位置
+      win.setPosition(Math.round(boundedX), Math.round(boundedY))
+    }
+  })
 
   // 开发环境加载 Vite dev server，生产环境加载打包后的文件
   if (process.env.NODE_ENV === 'development') {
