@@ -2,7 +2,9 @@
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div class="w-full max-w-md">
             <!-- 拖动区域和顶部操作按钮 -->
-            <div class="absolute top-2.5 padding right-0 flex justify-between items-center px-3">
+            <div class="absolute top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-10">
+                <!-- 左侧拖动区域 -->
+                <div ref="dragAreaRef" class="flex-1 h-full drag-area"></div>
                 <!-- 右侧操作按钮 -->
                 <div class="flex">
                     <el-button size="small" @click="handleMinimize" class="window-btn minimize-btn">
@@ -24,91 +26,106 @@
             </div>
 
             <!-- Login/Register Form Card -->
-            <el-card class="shadow-xl">
-                <el-tabs v-model="activeTab" class="login-tabs" @tab-change="handleTabChange">
-                    <!-- Login Tab -->
-                    <el-tab-pane label="登录" name="login">
-                        <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="space-y-4">
-                            <el-form-item prop="username">
-                                <el-input v-model="loginForm.username" placeholder="请输入账号" size="large">
-                                    <template #prefix>
-                                        <el-icon>
-                                            <User />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item prop="password">
-                                <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" size="large"
-                                    show-password>
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Lock />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item>
-                                <el-button type="primary" size="large" class="w-full" :loading="loginLoading">
-                                    登录
-                                </el-button>
-                            </el-form-item>
-                        </el-form>
-                    </el-tab-pane>
 
-                    <!-- Register Tab -->
-                    <el-tab-pane label="注册" name="register">
-                        <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" class="space-y-4">
-                            <el-form-item prop="username">
-                                <el-input v-model="registerForm.username" placeholder="请输入账号" size="large">
-                                    <template #prefix>
-                                        <el-icon>
-                                            <User />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item prop="password">
-                                <el-input v-model="registerForm.password" type="password" placeholder="请输入密码"
-                                    size="large" show-password>
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Lock />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item prop="confirmPassword">
-                                <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请确认密码"
-                                    size="large" show-password>
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Lock />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item>
-                                <el-button type="primary" size="large" class="w-full" :loading="registerLoading">
-                                    注册
-                                </el-button>
-                            </el-form-item>
-                        </el-form>
-                    </el-tab-pane>
-                </el-tabs>
-            </el-card>
+            <el-tabs v-model="activeTab" class="login-tabs" @tab-change="handleTabChange">
+                <!-- Login Tab -->
+                <el-tab-pane label="登录" name="login">
+                    <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="space-y-4">
+                        <el-form-item prop="username">
+                            <el-input v-model="loginForm.username" placeholder="请输入账号" size="large">
+                                <template #prefix>
+                                    <el-icon>
+                                        <User />
+                                    </el-icon>
+                                </template>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item prop="password">
+                            <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" size="large"
+                                show-password>
+                                <template #prefix>
+                                    <el-icon>
+                                        <Lock />
+                                    </el-icon>
+                                </template>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" size="large" class="w-full" :loading="loginLoading">
+                                登录
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-tab-pane>
+
+                <!-- Register Tab -->
+                <el-tab-pane label="注册" name="register">
+                    <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" class="space-y-4">
+                        <el-form-item prop="username">
+                            <el-input v-model="registerForm.username" placeholder="请输入账号" size="large">
+                                <template #prefix>
+                                    <el-icon>
+                                        <User />
+                                    </el-icon>
+                                </template>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item prop="password">
+                            <el-input v-model="registerForm.password" type="password" placeholder="请输入密码" size="large"
+                                show-password>
+                                <template #prefix>
+                                    <el-icon>
+                                        <Lock />
+                                    </el-icon>
+                                </template>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item prop="confirmPassword">
+                            <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请确认密码"
+                                size="large" show-password>
+                                <template #prefix>
+                                    <el-icon>
+                                        <Lock />
+                                    </el-icon>
+                                </template>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" size="large" class="w-full" :loading="registerLoading">
+                                注册
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-tab-pane>
+            </el-tabs>
+
         </div>
     </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { closeWindow, minimizeWindow } from '@/utils/electron';
 import { type FormInstance, type FormRules } from 'element-plus';
 import { Close, User, Lock, Minus } from '@element-plus/icons-vue';
+import drag from '@/utils/drag';
 
 const activeTab = ref('login');
 const loginLoading = ref(false);
 const registerLoading = ref(false);
+const dragAreaRef = ref<HTMLElement>();
+let dragCleanup: (() => void) | undefined;
+
+onMounted(() => {
+    if (dragAreaRef.value) {
+        dragCleanup = drag(dragAreaRef.value);
+    }
+});
+
+onUnmounted(() => {
+    if (dragCleanup) {
+        dragCleanup();
+    }
+});
 
 
 const loginFormRef = ref<FormInstance>();
@@ -175,6 +192,18 @@ function handleMinimize() {
 
 
 <style scoped lang="less">
+.drag-area {
+    user-select: none;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    &:active {
+        cursor: move;
+    }
+}
+
 .window-btn {
     background-color: rgba(255, 255, 255, 0);
     border: 1px solid rgba(255, 255, 255, 0);
@@ -194,7 +223,7 @@ function handleMinimize() {
 }
 
 .minimize-btn:hover {
-    background-color: rgba(212, 227, 241, 0.416);
+    background-color: rgba(212, 227, 241, 0.525);
     border-color: rgba(255, 255, 255, 0);
 }
 

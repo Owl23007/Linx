@@ -25,9 +25,6 @@ function createWindow() {
     titleBarStyle: 'hidden', // 隐藏标题栏
   })
 
-  // 拖动相关变量
-  let isDragging = false
-
   // 关闭窗口
   ipcMain.on('close-window', () => {
     const wins = BrowserWindow.getAllWindows()
@@ -57,40 +54,21 @@ function createWindow() {
     }
   })
 
-  // 开始拖动窗口
-  ipcMain.on('drag-start', () => {
-    isDragging = true
+  // 获取窗口边界信息
+  ipcMain.handle('drag:getBounds', (e) => {
+    return e.sender.getOwnerBrowserWindow().getBounds()
   })
 
-  // 停止拖动窗口
-  ipcMain.on('drag-stop', () => {
-    isDragging = false
-  })
-
-  // 拖动窗口 - 使用绝对位置而不是增量
-  ipcMain.on('drag-move', (event, { x, y }) => {
-    if (isDragging) {
-      // 获取屏幕信息用于边界检查
-      const { screen } = require('electron')
-      const primaryDisplay = screen.getPrimaryDisplay()
-      const { width: screenWidth, height: screenHeight } =
-        primaryDisplay.workAreaSize
-      const { x: screenX, y: screenY } = primaryDisplay.workArea
-      const windowBounds = win.getBounds()
-
-      // 计算边界限制
-      const minX = screenX - windowBounds.width + 50 // 允许窗口部分移出左边界
-      const maxX = screenX + screenWidth - 50 // 保留至少50px在右边界内
-      const minY = screenY // 不允许移出上边界
-      const maxY = screenY + screenHeight - 50 // 保留至少50px在下边界内
-
-      // 应用边界限制
-      const boundedX = Math.max(minX, Math.min(x, maxX))
-      const boundedY = Math.max(minY, Math.min(y, maxY))
-
-      // 设置窗口位置
-      win.setPosition(Math.round(boundedX), Math.round(boundedY))
-    }
+  // 设置窗口位置
+  ipcMain.handle('drag:setBounds', (e, x, y, width, height) => {
+    const win = e.sender.getOwnerBrowserWindow()
+    // 不用 setPosition 是因为 https://github.com/electron/electron/issues/9477
+    win.setBounds({
+      x: Math.round(x),
+      y: Math.round(y),
+      width,
+      height,
+    })
   })
 
   // 开发环境加载 Vite dev server，生产环境加载打包后的文件

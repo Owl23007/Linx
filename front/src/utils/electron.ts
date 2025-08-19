@@ -8,6 +8,7 @@ declare global {
       dragStart: () => void;
       dragStop: () => void;
       dragMove: (x: number, y: number) => void;
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
     };
   }
 }
