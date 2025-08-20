@@ -28,7 +28,7 @@
                 <div class="tab-list" ref="tabListRef">
                     <div v-for="(tab, idx) in tabs" :key="tab.name"
                         :class="['tab-item', { active: activeTab === tab.name }]" @click="switchTab(tab.name, idx)"
-                        ref="el => tabRefs[idx] = el">
+                        :ref="(el) => { if (el) tabRefs[idx] = el as HTMLElement }">
                         {{ tab.label }}
                     </div>
                     <div class="tab-slider" :style="sliderStyle"></div>
@@ -62,7 +62,7 @@
                     </el-form-item>
                 </el-form>
             </div>
-            <div v-show="activeTab === 'register'">
+            <div v-show="activeTab === 'register'" class="mt-6">
                 <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules">
                     <el-form-item prop="username">
                         <el-input v-model="registerForm.username" placeholder="请输入账号" size="large">
@@ -193,15 +193,17 @@ const registerRules: FormRules = {
 // Tab相关方法
 function updateSlider(idx: number): void {
     nextTick(() => {
-        const el = tabRefs.value[idx];
-        if (el && tabListRef.value) {
-            const parentRect = tabListRef.value.getBoundingClientRect();
-            const rect = el.getBoundingClientRect();
-            sliderStyle.value = {
-                left: rect.left - parentRect.left + 'px',
-                width: rect.width + 'px'
-            };
-        }
+        setTimeout(() => {
+            const el = tabRefs.value[idx];
+            if (el && tabListRef.value) {
+                const parentRect = tabListRef.value.getBoundingClientRect();
+                const rect = el.getBoundingClientRect();
+                sliderStyle.value = {
+                    left: rect.left - parentRect.left + 'px',
+                    width: rect.width + 'px'
+                };
+            }
+        }, 10);
     });
 }
 
@@ -264,7 +266,7 @@ onUnmounted(() => {
             user-select: none;
 
             &.active {
-                color: #2563eb;
+                color: #ffffff;
             }
 
             &:hover:not(.active) {
@@ -274,12 +276,13 @@ onUnmounted(() => {
 
         .tab-slider {
             position: absolute;
+            top: 0.25rem;
             bottom: 0.25rem;
-            height: 0.25rem;
             background: linear-gradient(to right, #3b82f6, #2563eb);
-            border-radius: 9999px;
+            border-radius: 0.375rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 0;
+            z-index: 5;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
     }
 }
