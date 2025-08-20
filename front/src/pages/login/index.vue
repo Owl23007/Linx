@@ -38,7 +38,7 @@
 
 
         <!-- 表单内容区域 -->
-        <div class="w-full max-w-sm absolute rounded-xl mt-2 px-4 py-4">
+        <div class="w-full max-w-sm absolute rounded-xl mt-2 px-4 py-4 overflow-hidden">
             <div v-show="activeTab === 'login'">
                 <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
                     <el-form-item prop="username">
@@ -310,6 +310,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    margin-left: 0.5vh;
 
     &:hover {
         border-color: rgba(255, 255, 255, 0.5);
