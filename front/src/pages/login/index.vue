@@ -19,99 +19,96 @@
                 </el-button>
             </div>
         </div>
-        <!-- 标题组件 -->
+
         <Title />
-        <div class="w-full max-w-sm relative">
-            <!-- 主要内容区域 -->
-            <div class=" rounded-xl overflow-hidden mt-16">
-                <!-- Tab 区域 -->
-                <div class="px-4 pt-4 pb-0 overflow-hidden">
-                    <div class="custom-tabs">
-                        <div class="tab-list" ref="tabListRef">
-                            <div v-for="(tab, idx) in tabs" :key="tab.name"
-                                :class="['tab-item', { active: activeTab === tab.name }]"
-                                @click="switchTab(tab.name, idx)" ref="el => tabRefs[idx] = el">
-                                {{ tab.label }}
-                            </div>
-                            <div class="tab-slider" :style="sliderStyle"></div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- 表单内容区域 -->
-                <div class="px-4 py-4 overflow-hidden">
-                    <div v-show="activeTab === 'login'" class="overflow-hidden">
-                        <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="space-y-4">
-                            <el-form-item prop="username">
-                                <el-input v-model="loginForm.username" placeholder="请输入账号" size="large">
-                                    <template #prefix>
-                                        <el-icon>
-                                            <User />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item prop="password">
-                                <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" size="large"
-                                    show-password>
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Lock />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                        </el-form>
+        <!-- Tab 区域 -->
+        <div class=" overflow-hidden w-70 max-w-md absolute top-26 z-10">
+            <div class="custom-tabs">
+                <div class="tab-list" ref="tabListRef">
+                    <div v-for="(tab, idx) in tabs" :key="tab.name"
+                        :class="['tab-item', { active: activeTab === tab.name }]" @click="switchTab(tab.name, idx)"
+                        ref="el => tabRefs[idx] = el">
+                        {{ tab.label }}
                     </div>
-                    <div v-show="activeTab === 'register'" class="overflow-hidden">
-                        <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" class="space-y-4">
-                            <el-form-item prop="username">
-                                <el-input v-model="registerForm.username" placeholder="请输入账号" size="large">
-                                    <template #prefix>
-                                        <el-icon>
-                                            <User />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item prop="password">
-                                <el-input v-model="registerForm.password" type="password" placeholder="请输入密码"
-                                    size="large" show-password>
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Lock />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item prop="confirmPassword">
-                                <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请确认密码"
-                                    size="large" show-password>
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Lock />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                        </el-form>
-                    </div>
-                </div>
-
-                <!-- 底部按钮区域 -->
-                <div class="px-4 pb-4 overflow-hidden">
-                    <el-form-item v-if="activeTab === 'login'" class="mb-0">
-                        <el-button type="primary" size="large" class="w-full" :loading="loginLoading">
-                            登录
-                        </el-button>
-                    </el-form-item>
-                    <el-form-item v-if="activeTab === 'register'" class="mb-0">
-                        <el-button type="primary" size="large" class="w-full" :loading="registerLoading">
-                            注册
-                        </el-button>
-                    </el-form-item>
+                    <div class="tab-slider" :style="sliderStyle"></div>
                 </div>
             </div>
+        </div>
+
+
+        <!-- 表单内容区域 -->
+        <div class="w-full max-w-sm absolute rounded-xl mt-2 px-4 py-4">
+            <div v-show="activeTab === 'login'">
+                <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
+                    <el-form-item prop="username">
+                        <el-input v-model="loginForm.username" placeholder="请输入账号" size="large">
+                            <template #prefix>
+                                <el-icon>
+                                    <User />
+                                </el-icon>
+                            </template>
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item prop="password">
+                        <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" size="large"
+                            show-password>
+                            <template #prefix>
+                                <el-icon>
+                                    <Lock />
+                                </el-icon>
+                            </template>
+                        </el-input>
+                    </el-form-item>
+                </el-form>
+            </div>
+            <div v-show="activeTab === 'register'">
+                <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules">
+                    <el-form-item prop="username">
+                        <el-input v-model="registerForm.username" placeholder="请输入账号" size="large">
+                            <template #prefix>
+                                <el-icon>
+                                    <User />
+                                </el-icon>
+                            </template>
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item prop="password">
+                        <el-input v-model="registerForm.password" type="password" placeholder="请输入密码" size="large"
+                            show-password>
+                            <template #prefix>
+                                <el-icon>
+                                    <Lock />
+                                </el-icon>
+                            </template>
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item prop="confirmPassword">
+                        <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请确认密码"
+                            size="large" show-password>
+                            <template #prefix>
+                                <el-icon>
+                                    <Lock />
+                                </el-icon>
+                            </template>
+                        </el-input>
+                    </el-form-item>
+                </el-form>
+            </div>
+        </div>
+
+        <!-- 底部按钮区域 -->
+        <div class="px-4 pb-4 overflow-hidden absolute bottom-0 w-55">
+            <el-form-item v-if="activeTab === 'login'" class="mb-0">
+                <el-button type="primary" size="large" class="w-full" :loading="loginLoading">
+                    登录
+                </el-button>
+            </el-form-item>
+            <el-form-item v-if="activeTab === 'register'" class="mb-0">
+                <el-button type="primary" size="large" class="w-full" :loading="registerLoading">
+                    注册
+                </el-button>
+            </el-form-item>
         </div>
     </div>
 </template>
@@ -255,8 +252,8 @@ onUnmounted(() => {
         .tab-item {
             flex: 1;
             text-align: center;
-            padding: 0.75rem 0;
-            font-size: 1rem;
+            padding: 0.5rem 0;
+            font-size: 0.875rem;
             font-weight: 500;
             color: #6b7280;
             cursor: pointer;
