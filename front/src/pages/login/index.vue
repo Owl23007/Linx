@@ -23,7 +23,7 @@
         <Title />
 
         <!-- Tab 区域 -->
-        <div class=" overflow-hidden w-70 max-w-md absolute top-26 z-10">
+        <div class=" overflow-hidden w-50 max-w-md absolute top-27 z-10">
             <div class="custom-tabs">
                 <div class="tab-list" ref="tabListRef">
                     <div v-for="(tab, idx) in tabs" :key="tab.name"
@@ -38,11 +38,12 @@
 
 
         <!-- 表单内容区域 -->
-        <div class="w-full max-w-sm absolute rounded-xl mt-2 px-4 py-4 overflow-hidden">
-            <div v-show="activeTab === 'login'">
+        <div class="w-70 max-w-sm absolute mt-5 px-4 py-4 overflow-hidden">
+            <div v-show="activeTab === 'login'" class="mt-6">
                 <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
                     <el-form-item prop="username">
-                        <el-input v-model="loginForm.username" placeholder="请输入账号" size="large">
+                        <el-input v-model="loginForm.username" clearable placeholder="请输入账号或邮箱" size="large"
+                            class="round-input">
                             <template #prefix>
                                 <el-icon>
                                     <User />
@@ -50,9 +51,10 @@
                             </template>
                         </el-input>
                     </el-form-item>
+                    <div class="h-4" />
                     <el-form-item prop="password">
-                        <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" size="large"
-                            show-password>
+                        <el-input v-model="loginForm.password" clearable type="password" placeholder="请输入密码"
+                            size="large" show-password class="round-input">
                             <template #prefix>
                                 <el-icon>
                                     <Lock />
@@ -62,10 +64,11 @@
                     </el-form-item>
                 </el-form>
             </div>
-            <div v-show="activeTab === 'register'" class="mt-6">
+            <div v-show="activeTab === 'register'" class="mt-8">
                 <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules">
                     <el-form-item prop="username">
-                        <el-input v-model="registerForm.username" placeholder="请输入账号" size="large">
+                        <el-input v-model="registerForm.username" placeholder="请输入邮箱" size="large" class="round-input"
+                            clearable>
                             <template #prefix>
                                 <el-icon>
                                     <User />
@@ -75,7 +78,7 @@
                     </el-form-item>
                     <el-form-item prop="password">
                         <el-input v-model="registerForm.password" type="password" placeholder="请输入密码" size="large"
-                            show-password>
+                            show-password class="round-input" clearable>
                             <template #prefix>
                                 <el-icon>
                                     <Lock />
@@ -83,29 +86,41 @@
                             </template>
                         </el-input>
                     </el-form-item>
-                    <el-form-item prop="confirmPassword">
-                        <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请确认密码"
-                            size="large" show-password>
-                            <template #prefix>
-                                <el-icon>
-                                    <Lock />
-                                </el-icon>
-                            </template>
-                        </el-input>
+                    <el-form-item prop="captchaCode">
+                        <div class="flex gap-2">
+                            <el-input v-model="registerForm.captchaCode" placeholder="输入验证码" size="large"
+                                class="round-input flex-1">
+                                <template #prefix>
+                                    <el-icon>
+                                        <Key />
+                                    </el-icon>
+                                </template>
+                            </el-input>
+                            <div class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
+                                @click="refreshCaptcha">
+                                <img v-if="captchaImage" :src="captchaImage" alt="验证码" class="max-w-full max-h-full " />
+                                <span v-else class="flex items-center justify-center text-xs text-gray-500">
+                                    <el-icon :size="16" class="mr-1">
+                                        <Refresh />
+                                    </el-icon>
+                                    刷新验证码
+                                </span>
+                            </div>
+                        </div>
                     </el-form-item>
                 </el-form>
             </div>
         </div>
 
         <!-- 底部按钮区域 -->
-        <div class="px-4 pb-4 overflow-hidden absolute bottom-0 w-55">
+        <div class="px-4 pb-14 overflow-hidden absolute bottom-0 w-55">
             <el-form-item v-if="activeTab === 'login'" class="mb-0">
-                <el-button type="primary" size="large" class="w-full" :loading="loginLoading">
+                <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loginLoading">
                     登录
                 </el-button>
             </el-form-item>
             <el-form-item v-if="activeTab === 'register'" class="mb-0">
-                <el-button type="primary" size="large" class="w-full" :loading="registerLoading">
+                <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="registerLoading">
                     注册
                 </el-button>
             </el-form-item>
@@ -115,10 +130,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { type FormInstance, type FormRules } from 'element-plus';
-import { Close, User, Lock, Minus } from '@element-plus/icons-vue';
+import { Close, User, Lock, Minus, Key, Refresh } from '@element-plus/icons-vue';
 import { closeWindow, minimizeWindow } from '@/utils/electron';
 import drag from '@/utils/drag';
 import Title from './components/title.vue';
+import { getCaptcha } from '@/api/auth';
 
 // ==================== 常量定义 ====================
 const tabs = [
@@ -149,43 +165,39 @@ const loginForm = ref({
 const registerForm = ref({
     username: '',
     password: '',
-    confirmPassword: ''
+    captchaCode: '',
+    captchaId: ''
 });
+
+// 验证码相关状态
+const captchaImage = ref<string>('');
+const captchaLoading = ref(false);
 
 let dragCleanup: (() => void) | undefined; // 拖动清理函数
 
 // ==================== 表单验证 ====================
-const validateConfirmPassword = (_rule: any, value: any, callback: any) => {
-    if (value !== registerForm.value.password) {
-        callback(new Error('两次输入的密码不一致'));
-    } else {
-        callback();
-    }
-};
-
 const loginRules: FormRules = {
     username: [
-        { required: true, message: '请输入账号', trigger: 'blur' },
-        { min: 3, max: 20, message: '账号长度应为 3-20 个字符', trigger: 'blur' }
+        { required: true, trigger: 'none' },
+        { min: 3, max: 20, message: '账号长度应为 3-20 个字符', trigger: 'none' }
     ],
     password: [
-        { required: true, message: '请输入密码', trigger: 'blur' },
-        { min: 6, max: 20, message: '密码长度应为 6-20 个字符', trigger: 'blur' }
+        { required: true, trigger: 'none' },
+        { min: 6, max: 20, message: '请输入正确的密码', trigger: 'none' }
     ]
 };
 
 const registerRules: FormRules = {
     username: [
-        { required: true, message: '请输入账号', trigger: 'blur' },
-        { min: 3, max: 20, message: '账号长度应为 3-20 个字符', trigger: 'blur' }
+        { required: true, message: '请输入账号', trigger: 'none' },
+        { min: 3, max: 20, message: '账号长度应为 3-20 个字符', trigger: 'none' }
     ],
     password: [
-        { required: true, message: '请输入密码', trigger: 'blur' },
-        { min: 6, max: 20, message: '密码长度应为 6-20 个字符', trigger: 'blur' }
+        { required: true, message: '请输入密码', trigger: 'none' },
+        { min: 6, max: 20, message: '密码长度应为 6-20 个字符', trigger: 'none' }
     ],
-    confirmPassword: [
-        { required: true, message: '请确认密码', trigger: 'blur' },
-        { validator: validateConfirmPassword, trigger: 'blur' }
+    captchaCode: [
+        { required: true, message: '请输入验证码', trigger: 'none' },
     ]
 };
 
@@ -221,6 +233,25 @@ function handleMinimize(): void {
     minimizeWindow();
 }
 
+// 验证码相关方法
+async function refreshCaptcha(): Promise<void> {
+    try {
+        captchaLoading.value = true;
+        const response = await getCaptcha();
+        if (response.code === 0 && response.data) {
+            const dataStr = response.data as string;
+            const [captchaId, ...imageDataParts] = dataStr.split(':');
+            const imageData = imageDataParts.join(':');
+            captchaImage.value = imageData;
+            registerForm.value.captchaId = captchaId;
+        }
+    } catch (error) {
+        console.error('获取验证码失败:', error);
+    } finally {
+        captchaLoading.value = false;
+    }
+}
+
 // ==================== 生命周期钩子 ====================
 onMounted(() => {
     // 初始化拖动功能
@@ -230,6 +261,9 @@ onMounted(() => {
 
     // 初始化滑块位置
     updateSlider(tabs.findIndex(t => t.name === activeTab.value));
+
+    // 获取验证码
+    refreshCaptcha();
 });
 
 onUnmounted(() => {
@@ -327,6 +361,31 @@ onUnmounted(() => {
     &.close-btn:hover {
         background-color: #ef4444;
         color: white;
+    }
+}
+</style>
+
+<style lang="less">
+.round-input {
+    border-radius: 0.45rem !important;
+
+
+    .el-input-group__prepend {
+        border-radius: 0.45rem;
+        border: 0;
+        box-shadow: 0 0 0 0px;
+    }
+
+    .el-input__wrapper {
+        border-radius: 0.45rem;
+        border: 0;
+        box-shadow: 0 0 0 0px;
+    }
+
+    .el-input-group__append {
+        border-radius: 0.45rem;
+        border: 0;
+        box-shadow: 0 0 0 0px;
     }
 }
 </style>

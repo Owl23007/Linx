@@ -4,7 +4,7 @@ const { ipcMain } = require('electron')
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 350,
+    width: 320,
     height: 450,
     frame: false, // 隐藏原生的标题栏和控制按钮
     transparent: false,
