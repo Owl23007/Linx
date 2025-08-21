@@ -7,7 +7,5 @@ contextBridge.exposeInMainWorld('electronApi', {
   closeWindow: () => ipcRenderer.send('close-window'),
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
   maximizeWindow: () => ipcRenderer.send('maximize-window'),
-  dragMove: (x, y) => ipcRenderer.send('drag-move', { x, y }),
-  // 新的拖动 API
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
 })
