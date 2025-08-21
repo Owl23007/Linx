@@ -22,6 +22,24 @@ import top.contins.letstalk.config.Value;
 import top.contins.letstalk.util.ErrorDialogUtil;
 import top.contins.letstalk.util.LogUtil;
 
+/**
+ * ⚠️ DEPRECATED: JavaFX认证界面控制器
+ * 
+ * <p>该控制器属于已弃用的JavaFX客户端，不再进行主动开发。
+ * 弃用原因：JavaFX UI开发复杂度过高，影响开发效率。
+ * 
+ * <p>推荐替代方案：
+ * 请参考 `/front/src` 目录下的Vue.js认证组件实现。
+ * 
+ * <p>参考价值：
+ * - 认证流程的业务逻辑设计
+ * - 表单验证和用户交互处理
+ * - 配置注入和日志记录的使用方式
+ * 
+ * @deprecated 自2025年1月起弃用，请使用Vue.js版本
+ * @author Oii Woof
+ */
+@Deprecated(since = "2025-01", forRemoval = false)
 public class AuthController {
 
     public Label passwordLabel;

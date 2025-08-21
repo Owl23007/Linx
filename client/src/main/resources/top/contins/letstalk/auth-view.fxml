@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<!--
+    ⚠️ DEPRECATED: JavaFX认证界面布局文件
+    
+    该FXML文件属于已弃用的JavaFX客户端，不再进行主动开发。
+    弃用原因：JavaFX UI开发复杂度过高，影响开发效率。
+    
+    推荐替代方案：请参考 /front/src 目录下的Vue.js认证组件
+    
+    存档价值：
+    - UI布局设计的参考
+    - 表单组件组织结构的示例
+    
+    @deprecated 自2025年1月起弃用
+-->
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>

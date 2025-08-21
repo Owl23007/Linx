@@ -6,10 +6,23 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * 日志工具类<br>
- * 支持 DEBUG、INFO、WARN、ERROR 级别输出<br>
- * 可通过配置 log.level 控制输出级别<br>
- * 格式：[LEVEL] [yyyy-MM-dd HH:mm:ss.SSS] [Thread] [Class] 消息
+ * 💡 推荐复用：轻量级日志工具类
+ * 
+ * <p>该工具类设计规范，独立性强，建议在新项目中复用。
+ * 
+ * <p>特点：
+ * - 支持 DEBUG、INFO、WARN、ERROR 级别输出
+ * - 可通过配置 log.level 控制输出级别
+ * - 线程安全的日志输出
+ * - 格式化输出支持：[LEVEL] [yyyy-MM-dd HH:mm:ss.SSS] [Thread] [Class] 消息
+ * 
+ * <p>复用建议：
+ * - 可直接复制到新项目使用
+ * - 配合 AppConfig 使用或替换为其他配置框架
+ * - 可扩展为支持文件输出等功能
+ * 
+ * @author Oii Woof
+ * @since 2025/08/18
  */
 public record LogUtil(Class<?> sourceClass) {
 
