@@ -2,11 +2,16 @@
     <div
         class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
         <!-- 拖动区域和顶部操作按钮 - 固定到屏幕右上角 -->
-        <div class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
+        <div v-if="isElectron()" class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
             <!-- 左侧拖动区域 -->
             <div ref="dragAreaRef" class="flex-1 h-full drag-area"></div>
             <!-- 右侧操作按钮 -->
             <div class="flex">
+                <el-button size="small" class="window-btn minimize-btn">
+                    <el-icon :size="16">
+                        <Setting />
+                    </el-icon>
+                </el-button>
                 <el-button size="small" @click="handleMinimize" class="window-btn minimize-btn">
                     <el-icon :size="16">
                         <Minus />
@@ -20,10 +25,12 @@
             </div>
         </div>
 
-        <Title />
+        <div class="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
+            <Title :size="isElectron() ? '1' : '1.5'" />
+        </div>
 
         <!-- Tab 区域 -->
-        <div class=" overflow-hidden w-50 max-w-md absolute top-27 z-10">
+        <div :class="{ 'scale-120 top-50': !isElectron() }" class="overflow-hidden w-50 max-w-md absolute top-27 z-10">
             <div class="custom-tabs">
                 <div class="tab-list" ref="tabListRef">
                     <div v-for="(tab, idx) in tabs" :key="tab.name"
@@ -41,6 +48,17 @@
         <div class="w-70 max-w-sm absolute mt-5 px-4 py-4 overflow-hidden">
             <div v-show="activeTab === 'login'" class="mt-6">
                 <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
+                    <el-form-item v-if="!isElectron()" prop="username">
+                        <el-input v-model="loginForm.username" clearable placeholder="请输入账号或邮箱" size="large"
+                            class="round-input">
+                            <template #prefix>
+                                <el-icon>
+                                    <User />
+                                </el-icon>
+                            </template>
+                        </el-input>
+                    </el-form-item>
+                    <div v-if="!isElectron()" class="h-4" />
                     <el-form-item prop="username">
                         <el-input v-model="loginForm.username" clearable placeholder="请输入账号或邮箱" size="large"
                             class="round-input">
@@ -113,7 +131,8 @@
         </div>
 
         <!-- 底部按钮区域 -->
-        <div class="px-4 pb-14 overflow-hidden absolute bottom-0 w-55">
+        <div :class="{ 'bottom-40 scale-125': !isElectron() }"
+            class="px-4 pb-14 overflow-hidden absolute bottom-0 w-55">
             <el-form-item v-if="activeTab === 'login'" class="mb-0">
                 <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loginLoading">
                     登录
@@ -130,8 +149,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { type FormInstance, type FormRules } from 'element-plus';
-import { Close, User, Lock, Minus, Key, Refresh } from '@element-plus/icons-vue';
-import { closeWindow, minimizeWindow } from '@/utils/electron';
+import { Close, User, Lock, Minus, Key, Refresh, Setting } from '@element-plus/icons-vue';
+import { closeWindow, minimizeWindow, isElectron } from '@/utils/electron';
 import drag from '@/utils/drag';
 import Title from './components/title.vue';
 import { getCaptcha } from '@/api/auth';
@@ -210,9 +229,15 @@ function updateSlider(idx: number): void {
             if (el && tabListRef.value) {
                 const parentRect = tabListRef.value.getBoundingClientRect();
                 const rect = el.getBoundingClientRect();
+
+                // 检查是否应用了缩放（非 Electron 环境）
+                const scaleFactor = !isElectron() ? 1.2 : 1;
+                const adjustedLeft = (rect.left - parentRect.left) / scaleFactor;
+                const adjustedWidth = rect.width / scaleFactor;
+
                 sliderStyle.value = {
-                    left: rect.left - parentRect.left + 'px',
-                    width: rect.width + 'px'
+                    left: adjustedLeft + 'px',
+                    width: adjustedWidth + 'px'
                 };
             }
         }, 10);

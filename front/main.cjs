@@ -76,7 +76,7 @@ function createWindow() {
     const port = process.env.VITE_PORT || '5173'
     win.loadURL(`http://localhost:${port}`)
   } else {
-    // 生产环境使用 file:// 协议加载本地文件
+    // 生产环境使用打包后的文件
     const indexPath = path.join(__dirname, 'dist/index.html')
     win.loadFile(indexPath)
   }
