@@ -45,15 +45,19 @@
 
 
         <!-- 表单内容区域 -->
-        <div class="w-70 max-w-sm absolute mt-5 px-4 py-4 overflow-hidden">
+        <div :class="{ 'w-120 ': !isElectron() }" class="w-70 max-w-sm absolute mt-5 px-4 py-4 overflow-hidden">
             <div v-show="activeTab === 'login'" class="mt-6">
                 <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
-                    <el-form-item v-if="!isElectron()" prop="username">
-                        <el-input v-model="loginForm.username" clearable placeholder="请输入账号或邮箱" size="large"
-                            class="round-input">
+                    <el-form-item v-if="!isElectron()">
+                        <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large" class="round-input">
                             <template #prefix>
                                 <el-icon>
-                                    <User />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 1024 1024"
+                                        data-v-133a2e38="">
+                                        <path
+                                            d="M832 64H192c-17.7 0-32 14.3-32 32v832c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zm-600 72h560v208H232V136zm560 480H232V408h560v208zm0 272H232V680h560v208zM304 240a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0z">
+                                        </path>
+                                    </svg>
                                 </el-icon>
                             </template>
                         </el-input>
@@ -114,7 +118,8 @@
                                     </el-icon>
                                 </template>
                             </el-input>
-                            <div class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
+                            <div :class="{ 'w-35': !isElectron() }"
+                                class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
                                 @click="refreshCaptcha">
                                 <img v-if="captchaImage" :src="captchaImage" alt="验证码" class="max-w-full max-h-full " />
                                 <span v-else class="flex items-center justify-center text-xs text-gray-500">
@@ -131,7 +136,7 @@
         </div>
 
         <!-- 底部按钮区域 -->
-        <div :class="{ 'bottom-40 scale-125': !isElectron() }"
+        <div :class="{ 'bottom-25 scale-125': !isElectron() }"
             class="px-4 pb-14 overflow-hidden absolute bottom-0 w-55">
             <el-form-item v-if="activeTab === 'login'" class="mb-0">
                 <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loginLoading">
@@ -175,8 +180,11 @@ const sliderStyle = ref({ left: '0px', width: '0px' });
 const loginLoading = ref(false);
 const registerLoading = ref(false);
 
+const serverUrl = ref(import.meta.env.VITE_DEFAULT_BASE_URL || 'http://localhost:8082');
+
 // 表单数据refs
 const loginForm = ref({
+
     username: '',
     password: ''
 });
