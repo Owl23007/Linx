@@ -1,4 +1,4 @@
-package top.contins.letstalk.controller;
+package top.contins.linx.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -6,11 +6,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import top.contins.letstalk.model.dto.CreateSupernodeRequest;
-import top.contins.letstalk.model.dto.UpdateSupernodeRequest;
-import top.contins.letstalk.model.vo.ApiResponse;
-import top.contins.letstalk.model.vo.SupernodeVO;
-import top.contins.letstalk.service.SupernodeService;
+import top.contins.linx.model.dto.CreateSupernodeRequest;
+import top.contins.linx.model.dto.UpdateSupernodeRequest;
+import top.contins.linx.model.vo.ApiResponse;
+import top.contins.linx.model.vo.SupernodeVO;
+import top.contins.linx.service.SupernodeService;
 
 import java.util.List;
 

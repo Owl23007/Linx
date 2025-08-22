@@ -1,4 +1,4 @@
-package top.contins.letstalk.model.dto;
+package top.contins.linx.model.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -1,11 +1,11 @@
-package top.contins.letstalk.service;
+package top.contins.linx.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.context.SpringBootTest;
-import top.contins.letstalk.model.dto.CreateSupernodeRequest;
-import top.contins.letstalk.model.dto.UpdateSupernodeRequest;
-import top.contins.letstalk.model.vo.SupernodeVO;
+import top.contins.linx.model.dto.CreateSupernodeRequest;
+import top.contins.linx.model.dto.UpdateSupernodeRequest;
+import top.contins.linx.model.vo.SupernodeVO;
 
 import java.util.List;
 
@@ -225,8 +225,5 @@ class SupernodeServiceTest {
                 assertTrue(actives.stream().anyMatch(s -> s.getId().equals(created.getId())));
             }
         }
-        
-        // 注意：由于状态检查是随机的，这个测试可能不是100%可靠，
-        // 但在实际项目中应该实现真实的网络检测
     }
 }

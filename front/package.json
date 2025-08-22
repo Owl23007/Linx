@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "main": "main.cjs",
-  "description": "Let's Talk - A modern communication application",
-  "author": "Let's Talk Team",
+  "description": "Linx - A modern communication application",
+  "author": "Linx Team",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
@@ -40,8 +40,8 @@
     "wait-on": "^8.0.4"
   },
   "build": {
-    "appId": "com.contins.letstalk",
-    "productName": "Let's Talk",
+    "appId": "top.contins.linx",
+    "productName": "Linx",
     "directories": {
       "output": "release"
     },

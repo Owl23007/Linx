@@ -1,4 +1,4 @@
-package top.contins.letstalk.model.vo;
+package top.contins.linx.model.vo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

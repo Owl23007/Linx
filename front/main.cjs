@@ -75,8 +75,6 @@ function createWindow() {
   if (process.env.NODE_ENV === 'development') {
     const port = process.env.VITE_PORT || '5173'
     win.loadURL(`http://localhost:${port}`)
-    // 开发环境下打开开发者工具
-    win.webContents.openDevTools()
   } else {
     // 生产环境使用 file:// 协议加载本地文件
     const indexPath = path.join(__dirname, 'dist/index.html')

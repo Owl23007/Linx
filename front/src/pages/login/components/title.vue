@@ -3,7 +3,7 @@
     <div class="fixed top-8 left-1/2 transform -translate-x-1/2 z-20 text-center w-auto min-w-max select-none">
         <div class="relative px-6 py-2">
             <!-- 艺术字logo -->
-            <h1 class="logo-art">Let's <span class="logo-art-talk">Talk</span></h1>
+            <h1 class="logo-art">Linx <span class="logo-art-talk">Linx</span></h1>
         </div>
     </div>
 </template>

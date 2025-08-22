@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>top.contins</groupId>
-    <artifactId>let-s-talk</artifactId>
+    <artifactId>linx</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>client</name>
 
@@ -124,7 +124,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>top.contins.letstalk/top.contins.letstalk.ClientApplication</mainClass>
+                            <mainClass>top.contins.linx/top.contins.linx.ClientApplication</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

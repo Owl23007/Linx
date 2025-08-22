@@ -9,7 +9,7 @@
         <relativePath/>
     </parent>
     <groupId>top.contins</groupId>
-    <artifactId>let-s-talk</artifactId>
+    <artifactId>linx</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>server</name>
     <description>server</description>

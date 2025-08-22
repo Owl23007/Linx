@@ -1,10 +1,10 @@
-package top.contins.letstalk.service;
+package top.contins.linx.service;
 
 import org.springframework.stereotype.Service;
-import top.contins.letstalk.model.dto.CreateSupernodeRequest;
-import top.contins.letstalk.model.dto.UpdateSupernodeRequest;
-import top.contins.letstalk.model.entity.Supernode;
-import top.contins.letstalk.model.vo.SupernodeVO;
+import top.contins.linx.model.dto.CreateSupernodeRequest;
+import top.contins.linx.model.dto.UpdateSupernodeRequest;
+import top.contins.linx.model.entity.Supernode;
+import top.contins.linx.model.vo.SupernodeVO;
 
 import java.time.LocalDateTime;
 import java.util.*;
