@@ -1,17 +1,21 @@
 {
-  "name": "front",
+  "name": "linx-front",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "main": "main.cjs",
+  "description": "Let's Talk - A modern communication application",
+  "author": "Let's Talk Team",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "electron": "cross-env NODE_ENV=development electron .",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
     "start": "npm run electron:dev",
     "build": "vue-tsc -b && vite build",
-    "build:electron": "npm run build && electron-builder",
-    "preview": "vite preview"
+    "build:electron": "npm run build && cross-env NODE_ENV=production electron-builder",
+    "preview": "vite preview",
+    "clean": "rimraf dist release"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.12",
@@ -29,9 +33,48 @@
     "cross-env": "^7.0.3",
     "electron": "^37.3.0",
     "electron-builder": "^25.1.8",
+    "rimraf": "^6.0.1",
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
     "vue-tsc": "^3.0.5",
     "wait-on": "^8.0.4"
+  },
+  "build": {
+    "appId": "com.contins.letstalk",
+    "productName": "Let's Talk",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "main.cjs",
+      "public/preload.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "dist",
+        "to": "dist"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/favicon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/favicon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

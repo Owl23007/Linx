@@ -11,6 +11,14 @@ declare global {
 }
 
 /**
+ * 检查是否在 Electron 环境中
+ */
+export function isElectron(): boolean {
+  return !!(window.electronApi && typeof window.electronApi === 'object');
+}
+
+
+/**
  * 通过 Electron 的 window.electronApi 关闭窗口
  */
 export function closeWindow() {
