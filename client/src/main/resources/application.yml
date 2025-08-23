@@ -9,7 +9,7 @@
 # - 应用配置结构的参考
 # - 配置管理和注入的实现思路
 # 
-# @deprecated 自2025年1月起弃用
+# @deprecated 自2025年8月起弃用
 
 app:
   name: Let's Talk

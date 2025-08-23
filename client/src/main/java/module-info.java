@@ -10,7 +10,7 @@
  * - Java模块系统的配置参考
  * - 依赖管理和导出配置的示例
  * 
- * @deprecated 自2025年1月起弃用
+ * @deprecated 自2025年8月起弃用
  */
 module top.contins.letstalk {
     requires javafx.controls;

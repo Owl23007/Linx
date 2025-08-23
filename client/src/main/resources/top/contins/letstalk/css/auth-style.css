@@ -2,7 +2,6 @@
  * ⚠️ DEPRECATED: JavaFX认证界面样式文件
  * 
  * 该CSS文件属于已弃用的JavaFX客户端，不再进行主动开发。
- * 弃用原因：JavaFX UI开发复杂度过高，影响开发效率。
  * 
  * 推荐替代方案：请参考 /front/src 目录下的Vue.js组件样式
  * 
@@ -10,7 +9,7 @@
  * - UI设计风格和配色方案的参考
  * - 动画效果和交互设计的思路
  * 
- * @deprecated 自2025年1月起弃用
+ * @deprecated 自2025年8月起弃用
  */
 
 /* ====================== 基础容器样式 ====================== */
@@ -21,6 +20,7 @@
     -fx-clip: null;
     -fx-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .auth-card {
     /* 玻璃拟态效果 */
     -fx-background-color: rgb(175, 226, 255);
@@ -28,18 +28,18 @@
     -fx-border-radius: 8;
     -fx-border-color: rgba(255, 255, 255, 0.3);
     -fx-border-width: 1;
-    
+
     /* 增强阴影效果 */
     -fx-effect: dropshadow(gaussian, rgba(0, 82, 217, 0.15), 32, 0.4, 0, 8),
-                innershadow(gaussian, rgba(255, 255, 255, 0.8), 1, 1.0, 0, 1);
-    
+        innershadow(gaussian, rgba(255, 255, 255, 0.8), 1, 1.0, 0, 1);
+
     -fx-clip: null;
     -fx-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .auth-card:hover {
     -fx-effect: dropshadow(gaussian, rgba(0, 82, 217, 0.25), 40, 0.5, 0, 12),
-                innershadow(gaussian, rgba(255, 255, 255, 0.9), 2, 1.0, 0, 2);
+        innershadow(gaussian, rgba(255, 255, 255, 0.9), 2, 1.0, 0, 2);
 }
 
 /* ====================== 窗口样式 ====================== */
@@ -88,12 +88,12 @@
     -fx-text-alignment: center;
     /* 渐变文字效果 */
     -fx-text-fill: linear-gradient(to right, #008dd9, #2653e5, #4266f4, #0859df);
-    
+
     /* 字体设置 */
     -fx-font-size: 28px;
     -fx-font-weight: 700;
     -fx-font-family: sans-serif;
-    
+
     /* 布局和间距 */
     -fx-padding: 0 0 10 0;
     -fx-alignment: center;
@@ -138,8 +138,10 @@
 
 .toggle-container:hover .auth-btn-mode:hover {
     -fx-background-color: rgba(0, 0, 0, 0.05);
-    -fx-background-radius: 6px;           /* 可选：圆角匹配 */
-    -fx-background-insets: 0 8 0 8;       /* 上 右 下 左 */
+    -fx-background-radius: 6px;
+    /* 可选：圆角匹配 */
+    -fx-background-insets: 0 8 0 8;
+    /* 上 右 下 左 */
 }
 
 .auth-btn-mode.selected {
@@ -149,7 +151,8 @@
 
 /* 当按钮是 selected 时，禁用 hover 效果 */
 .auth-btn-mode.selected:hover {
-    -fx-background-color: transparent; /* 或保持原样 */
+    -fx-background-color: transparent;
+    /* 或保持原样 */
     /* 不要应用 hover 的背景色 */
 }
 

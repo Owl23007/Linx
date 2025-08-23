@@ -3,15 +3,10 @@
     ⚠️ DEPRECATED: JavaFX客户端构建配置
     
     该JavaFX客户端已被弃用，不再进行主动开发。
-    弃用原因：UI开发复杂度过高，影响开发效率。
-    
+
     推荐替代方案：请使用 /front 目录下的Vue.js + Electron客户端
-    
-    存档价值：
-    - Maven配置和依赖管理的参考
-    - JavaFX项目结构的学习示例
-    
-    @deprecated 自2025年1月起弃用
+
+    @deprecated 自2025年8月起弃用
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -29,7 +24,7 @@
     </properties>
 
     <dependencies>
-        <!-- JavaFX : 提供GUI界面 (已弃用) -->
+        <!-- JavaFX : 提供GUI界面 -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-base</artifactId>
