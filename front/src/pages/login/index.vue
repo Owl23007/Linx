@@ -1,10 +1,11 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
+    class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden"
+  >
     <!-- 拖动区域和顶部操作按钮 - 固定到屏幕右上角 -->
     <div v-if="isElectron()" class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
       <!-- 左侧拖动区域 -->
-      <div ref="dragAreaRef" class="flex-1 h-full drag-area"></div>
+      <div ref="dragAreaRef" class="flex-1 h-full drag-area" />
       <!-- 右侧操作按钮 -->
       <div class="flex">
         <el-button size="small" class="window-btn minimize-btn">
@@ -33,12 +34,16 @@
     <div :class="{ 'scale-120 top-50': !isElectron() }" class="overflow-hidden w-50 max-w-md absolute top-27 z-10">
       <div class="custom-tabs">
         <div ref="tabListRef" class="tab-list">
-          <div v-for="(tab, idx) in tabs" :key="tab.name" :ref="el => {
-            if (el) tabRefs[idx] = el as HTMLElement
-          }" :class="['tab-item', { active: activeTab === tab.name }]" @click="switchTab(tab.name, idx)">
+          <div
+            v-for="(tab, idx) in tabs"
+            :key="tab.name"
+            :ref="el => { if (el) tabRefs[idx] = el as HTMLElement }"
+            :class="['tab-item', { active: activeTab === tab.name }]" 
+            @click="switchTab(tab.name, idx)"
+          >
             {{ tab.label }}
           </div>
-          <div class="tab-slider" :style="sliderStyle"></div>
+          <div class="tab-slider" :style="sliderStyle" />
         </div>
       </div>
     </div>
@@ -52,9 +57,7 @@
               <template #prefix>
                 <el-icon>
                   <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 1024 1024" data-v-133a2e38="">
-                    <path
-                      d="M832 64H192c-17.7 0-32 14.3-32 32v832c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zm-600 72h560v208H232V136zm560 480H232V408h560v208zm0 272H232V680h560v208zM304 240a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0z">
-                    </path>
+                    <path d="M832 64H192c-17.7 0-32 14.3-32 32v832c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zm-600 72h560v208H232V136zm560 480H232V408h560v208zm0 272H232V680h560v208zM304 240a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0z" />
                   </svg>
                 </el-icon>
               </template>
@@ -72,8 +75,15 @@
           </el-form-item>
           <div class="h-4" />
           <el-form-item prop="password">
-            <el-input v-model="loginForm.password" clearable type="password" placeholder="请输入密码" size="large"
-              show-password class="round-input">
+            <el-input
+              v-model="loginForm.password"
+              clearable
+              type="password"
+              placeholder="请输入密码"
+              size="large"
+              show-password
+              class="round-input"
+            >
               <template #prefix>
                 <el-icon>
                   <lock />
@@ -83,16 +93,17 @@
           </el-form-item>
         </el-form>
       </div>
-      <div v-show="activeTab === 'register'" class="mt-8">
+      <div
+        v-show="activeTab === 'register'"
+        class="mt-8"
+      >
         <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules">
           <el-form-item v-if="!isElectron()">
             <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large" class="round-input">
               <template #prefix>
                 <el-icon>
                   <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 1024 1024" data-v-133a2e38="">
-                    <path
-                      d="M832 64H192c-17.7 0-32 14.3-32 32v832c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zm-600 72h560v208H232V136zm560 480H232V408h560v208zm0 272H232V680h560v208zM304 240a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0z">
-                    </path>
+                    <path d="M832 64H192c-17.7 0-32 14.3-32 32v832c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zm-600 72h560v208H232V136zm560 480H232V408h560v208zm0 272H232V680h560v208zM304 240a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0zm0 272a40 40 0 1 0 80 0 40 40 0 1 0-80 0z" />
                   </svg>
                 </el-icon>
               </template>
@@ -108,8 +119,15 @@
             </el-input>
           </el-form-item>
           <el-form-item prop="password">
-            <el-input v-model="registerForm.password" type="password" placeholder="请输入密码" size="large" show-password
-              class="round-input" clearable>
+            <el-input
+              v-model="registerForm.password"
+              type="password"
+              placeholder="请输入密码"
+              size="large"
+              show-password
+              class="round-input"
+              clearable
+            >
               <template #prefix>
                 <el-icon>
                   <lock />
@@ -126,12 +144,25 @@
                   </el-icon>
                 </template>
               </el-input>
-              <div :class="{ 'w-35': !isElectron() }"
+              <div
+                :class="{ 'w-35': !isElectron() }" 
                 class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
-                @click="refreshCaptcha">
-                <img v-if="captchaImage" :src="captchaImage" alt="验证码" class="max-w-full max-h-full" />
-                <span v-else class="flex items-center justify-center text-xs text-gray-500">
-                  <el-icon :size="16" class="mr-1">
+                @click="refreshCaptcha"
+              >
+                <img
+                  v-if="captchaImage"
+                  :src="captchaImage"
+                  alt="验证码"
+                  class="max-w-full max-h-full"
+                >
+                <span
+                  v-else
+                  class="flex items-center justify-center text-xs text-gray-500"
+                >
+                  <el-icon
+                    :size="16"
+                    class="mr-1"
+                  >
                     <refresh />
                   </el-icon>
                   获取验证码
@@ -144,14 +175,33 @@
     </div>
 
     <!-- 底部按钮区域 -->
-    <div :class="{ 'bottom-25 scale-125': !isElectron() }" class="px-4 pb-14 overflow-hidden absolute bottom-0 w-55">
-      <el-form-item v-if="activeTab === 'login'" class="mb-0">
-        <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loginLoading">
+    <div
+      :class="{ 'bottom-25 scale-125': !isElectron() }"
+      class="px-4 pb-14 overflow-hidden absolute bottom-0 w-55"
+    >
+      <el-form-item
+        v-if="activeTab === 'login'"
+        class="mb-0"
+      >
+        <el-button
+          type="primary"
+          size="large"
+          class="w-full !rounded-lg"
+          :loading="loginLoading"
+        >
           登录
         </el-button>
       </el-form-item>
-      <el-form-item v-if="activeTab === 'register'" class="mb-0">
-        <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="registerLoading">
+      <el-form-item
+        v-if="activeTab === 'register'"
+        class="mb-0"
+      >
+        <el-button
+          type="primary"
+          size="large"
+          class="w-full !rounded-lg"
+          :loading="registerLoading"
+        >
           注册
         </el-button>
       </el-form-item>

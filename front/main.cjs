@@ -55,7 +55,7 @@ function createWindow() {
   })
 
   // 获取窗口边界信息
-  ipcMain.handle('drag:getBounds', (e) => {
+  ipcMain.handle('drag:getBounds', e => {
     return e.sender.getOwnerBrowserWindow().getBounds()
   })
 

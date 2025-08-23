@@ -45,14 +45,14 @@ export default function drag(elem: HTMLElement) {
     initW = 0,
     initH = 0
 
-  const _move = async (e: PointerEvent) => {
+  const _move = async(e: PointerEvent) => {
     const { screenX, screenY } = e
     window.electronApi?.invoke(
       'drag:setBounds',
       Math.round(screenX - initX + initLeft),
       Math.round(screenY - initY + initTop),
       initW,
-      initH
+      initH,
     )
   }
 
@@ -73,7 +73,7 @@ export default function drag(elem: HTMLElement) {
     return false
   }
 
-  const down = async (e: PointerEvent) => {
+  const down = async(e: PointerEvent) => {
     if (moving || e.button !== 0) return // 只响应鼠标左键
 
     let p: HTMLElement | null = e.target as HTMLElement
@@ -100,7 +100,7 @@ export default function drag(elem: HTMLElement) {
     }
   }
 
-  const up = async (e: PointerEvent) => {
+  const up = async(e: PointerEvent) => {
     if (moving) {
       // 只有当实际移动时才调用 _move
       const deltaX = Math.abs(e.screenX - initX)

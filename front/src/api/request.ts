@@ -27,7 +27,7 @@ instance.interceptors.request.use(
   },
   error => {
     return Promise.reject(error)
-  }
+  },
 )
 
 // 响应拦截器
@@ -52,25 +52,25 @@ instance.interceptors.response.use(
 
       // 可以根据状态码进行特殊处理
       switch (status) {
-        case 401:
-          // 未授权，可以跳转到登录页
-          break
-        case 403:
-          // 禁止访问
-          break
-        case 404:
-          // 资源不存在
-          break
-        case 500:
-          // 服务器错误
-          break
+      case 401:
+        // 未授权，可以跳转到登录页
+        break
+      case 403:
+        // 禁止访问
+        break
+      case 404:
+        // 资源不存在
+        break
+      case 500:
+        // 服务器错误
+        break
       }
     } else {
       console.error('Network Error:', error.message)
     }
 
     return Promise.reject(error)
-  }
+  },
 )
 
 /**
