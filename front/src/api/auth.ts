@@ -1,95 +1,88 @@
-import { get, post } from './request';
-import type { ApiResponse } from './request';
+import { get, post } from './request'
+import type { ApiResponse } from './request'
 
 /**
  * 认证相关API
  */
 
-// 验证码响应数据类型
-export interface CaptchaData {
-    captchaId: string;
-    captchaImage: string; // base64图片数据
-}
-
-// 验证码响应可能的格式：对象或直接字符串
-export type CaptchaResponse = CaptchaData | string;
+export type CaptchaResponse = string
 
 // 登录请求数据类型
 export interface LoginRequest {
-    username: string;
-    password: string;
+  username: string
+  password: string
 }
 
 // 注册请求数据类型
 export interface RegisterRequest {
-    username: string;
-    password: string;
-    captchaCode: string;
-    captchaId?: string;
+  username: string
+  password: string
+  captchaCode: string
+  captchaId?: string
 }
 
 // 用户信息类型
 export interface UserInfo {
-    id: string;
-    username: string;
-    email?: string;
-    avatar?: string;
-    createTime?: string;
+  id: string
+  username: string
+  email?: string
+  avatar?: string
+  createTime?: string
 }
 
 // 登录响应数据类型
 export interface LoginResponse {
-    token: string;
-    userInfo: UserInfo;
+  token: string
+  userInfo: UserInfo
 }
 
 /**
  * 获取验证码
  */
 export function getCaptcha(): Promise<ApiResponse<CaptchaResponse>> {
-    return get<ApiResponse<CaptchaResponse>>('/auth/captcha');
+  return get<ApiResponse<CaptchaResponse>>('/auth/captcha')
 }
 
 /**
  * 用户登录
  */
 export function login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    return post<ApiResponse<LoginResponse>>('/auth/login', data);
+  return post<ApiResponse<LoginResponse>>('/auth/login', data)
 }
 
 /**
  * 用户注册
  */
-export function register(data: RegisterRequest): Promise<ApiResponse<UserInfo>> {
-    return post<ApiResponse<UserInfo>>('/auth/register', data);
+export function register(data: RegisterRequest) {
+  return post<ApiResponse<UserInfo>>('/auth/register', data)
 }
 
 /**
  * 获取用户信息
  */
 export function getUserInfo(): Promise<ApiResponse<UserInfo>> {
-    return get<ApiResponse<UserInfo>>('/auth/userinfo');
+  return get<ApiResponse<UserInfo>>('/auth/userinfo')
 }
 
 /**
  * 刷新token
  */
 export function refreshToken(): Promise<ApiResponse<{ token: string }>> {
-    return post<ApiResponse<{ token: string }>>('/auth/refresh');
+  return post<ApiResponse<{ token: string }>>('/auth/refresh')
 }
 
 /**
  * 用户登出
  */
 export function logout(): Promise<ApiResponse<null>> {
-    return post<ApiResponse<null>>('/auth/logout');
+  return post<ApiResponse<null>>('/auth/logout')
 }
 
 export default {
-    getCaptcha,
-    login,
-    register,
-    getUserInfo,
-    refreshToken,
-    logout,
-};
+  getCaptcha,
+  login,
+  register,
+  getUserInfo,
+  refreshToken,
+  logout,
+}

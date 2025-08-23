@@ -1,7 +1,6 @@
 <template>
-    <div>Main Panel</div>
+  <div>Main Panel</div>
 </template>
 
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 <style lang="less" scoped></style>

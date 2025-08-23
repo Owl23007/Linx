@@ -9,8 +9,8 @@ export default defineConfig({
   base: './',
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
-    }
+      '@': resolve(__dirname, 'src'),
+    },
   },
   build: {
     outDir: 'dist',
@@ -21,12 +21,12 @@ export default defineConfig({
         // 确保静态资源使用相对路径
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js'
-      }
-    }
+        entryFileNames: 'assets/[name]-[hash].js',
+      },
+    },
   },
   server: {
     port: 5173,
-    host: 'localhost'
-  }
+    host: 'localhost',
+  },
 })

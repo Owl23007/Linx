@@ -1,25 +1,25 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
-	{
-		path: '/login',
-		name: 'Login',
-		component: () => import('@/pages/login/index.vue'),
-	},
-	{
-		path: '/main',
-		name: 'MainPannel',
-		component: () => import('@/pages/main-pannel/index.vue'),
-	},
-	{
-		path: '/',
-		redirect: '/login',
-	},
-];
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/pages/login/index.vue'),
+  },
+  {
+    path: '/main',
+    name: 'MainPannel',
+    component: () => import('@/pages/main-pannel/index.vue'),
+  },
+  {
+    path: '/',
+    redirect: '/login',
+  },
+]
 
 const router = createRouter({
-	history: createWebHistory(),
-	routes,
-});
+  history: createWebHistory(),
+  routes,
+})
 
-export default router;
+export default router

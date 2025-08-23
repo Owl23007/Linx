@@ -2,11 +2,11 @@
 declare global {
   interface Window {
     electronApi?: {
-      closeWindow: () => void;
-      minimizeWindow: () => void;
-      maximizeWindow: () => void;
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-    };
+      closeWindow: () => void
+      minimizeWindow: () => void
+      maximizeWindow: () => void
+      invoke: (channel: string, ...args: any[]) => Promise<any>
+    }
   }
 }
 
@@ -14,19 +14,18 @@ declare global {
  * 检查是否在 Electron 环境中
  */
 export function isElectron(): boolean {
-  return !!(window.electronApi && typeof window.electronApi === 'object');
+  return !!(window.electronApi && typeof window.electronApi === 'object')
 }
-
 
 /**
  * 通过 Electron 的 window.electronApi 关闭窗口
  */
 export function closeWindow() {
   if (window.electronApi && window.electronApi.closeWindow) {
-    window.electronApi.closeWindow();
+    window.electronApi.closeWindow()
   } else {
     // fallback: 兼容非 electron 环境
-    window.close && window.close();
+    window.close && window.close()
   }
 }
 
@@ -35,7 +34,7 @@ export function closeWindow() {
  */
 export function minimizeWindow() {
   if (window.electronApi && window.electronApi.minimizeWindow) {
-    window.electronApi.minimizeWindow();
+    window.electronApi.minimizeWindow()
   }
 }
 
@@ -44,6 +43,6 @@ export function minimizeWindow() {
  */
 export function maximizeWindow() {
   if (window.electronApi && window.electronApi.maximizeWindow) {
-    window.electronApi.maximizeWindow();
+    window.electronApi.maximizeWindow()
   }
 }

@@ -5,31 +5,50 @@
 
 // 需要忽略的元素标签名
 const IGNORE = new Set([
-  'SELECT', 'BUTTON', 'A', 'INPUT', 'TEXTAREA', 
-  'LABEL', 'FORM', 'FIELDSET', 'LEGEND',
+  'SELECT',
+  'BUTTON',
+  'A',
+  'INPUT',
+  'TEXTAREA',
+  'LABEL',
+  'FORM',
+  'FIELDSET',
+  'LEGEND',
 ])
 
 // 需要忽略的 CSS 类名
 const IGNORE_CLASSES = new Set([
-  'el-input', 'el-button', 'el-form', 'el-form-item', 
-  'el-tabs', 'el-tab-pane', 'el-input__inner', 'el-input__wrapper',
-  'window-btn', 'minimize-btn', 'close-btn'
+  'el-input',
+  'el-button',
+  'el-form',
+  'el-form-item',
+  'el-tabs',
+  'el-tab-pane',
+  'el-input__inner',
+  'el-input__wrapper',
+  'window-btn',
+  'minimize-btn',
+  'close-btn',
 ])
 
 let moving = false
 
 export default function drag(elem: HTMLElement) {
   // 只在 Electron 环境下启用
-  if (typeof window.electronApi === 'undefined') return
-
-  // 设置为不可拖动区域，避免与自定义拖动冲突
+  if (typeof window.electronApi === 'undefined') return // 设置为不可拖动区域，避免与自定义拖动冲突
   ;(elem.style as any).webkitAppRegion = 'no-drag'
 
-  let initX = 0, initY = 0, initLeft = 0, initTop = 0, initW = 0, initH = 0
+  let initX = 0,
+    initY = 0,
+    initLeft = 0,
+    initTop = 0,
+    initW = 0,
+    initH = 0
 
   const _move = async (e: PointerEvent) => {
     const { screenX, screenY } = e
-    window.electronApi?.invoke('drag:setBounds',
+    window.electronApi?.invoke(
+      'drag:setBounds',
       Math.round(screenX - initX + initLeft),
       Math.round(screenY - initY + initTop),
       initW,
@@ -40,34 +59,34 @@ export default function drag(elem: HTMLElement) {
   const shouldIgnore = (element: HTMLElement): boolean => {
     // 检查元素标签名
     if (IGNORE.has(element.nodeName)) return true
-    
+
     // 检查元素的类名
     for (const className of element.classList) {
       if (IGNORE_CLASSES.has(className)) return true
       // 检查以 'el-' 开头的类名（Element Plus 组件）
       if (className.startsWith('el-')) return true
     }
-    
+
     // 检查是否有 contenteditable 属性
     if (element.contentEditable === 'true') return true
-    
+
     return false
   }
 
   const down = async (e: PointerEvent) => {
     if (moving || e.button !== 0) return // 只响应鼠标左键
-    
+
     let p: HTMLElement | null = e.target as HTMLElement
     // 检查是否点击在需要忽略的元素上
     while (p && p !== elem) {
       if (shouldIgnore(p)) return
       p = p.parentElement
     }
-    
+
     moving = true
     initX = e.screenX
     initY = e.screenY
-    
+
     elem.setPointerCapture(e.pointerId)
     elem.addEventListener('pointermove', _move)
 
@@ -86,7 +105,8 @@ export default function drag(elem: HTMLElement) {
       // 只有当实际移动时才调用 _move
       const deltaX = Math.abs(e.screenX - initX)
       const deltaY = Math.abs(e.screenY - initY)
-      if (deltaX > 2 || deltaY > 2) { // 只有移动超过2像素才认为是拖动
+      if (deltaX > 2 || deltaY > 2) {
+        // 只有移动超过2像素才认为是拖动
         await _move(e)
       }
       elem.releasePointerCapture(e.pointerId)
