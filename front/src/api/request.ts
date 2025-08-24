@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from 'axios';
 
 /**
  * 基础请求封装
@@ -18,93 +18,93 @@ const instance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-})
+});
 
 // 请求拦截器
 instance.interceptors.request.use(
   config => {
-    return config
+    return config;
   },
   error => {
-    return Promise.reject(error)
+    return Promise.reject(error);
   },
-)
+);
 
 // 响应拦截器
 instance.interceptors.response.use(
   response => {
-    const { data } = response
+    const { data } = response;
 
     // 这里可以根据后端的响应格式进行调整
     if (data.code === 200 || data.code === 0) {
-      return response // 返回完整的响应对象
+      return response; // 返回完整的响应对象
     } else {
       // 业务错误处理
-      console.error('API Error:', data.message)
+      console.error('API Error:', data.message);
 
-      return Promise.reject(new Error(data.message || '请求失败'))
+      return Promise.reject(new Error(data.message || '请求失败'));
     }
   },
   error => {
     // HTTP错误处理
     if (error.response) {
-      const { status, data } = error.response
+      const { status, data } = error.response;
 
-      console.error(`HTTP ${status}:`, data?.message || error.message)
+      console.error(`HTTP ${status}:`, data?.message || error.message);
 
       // 可以根据状态码进行特殊处理
       switch (status) {
         case 401:
         // 未授权，可以跳转到登录页
-          break
+          break;
         case 403:
         // 禁止访问
-          break
+          break;
         case 404:
         // 资源不存在
-          break
+          break;
         case 500:
         // 服务器错误
-          break
+          break;
       }
     } else {
-      console.error('Network Error:', error.message)
+      console.error('Network Error:', error.message);
     }
 
-    return Promise.reject(error)
+    return Promise.reject(error);
   },
-)
+);
 
 /**
  * GET 请求
  */
 export function get<T = any>(url: string, params?: any, config?: any): Promise<T> {
-  return instance.get(url, { params, ...config }).then(res => res.data)
+  return instance.get(url, { params, ...config }).then(res => res.data);
 }
 
 /**
  * POST 请求
  */
 export function post<T = any>(url: string, data?: any, config?: any): Promise<T> {
-  return instance.post(url, data, config).then(res => res.data)
+  return instance.post(url, data, config).then(res => res.data);
 }
 
 /**
  * PUT 请求
  */
 export function put<T = any>(url: string, data?: any, config?: any): Promise<T> {
-  return instance.put(url, data, config).then(res => res.data)
+  return instance.put(url, data, config).then(res => res.data);
 }
 
 /**
  * DELETE 请求
  */
 export function del<T = any>(url: string, params?: any, config?: any): Promise<T> {
-  return instance.delete(url, { params, ...config }).then(res => res.data)
+  return instance.delete(url, { params, ...config }).then(res => res.data);
 }
 
 // 导出实例，以便在其他地方直接使用
-export { instance as axiosInstance }
+export { instance as axiosInstance };
 
 export default {
   get,
@@ -112,4 +112,4 @@ export default {
   put,
   delete: del,
   instance,
-}
+};

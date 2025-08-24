@@ -16,7 +16,7 @@ declare global {
  * 检查是否在 Electron 环境中
  */
 export function isElectron(): boolean {
-  return !!(window.electronApi && typeof window.electronApi === 'object')
+  return !!(window.electronApi && typeof window.electronApi === 'object');
 }
 
 /**
@@ -24,11 +24,11 @@ export function isElectron(): boolean {
  */
 export function closeWindow() {
   if (window.electronApi && window.electronApi.closeWindow) {
-    window.electronApi.closeWindow()
+    window.electronApi.closeWindow();
   } else {
     // fallback: 兼容非 electron 环境
     if (typeof window.close === 'function') {
-      window.close()
+      window.close();
     }
   }
 }
@@ -38,7 +38,7 @@ export function closeWindow() {
  */
 export function minimizeWindow() {
   if (window.electronApi && window.electronApi.minimizeWindow) {
-    window.electronApi.minimizeWindow()
+    window.electronApi.minimizeWindow();
   }
 }
 
@@ -47,6 +47,6 @@ export function minimizeWindow() {
  */
 export function maximizeWindow() {
   if (window.electronApi && window.electronApi.maximizeWindow) {
-    window.electronApi.maximizeWindow()
+    window.electronApi.maximizeWindow();
   }
 }

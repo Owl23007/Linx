@@ -158,58 +158,58 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { type FormInstance, type FormRules } from 'element-plus'
-import { Close, User, Lock, Minus, Key, Refresh, Setting } from '@element-plus/icons-vue'
-import { closeWindow, minimizeWindow, isElectron } from '@/utils/electron'
-import drag from '@/utils/drag'
-import TitleIcon from './components/title-icon.vue'
-import { getCaptcha } from '@/api/auth'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { type FormInstance, type FormRules } from 'element-plus';
+import { Close, User, Lock, Minus, Key, Refresh, Setting } from '@element-plus/icons-vue';
+import { closeWindow, minimizeWindow, isElectron } from '@/utils/electron';
+import drag from '@/utils/drag';
+import TitleIcon from './components/title-icon.vue';
+import { getCaptcha } from '@/api/auth';
 
 // ==================== 常量定义 ====================
 const tabs = [
   { label: '登录', name: 'login' },
   { label: '注册', name: 'register' },
-]
+];
 
 // ==================== Refs 定义 ====================
 // DOM元素refs
-const tabRefs = ref<HTMLElement[]>([])
+const tabRefs = ref<HTMLElement[]>([]);
 
 
 
-const tabListRef = ref<HTMLElement | null>(null)
-const dragAreaRef = ref<HTMLElement>()
-const loginFormRef = ref<FormInstance>()
-const registerFormRef = ref<FormInstance>()
+const tabListRef = ref<HTMLElement | null>(null);
+const dragAreaRef = ref<HTMLElement>();
+const loginFormRef = ref<FormInstance>();
+const registerFormRef = ref<FormInstance>();
 
 // 状态refs
-const activeTab = ref('login')
+const activeTab = ref('login');
 
-const sliderStyle = ref({ left: '0px', width: '0px' })
-const loginLoading = ref(false)
-const registerLoading = ref(false)
+const sliderStyle = ref({ left: '0px', width: '0px' });
+const loginLoading = ref(false);
+const registerLoading = ref(false);
 
-const serverUrl = ref(import.meta.env.VITE_DEFAULT_BASE_URL || 'http://localhost:8082')
+const serverUrl = ref(import.meta.env.VITE_DEFAULT_BASE_URL || 'http://localhost:8082');
 
 // 表单数据refs
 const loginForm = ref({
   username: '',
   password: '',
-})
+});
 
 const registerForm = ref({
   username: '',
   password: '',
   captchaCode: '',
   captchaId: '',
-})
+});
 
 // 验证码相关状态
-const captchaImage = ref<string>('')
-const captchaLoading = ref(false)
+const captchaImage = ref<string>('');
+const captchaLoading = ref(false);
 
-let dragCleanup: (() => void) | undefined // 拖动清理函数
+let dragCleanup: (() => void) | undefined; // 拖动清理函数
 
 // ==================== 表单验证 ====================
 const loginRules: FormRules = {
@@ -221,7 +221,7 @@ const loginRules: FormRules = {
     { required: true, trigger: 'none' },
     { min: 6, max: 20, message: '请输入正确的密码', trigger: 'none' },
   ],
-}
+};
 
 const registerRules: FormRules = {
   username: [
@@ -233,7 +233,7 @@ const registerRules: FormRules = {
     { min: 6, max: 20, message: '密码长度应为 6-20 个字符', trigger: 'none' },
   ],
   captchaCode: [{ required: true, message: '请输入验证码', trigger: 'none' }],
-}
+};
 
 
 
@@ -243,57 +243,57 @@ const registerRules: FormRules = {
 function updateSlider(idx: number): void {
   nextTick(() => {
     setTimeout(() => {
-      const el = tabRefs.value[idx]
+      const el = tabRefs.value[idx];
       if (el && tabListRef.value) {
-        const parentRect = tabListRef.value.getBoundingClientRect()
-        const rect = el.getBoundingClientRect()
+        const parentRect = tabListRef.value.getBoundingClientRect();
+        const rect = el.getBoundingClientRect();
 
         // 检查是否应用了缩放（非 Electron 环境）
-        const scaleFactor = !isElectron() ? 1.2 : 1
-        const adjustedLeft = (rect.left - parentRect.left) / scaleFactor
-        const adjustedWidth = rect.width / scaleFactor
+        const scaleFactor = !isElectron() ? 1.2 : 1;
+        const adjustedLeft = (rect.left - parentRect.left) / scaleFactor;
+        const adjustedWidth = rect.width / scaleFactor;
 
         sliderStyle.value = {
           left: adjustedLeft + 'px',
           width: adjustedWidth + 'px',
-        }
+        };
       }
-    }, 10)
-  })
+    }, 10);
+  });
 }
 
 function switchTab(tabName: string, idx: number): void {
-  activeTab.value = tabName
-  updateSlider(idx)
+  activeTab.value = tabName;
+  updateSlider(idx);
 }
 
 // 窗口控制方法
 function handleClose(): void {
-  closeWindow()
+  closeWindow();
 }
 
 function handleMinimize(): void {
-  minimizeWindow()
+  minimizeWindow();
 }
 
 // 验证码相关方法
 async function refreshCaptcha(): Promise<void> {
   try {
-    captchaLoading.value = true
-    const response = await getCaptcha()
+    captchaLoading.value = true;
+    const response = await getCaptcha();
 
     if (response.code === 0 && response.data) {
-      const dataStr = response.data as string
-      const [captchaId, ...imageDataParts] = dataStr.split(':')
-      const imageData = imageDataParts.join(':')
+      const dataStr = response.data as string;
+      const [captchaId, ...imageDataParts] = dataStr.split(':');
+      const imageData = imageDataParts.join(':');
 
-      captchaImage.value = imageData
-      registerForm.value.captchaId = captchaId
+      captchaImage.value = imageData;
+      registerForm.value.captchaId = captchaId;
     }
   } catch (error) {
-    console.error('获取验证码失败:', error)
+    console.error('获取验证码失败:', error);
   } finally {
-    captchaLoading.value = false
+    captchaLoading.value = false;
   }
 }
 
@@ -301,22 +301,22 @@ async function refreshCaptcha(): Promise<void> {
 onMounted(() => {
   // 初始化拖动功能
   if (dragAreaRef.value) {
-    dragCleanup = drag(dragAreaRef.value)
+    dragCleanup = drag(dragAreaRef.value);
   }
 
   // 初始化滑块位置
-  updateSlider(tabs.findIndex(t => t.name === activeTab.value))
+  updateSlider(tabs.findIndex(t => t.name === activeTab.value));
 
   // 获取验证码
-  refreshCaptcha()
-})
+  refreshCaptcha();
+});
 
 onUnmounted(() => {
   // 清理拖动事件监听器
   if (dragCleanup) {
-    dragCleanup()
+    dragCleanup();
   }
-})
+});
 </script>
 <style scoped lang="less">
 // Tab 样式

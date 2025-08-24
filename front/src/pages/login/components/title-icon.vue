@@ -22,9 +22,9 @@ defineProps({
     type: Number,
     default: 20,
   },
-})
+});
 
-const appTitle = import.meta.env.APP_TITLE || 'LinX'
+const appTitle = import.meta.env.APP_TITLE || 'LinX';
 </script>
 <style scoped lang="less">
 .logo-art {
