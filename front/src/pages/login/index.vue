@@ -1,18 +1,18 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
+    class="min-h-screen bg-gradient-to-br  from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
     <!-- 拖动区域和顶部操作按钮 - 固定到屏幕右上角 -->
     <div v-if="isElectron()" class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
       <!-- 左侧拖动区域 -->
       <div ref="dragAreaRef" class="flex-1 h-full drag-area" />
       <!-- 右侧操作按钮 -->
       <div class="flex">
-        <el-button size="small" class="window-btn minimize-btn">
+        <el-button size="small" class="window-btn    minimize-btn">
           <el-icon :size="16">
             <Setting />
           </el-icon>
-
         </el-button>
+
         <el-button size="small" class="window-btn minimize-btn" @click="handleMinimize">
           <el-icon :size="16">
             <Minus />
@@ -123,6 +123,7 @@
                     <Key />
                   </el-icon>
                 </template>
+
               </el-input>
               <div :class="{ 'w-35': !isElectron() }"
                 class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
@@ -174,6 +175,9 @@ const tabs = [
 // ==================== Refs 定义 ====================
 // DOM元素refs
 const tabRefs = ref<HTMLElement[]>([])
+
+
+
 const tabListRef = ref<HTMLElement | null>(null)
 const dragAreaRef = ref<HTMLElement>()
 const loginFormRef = ref<FormInstance>()
@@ -231,13 +235,15 @@ const registerRules: FormRules = {
   captchaCode: [{ required: true, message: '请输入验证码', trigger: 'none' }],
 }
 
+
+
+
 // ==================== 事件处理 ====================
 // Tab相关方法
 function updateSlider(idx: number): void {
   nextTick(() => {
     setTimeout(() => {
       const el = tabRefs.value[idx]
-
       if (el && tabListRef.value) {
         const parentRect = tabListRef.value.getBoundingClientRect()
         const rect = el.getBoundingClientRect()

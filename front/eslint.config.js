@@ -1,268 +1,89 @@
-import js from '@eslint/js'
-import vue from 'eslint-plugin-vue'
-import typescript from '@typescript-eslint/eslint-plugin'
-import typescriptParser from '@typescript-eslint/parser'
-import vueParser from 'vue-eslint-parser'
+import js from "@eslint/js";
+import globals from "globals";
+import tseslint from "typescript-eslint";
+import vue from "eslint-plugin-vue";
+import stylistic from "@stylistic/eslint-plugin"; // 👈 引入格式化插件
+import { defineConfig } from "eslint/config";
 
-export default [
-  // 忽略文件配置
-  {
-    ignores: [
-      'dist/**',
-      'release/**',
-      'target/**',
-      'node_modules/**',
-      '*.log',
-      '*.d.ts',
-      '*.map',
-    ],
-  },
-
-  // 基础配置
+export default defineConfig([
   js.configs.recommended,
-  ...vue.configs['flat/recommended'],
+  ...tseslint.configs.recommended,
+  ...vue.configs["flat/essential"],
 
-  // 全局配置
+  // 格式化规则
   {
+    files: ["**/*.{js,ts,jsx,tsx,vue}"],
+    plugins: {
+      "@stylistic": stylistic, 
+    },
+    rules: {
+      // 缩进：2 个空格
+      "@stylistic/indent": ["error", 2],
+
+      // 分号：结尾必须有分号
+      "@stylistic/semi": ["error", "always"],
+
+      // 引号：使用单引号
+      "@stylistic/quotes": ["error", "single"],
+
+      // 逗号结尾：多行模式下必须有尾逗号
+      "@stylistic/comma-dangle": ["error", "only-multiline"],
+
+      // 空格：对象键值对冒号后有一个空格
+      "@stylistic/key-spacing": ["error", { afterColon: true }],
+
+      // 对象字面量大括号内侧空格
+      "@stylistic/object-curly-spacing": ["error", "always"],
+
+      // 数组中括号内侧空格
+      "@stylistic/array-bracket-spacing": ["error", "never"],
+
+      // 函数名与括号之间不能有空格
+      "@stylistic/space-before-function-paren": [
+        "error",
+        {
+          anonymous: "never",
+          named: "never",
+          asyncArrow: "always"
+        }
+      ],
+
+      // 操作符两侧空格
+      "@stylistic/space-infix-ops": "error",
+
+      // 关键字前后空格
+      "@stylistic/keyword-spacing": "error",
+
+      // 行尾空格禁止
+      "@stylistic/no-trailing-spaces": "error",
+
+      // 文件末尾换行
+      "@stylistic/eol-last": ["error", "always"],
+    },
+  },
+
+  // 全局环境
+  {
+    files: ["**/*.{js,ts,vue}"],
     languageOptions: {
       globals: {
-        console: 'readonly',
-        window: 'readonly',
-        document: 'readonly',
-        HTMLElement: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        PointerEvent: 'readonly',
-        MouseEvent: 'readonly',
-        KeyboardEvent: 'readonly',
-        Event: 'readonly',
-        Node: 'readonly',
-        Element: 'readonly',
+        ...globals.browser,
+        ...globals.node,
       },
     },
   },
 
-  // Vue 文件配置
+  // Vue 文件使用 TypeScript 解析器
   {
-    files: ['**/*.vue'],
+    files: ["**/*.vue"],
     languageOptions: {
-      parser: vueParser,
+      parser: vue.parser,
       parserOptions: {
-        parser: typescriptParser,
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        extraFileExtensions: ['.vue'],
+        parser: tseslint.parser,
+        sourceType: "module",
+        ecmaVersion: "latest",
+        extraFileExtensions: [".vue"],
       },
     },
-    plugins: {
-      vue,
-      '@typescript-eslint': typescript,
-    },
-    rules: {
-      // Vue 基础规则
-      'vue/multi-word-component-names': 'off',
-      'vue/component-definition-name-casing': ['error', 'PascalCase'],
-      'vue/component-name-in-template-casing': ['error', 'PascalCase'],
-      'vue/prop-name-casing': ['error', 'camelCase'],
-
-      // Vue 格式化规则
-      'vue/max-attributes-per-line': [
-        'warn',
-        {
-          singleline: 5,
-          multiline: 1,
-        },
-      ],
-      'vue/first-attribute-linebreak': [
-        'error',
-        {
-          singleline: 'ignore',
-          multiline: 'below',
-        },
-      ],
-      'vue/html-closing-bracket-newline': [
-        'error',
-        {
-          singleline: 'never',
-          multiline: 'always',
-        },
-      ],
-      'vue/html-indent': ['error', 2],
-      'vue/html-self-closing': [
-        'error',
-        {
-          html: {
-            void: 'never',
-            normal: 'always',
-            component: 'always',
-          },
-          svg: 'always',
-          math: 'always',
-        },
-      ],
-      'vue/attribute-hyphenation': ['error', 'always'],
-      'vue/v-on-event-hyphenation': ['error', 'always'],
-
-      // Vue 空行规则
-      'vue/padding-line-between-blocks': ['error', 'never'],
-      'vue/block-spacing': ['error', 'always'],
-
-      // TypeScript 规则
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-expressions': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/no-var-requires': 'off',
-
-      // JavaScript/TypeScript 通用规则
-      'no-console': 'warn',
-      'no-debugger': 'error',
-      'no-unused-vars': 'off',
-      'prefer-const': 'off',
-
-      // 代码格式化规则
-      indent: ['error', 2, { SwitchCase: 1 }],
-      quotes: ['error', 'single'],
-      semi: ['error', 'never'],
-      'comma-dangle': ['error', 'always-multiline'],
-      'object-curly-spacing': ['error', 'always'],
-      'array-bracket-spacing': ['error', 'never'],
-      'space-before-function-paren': ['error', 'never'],
-      'eol-last': ['error', 'always'],
-      'no-trailing-spaces': 'error',
-      'max-len': [
-        'warn',
-        { code: 120, ignoreUrls: true, ignorePattern: '<svg[\\s\\S]*</svg>' },
-      ],
-
-      // 空行控制规则
-      'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0, maxBOF: 0 }],
-      'padded-blocks': ['error', 'never'],
-      'padding-line-between-statements': [
-        'error',
-        { blankLine: 'always', prev: 'import', next: '*' },
-        { blankLine: 'any', prev: 'import', next: 'import' },
-        { blankLine: 'always', prev: '*', next: 'export' },
-        { blankLine: 'any', prev: 'export', next: 'export' },
-        { blankLine: 'always', prev: '*', next: 'function' },
-        { blankLine: 'always', prev: 'function', next: '*' },
-        { blankLine: 'always', prev: '*', next: 'class' },
-        { blankLine: 'always', prev: 'class', next: '*' },
-        { blankLine: 'always', prev: '*', next: 'return' },
-        { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
-        {
-          blankLine: 'any',
-          prev: ['const', 'let', 'var'],
-          next: ['const', 'let', 'var'],
-        },
-      ],
-    },
   },
-
-  // TypeScript/JavaScript 文件配置
-  {
-    files: ['**/*.{js,ts,tsx,jsx}'],
-    languageOptions: {
-      parser: typescriptParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-      },
-    },
-    plugins: {
-      '@typescript-eslint': typescript,
-    },
-    rules: {
-      // TypeScript 规则
-      ...typescript.configs.recommended.rules,
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-expressions': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/no-var-requires': 'off',
-
-      // JavaScript/TypeScript 通用规则
-      'no-console': 'warn',
-      'no-debugger': 'error',
-      'no-unused-vars': 'off',
-      'prefer-const': 'off',
-      // 代码格式化规则
-      indent: ['error', 2, { SwitchCase: 1 }],
-      quotes: ['error', 'single'],
-      semi: ['error', 'never'],
-      'comma-dangle': ['error', 'always-multiline'],
-      'object-curly-spacing': ['error', 'always'],
-      'array-bracket-spacing': ['error', 'never'],
-      'space-before-function-paren': ['error', 'never'],
-      'eol-last': ['error', 'always'],
-      'no-trailing-spaces': 'error',
-      'max-len': [
-        'warn',
-        { code: 120, ignoreUrls: true, ignorePattern: '<svg[\\s\\S]*</svg>' },
-      ],
-
-      // 空行控制规则
-      'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0, maxBOF: 0 }],
-      'padded-blocks': ['error', 'never'],
-      'padding-line-between-statements': [
-        'error',
-        // 在 import 语句后添加空行
-        { blankLine: 'always', prev: 'import', next: '*' },
-        { blankLine: 'any', prev: 'import', next: 'import' },
-        // 在 export 语句前添加空行
-        { blankLine: 'always', prev: '*', next: 'export' },
-        { blankLine: 'any', prev: 'export', next: 'export' },
-        // 在函数声明前后添加空行
-        { blankLine: 'always', prev: '*', next: 'function' },
-        { blankLine: 'always', prev: 'function', next: '*' },
-        // 在类声明前后添加空行
-        { blankLine: 'always', prev: '*', next: 'class' },
-        { blankLine: 'always', prev: 'class', next: '*' },
-        // 在 return 语句前添加空行
-        { blankLine: 'always', prev: '*', next: 'return' },
-        // 在变量声明块后添加空行
-        { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
-        {
-          blankLine: 'any',
-          prev: ['const', 'let', 'var'],
-          next: ['const', 'let', 'var'],
-        },
-      ],
-    },
-  },
-
-  // Node.js 文件配置
-  {
-    files: ['**/*.cjs', '**/preload.js', '**/vite.config.ts'],
-    languageOptions: {
-      globals: {
-        require: 'readonly',
-        module: 'readonly',
-        exports: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        process: 'readonly',
-        Buffer: 'readonly',
-        global: 'readonly',
-        NodeJS: 'readonly',
-      },
-    },
-    rules: {
-      '@typescript-eslint/no-require-imports': 'off',
-    },
-  },
-]
+]);

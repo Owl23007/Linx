@@ -10,6 +10,8 @@ declare global {
   }
 }
 
+
+
 /**
  * 检查是否在 Electron 环境中
  */
@@ -25,7 +27,9 @@ export function closeWindow() {
     window.electronApi.closeWindow()
   } else {
     // fallback: 兼容非 electron 环境
-    window.close && window.close()
+    if (typeof window.close === 'function') {
+      window.close()
+    }
   }
 }
 
