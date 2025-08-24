@@ -47,6 +47,7 @@ export default function drag(elem: HTMLElement) {
 
   const _move = async(e: PointerEvent) => {
     const { screenX, screenY } = e
+
     window.electronApi?.invoke(
       'drag:setBounds',
       Math.round(screenX - initX + initLeft),
@@ -77,6 +78,7 @@ export default function drag(elem: HTMLElement) {
     if (moving || e.button !== 0) return // 只响应鼠标左键
 
     let p: HTMLElement | null = e.target as HTMLElement
+
     // 检查是否点击在需要忽略的元素上
     while (p && p !== elem) {
       if (shouldIgnore(p)) return
@@ -92,6 +94,7 @@ export default function drag(elem: HTMLElement) {
 
     // 获取当前窗口位置和大小
     const bounds = await window.electronApi?.invoke('drag:getBounds')
+
     if (bounds) {
       initLeft = bounds.x
       initTop = bounds.y
@@ -105,6 +108,7 @@ export default function drag(elem: HTMLElement) {
       // 只有当实际移动时才调用 _move
       const deltaX = Math.abs(e.screenX - initX)
       const deltaY = Math.abs(e.screenY - initY)
+
       if (deltaX > 2 || deltaY > 2) {
         // 只有移动超过2像素才认为是拖动
         await _move(e)

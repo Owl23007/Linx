@@ -12,7 +12,6 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 defineProps({
   size: {
@@ -27,7 +26,6 @@ defineProps({
 
 const appTitle = import.meta.env.APP_TITLE || 'LinX'
 </script>
-
 <style scoped lang="less">
 .logo-art {
   font-family: 'Segoe Script', 'Comic Sans MS', 'Brush Script MT', cursive, sans-serif;
