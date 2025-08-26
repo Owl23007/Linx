@@ -1,0 +1,22 @@
+#!/bin/bash
+# MODE: FULL_LINT
+
+# pre-commit hook to run lint check
+echo "Running ESLint check..."
+
+# Change to front directory
+cd front
+
+# Run lint check
+npm run lint
+
+# Check the exit code
+if [ $? -eq 0 ]; then
+    echo "✅ ESLint check passed. Proceeding with commit..."
+    exit 0
+else
+    echo "❌ ESLint check failed. Please fix the linting errors before committing."
+    echo "You can run 'npm run lint:fix' to automatically fix some issues."
+    echo "Or run 'npm run lint' to see all issues."
+    exit 1
+fi

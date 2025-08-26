@@ -25,6 +25,26 @@
 
 ## 🚀 快速开始
 
+### ⚡ 首次设置（重要）
+
+**一键完整设置:**
+```bash
+npm run setup
+```
+
+**或分步设置:**
+```bash
+# 1. 安装前端依赖
+npm run setup:front
+
+# 2. 安装 Git hooks（代码质量检查）
+npm run install-hooks    # 自动检测系统
+# 或手动选择
+npm run install-hooks-ps1   # Windows PowerShell
+npm run install-hooks-bash  # Linux/Mac/Git Bash
+```
+> 💡 Git hooks 会在每次提交前自动运行 ESLint 检查，确保代码质量
+
 ### 启动后端服务
 ```bash
 cd server
