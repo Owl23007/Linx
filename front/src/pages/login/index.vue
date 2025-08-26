@@ -291,7 +291,7 @@ async function refreshCaptcha(): Promise<void> {
       registerForm.value.captchaId = captchaId;
     }
   } catch (error) {
-    console.error('获取验证码失败:', error);
+    console.error(error);
   } finally {
     captchaLoading.value = false;
   }
