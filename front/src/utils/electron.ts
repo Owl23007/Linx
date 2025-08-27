@@ -6,11 +6,12 @@ declare global {
       minimizeWindow: () => void
       maximizeWindow: () => void
       invoke: (channel: string, ...args: any[]) => Promise<any>
+      send: (channel: string, ...args: any[]) => void
+      on: (channel: string, callback: (...args: any[]) => void) => (() => void)
+      removeListener: (channel: string, callback: (...args: any[]) => void) => void
     }
   }
 }
-
-
 
 /**
  * 检查是否在 Electron 环境中

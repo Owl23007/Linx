@@ -9,7 +9,7 @@
         "install-hooks": "node ./scripts/install-hooks.js",
         "install-hooks-ps1": "powershell -ExecutionPolicy Bypass -File ./scripts/install-hooks.ps1",
         "install-hooks-bash": "bash ./scripts/install-hooks.sh",
-        "dev:front": "cd front && npm run dev",
+        "dev": "cd front && npm run dev",
         "dev:electron": "cd front && npm run electron:dev",
         "dev:server": "cd server && mvnw.cmd spring-boot:run",
         "lint": "cd front && npm run lint",

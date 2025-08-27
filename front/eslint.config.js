@@ -1,11 +1,16 @@
 import js from '@eslint/js';
+import stylistic from '@stylistic/eslint-plugin';
+import vue from 'eslint-plugin-vue';
+import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import vue from 'eslint-plugin-vue';
-import stylistic from '@stylistic/eslint-plugin'; // 👈 引入格式化插件
-import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
+  // 全局忽略配置
+  {
+    ignores: ['public/**/*', 'dist/**/*', 'node_modules/**/*'],
+  },
+
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...vue.configs['flat/essential'],
@@ -59,6 +64,32 @@ export default defineConfig([
 
       // 文件末尾换行
       '@stylistic/eol-last': ['error', 'always'],
+
+      // 删除多余连续空行
+      '@stylistic/no-multiple-empty-lines': [
+        'error',
+        {
+          max: 1, // 最多允许 1 个连续空行
+          maxEOF: 0, // 文件末尾不允许空行
+          maxBOF: 0  // 文件开头不允许空行
+        }
+      ],
+
+      // 限制块语句前后的空行
+      '@stylistic/padding-line-between-statements': [
+        'error',
+        // 导入语句后需要空行
+        { blankLine: 'always', prev: 'import', next: '*' },
+        { blankLine: 'any', prev: 'import', next: 'import' },
+        // return 语句前需要空行
+        { blankLine: 'always', prev: '*', next: 'return' },
+        // 函数声明前后需要空行
+        { blankLine: 'always', prev: '*', next: 'function' },
+        { blankLine: 'always', prev: 'function', next: '*' },
+        // 类声明前后需要空行
+        { blankLine: 'always', prev: '*', next: 'class' },
+        { blankLine: 'always', prev: 'class', next: '*' }
+      ],
     },
   },
 

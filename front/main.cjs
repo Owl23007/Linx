@@ -1,30 +1,8 @@
-const { app, BrowserWindow, Menu } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain } = require('electron')
 const path = require('path')
-const { ipcMain } = require('electron')
 
-function createWindow() {
-  const win = new BrowserWindow({
-    width: 320,
-    height: 450,
-    frame: false, // 隐藏原生的标题栏和控制按钮
-    transparent: false,
-    resizable: false, // 禁止调整窗口大小
-    minimizable: true, // 允许最小化窗口
-    maximizable: false, // 禁止最大化窗口
-    closable: true, // 允许关闭窗口
-    alwaysOnTop: false, // 不总是位于最上层
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      enableRemoteModule: false,
-      preload: path.join(__dirname, 'public/preload.js'),
-      webSecurity: true,
-    },
-    show: false,
-    autoHideMenuBar: true, // 隐藏菜单栏
-    titleBarStyle: 'hidden', // 隐藏标题栏
-  })
-
+// 注册 IPC 事件监听器（只注册一次）
+function setupIpcHandlers() {
   // 关闭窗口
   ipcMain.on('close-window', () => {
     const wins = BrowserWindow.getAllWindows()
@@ -70,6 +48,30 @@ function createWindow() {
       height,
     })
   })
+}
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 320,
+    height: 450,
+    frame: false, // 隐藏原生的标题栏和控制按钮
+    transparent: false,
+    resizable: false, // 禁止调整窗口大小
+    minimizable: true, // 允许最小化窗口
+    maximizable: false, // 禁止最大化窗口
+    closable: true, // 允许关闭窗口
+    alwaysOnTop: false, // 不总是位于最上层
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
+      preload: path.join(__dirname, 'public/preload.js'),
+      webSecurity: true,
+    },
+    show: false,
+    autoHideMenuBar: true, // 隐藏菜单栏
+    titleBarStyle: 'hidden', // 隐藏标题栏
+  })
 
   // 开发环境加载 Vite dev server，生产环境加载打包后的文件
   if (process.env.NODE_ENV === 'development') {
@@ -88,6 +90,9 @@ function createWindow() {
 }
 
 Menu.setApplicationMenu(null)
+
+// 设置 IPC 处理器
+setupIpcHandlers()
 
 app.whenReady().then(createWindow)
 

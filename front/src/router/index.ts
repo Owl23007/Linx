@@ -4,12 +4,17 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/pages/login/index.vue'),
+    component: () => import('@/views/pages/login/index.vue'),
   },
   {
     path: '/main',
     name: 'MainPannel',
-    component: () => import('@/pages/main-pannel/index.vue'),
+    component: () => import('@/views/pages/main-pannel/index.vue'),
+  },
+  {
+    path: '/login-mvvm',
+    name: 'LoginMVVM',
+    component: () => import('@/views/pages/login/index-NEW.vue'),
   },
   {
     path: '/',
