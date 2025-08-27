@@ -3,7 +3,7 @@
         class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
 
         <!-- 拖动区域和顶部操作按钮 -->
-        <div v-if="appVM.isElectron.value"
+        <div v-if="isElectron()"
             class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
             <div ref="dragAreaRef" class="flex-1 h-full drag-area" />
             <div class="flex">
@@ -12,12 +12,12 @@
                         <Setting />
                     </el-icon>
                 </el-button>
-                <el-button size="small" class="window-btn minimize-btn" @click="appVM.minimizeWindow()">
+                <el-button size="small" class="window-btn minimize-btn" @click="handleMinimizeWindow">
                     <el-icon :size="16">
                         <Minus />
                     </el-icon>
                 </el-button>
-                <el-button size="small" class="window-btn close-btn" @click="appVM.closeWindow()">
+                <el-button size="small" class="window-btn close-btn" @click="handleCloseWindow">
                     <el-icon :size="16">
                         <Close />
                     </el-icon>
@@ -27,11 +27,11 @@
 
         <!-- 标题图标 -->
         <div class="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
-            <TitleIcon :size="appVM.isElectron.value ? '1' : '1.5'" />
+            <TitleLogo :size="isElectron() ? '1' : '1.5'" />
         </div>
 
         <!-- Tab 区域 -->
-        <div :class="{ 'scale-120 top-40': !appVM.isElectron.value }"
+        <div :class="{ 'scale-120 top-40': !isElectron() }"
             class="overflow-hidden w-50 max-w-md absolute top-24 z-10">
             <div class="custom-tabs">
                 <div ref="tabListRef" class="tab-list">
@@ -47,7 +47,7 @@
         </div>
 
         <!-- 表单内容区域 -->
-        <div :class="{ 'w-120': !appVM.isElectron.value }"
+        <div :class="{ 'w-120': !isElectron() }"
             class="w-70 max-w-sm absolute mt-3 px-4 py-4 overflow-hidden">
             <div class="form-container relative">
                 <Transition :name="transitionName" mode="out-in">
@@ -97,7 +97,7 @@
                                     class="round-input">
                                     <template #prefix>
                                         <el-icon>
-                                            <ServerIcon />
+                                            <Server />
                                         </el-icon>
                                     </template>
                                 </el-input>
@@ -132,7 +132,7 @@
                                             </el-icon>
                                         </template>
                                     </el-input>
-                                    <div :class="{ 'w-35': !appVM.isElectron.value }"
+                                    <div :class="{ 'w-35': !isElectron() }"
                                         class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
                                         @click="loginVM.refreshCaptcha">
                                         <img v-if="loginVM.captchaImage.value" :src="loginVM.captchaImage.value"
@@ -158,7 +158,7 @@
         </div>
 
         <!-- 底部按钮区域 -->
-        <div :class="{ 'bottom-25 scale-125': !appVM.isElectron.value }"
+        <div :class="{ 'bottom-25 scale-125': !isElectron() }"
             class="px-4 pb-4 overflow-hidden absolute bottom-0 w-55">
             <el-form-item v-if="loginVM.activeTab.value === 'login'" class="mb-4">
                 <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loginVM.loading.value"
@@ -177,38 +177,179 @@
 </template>
 
 <script setup lang="ts">
+// ========== 导入依赖 ==========
+import type { LoginRequest, RegisterRequest } from '@/api/auth';
+import * as authApi from '@/api/auth';
+import { useAuthStore } from '@/stores/auth';
+import dragSetup from '@/utils/drag';
+import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
 import { Close, Key, Lock, Minus, Refresh, Setting, User } from '@element-plus/icons-vue';
 import { type FormInstance, type FormRules, ElMessage } from 'element-plus';
 import { nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Server from './components/server-icon.vue';
-import TitleIcon from './components/title-icon.vue';
+import TitleLogo from './components/title-icon.vue';
 
-// 导入 ViewModels
-import { AppViewModelImpl } from '@/viewmodels/app.vm';
-import { LoginViewModelImpl } from '@/viewmodels/login.vm';
-
-// 创建 ViewModel 实例
-const loginVM = new LoginViewModelImpl();
-const appVM = new AppViewModelImpl();
 const router = useRouter();
 
-// 常量定义
+// ========== 常量定义 ==========
 const tabs = [
   { label: '登录', name: 'login' },
   { label: '注册', name: 'register' },
-];// DOM refs
+];
+
+// ========== Composables ==========
+function useLogin() {
+  const authStore = useAuthStore();
+
+  // 状态管理
+  const activeTab = ref<'login' | 'register'>('login');
+  const loading = ref(false);
+  const error = ref<string>('');
+  const serverUrl = ref('');
+  const captchaImage = ref<string>('');
+  const captchaId = ref<string>('');
+
+  // 表单数据
+  const loginForm = ref<LoginRequest>({
+    username: '',
+    password: ''
+  });
+
+  const registerForm = ref<RegisterRequest>({
+    username: '',
+    password: '',
+    captchaCode: '',
+    captchaId: ''
+  });
+
+  // Tab 切换
+  function switchTab(tab: 'login' | 'register') {
+    activeTab.value = tab;
+    error.value = '';
+
+    if (tab === 'register' && !captchaImage.value) {
+      refreshCaptcha();
+    }
+  }
+
+  // 验证码相关
+  async function refreshCaptcha() {
+    try {
+      const response = await authApi.getCaptcha();
+      if (response.data) {
+        captchaImage.value = response.data;
+        captchaId.value = Date.now().toString();
+        registerForm.value.captchaId = captchaId.value;
+      }
+    } catch {
+      error.value = '获取验证码失败，请重试';
+    }
+  }
+
+  // 登录逻辑
+  async function login(): Promise<boolean> {
+    if (loading.value) return false;
+
+    loading.value = true;
+    error.value = '';
+
+    try {
+      await authStore.login(loginForm.value);
+
+      return true;
+    } catch (err: any) {
+      error.value = err.message || '登录失败，请重试';
+
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // 注册逻辑
+  async function register(): Promise<boolean> {
+    if (loading.value) return false;
+
+    loading.value = true;
+    error.value = '';
+
+    try {
+      if (captchaId.value) {
+        registerForm.value.captchaId = captchaId.value;
+      }
+
+      await authStore.register(registerForm.value);
+      switchTab('login');
+
+      return true;
+    } catch (err: any) {
+      error.value = err.message || '注册失败，请重试';
+      refreshCaptcha();
+
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // 清理函数
+  function dispose() {
+    loginForm.value = { username: '', password: '' };
+    registerForm.value = { username: '', password: '', captchaCode: '', captchaId: '' };
+    error.value = '';
+    captchaImage.value = '';
+    captchaId.value = '';
+  }
+
+  return {
+    activeTab,
+    loading,
+    error,
+    serverUrl,
+    captchaImage,
+    loginForm,
+    registerForm,
+    switchTab,
+    refreshCaptcha,
+    login,
+    register,
+    dispose
+  };
+}
+
+// ========== 状态初始化 ==========
+const loginVM = useLogin();
+
+// ========== 窗口操作函数 ==========
+function handleCloseWindow() {
+  closeWindow();
+}
+
+function handleMinimizeWindow() {
+  minimizeWindow();
+}
+
+function setupDragArea(element: HTMLElement) {
+  if (isElectron()) {
+    return dragSetup(element);
+  }
+
+  return null;
+}
+
+// ========== DOM Refs ==========
 const tabRefs = ref<HTMLElement[]>([]);
 const tabListRef = ref<HTMLElement | null>(null);
 const dragAreaRef = ref<HTMLElement>();
 const loginFormRef = ref<FormInstance>();
 const registerFormRef = ref<FormInstance>();
 
-// 状态
+// ========== 响应式状态 ==========
 const transitionName = ref('slide-left');
 const sliderStyle = ref({ left: '0px', width: '0px' });
 
-// 表单验证规则
+// ========== 表单验证规则 ==========
 const loginRules: FormRules = {
   username: [
     { required: true, trigger: 'none' },
@@ -234,7 +375,7 @@ const registerRules: FormRules = {
   ],
 };
 
-// 事件处理函数
+// ========== UI 交互函数 ==========
 function updateSlider(idx: number): void {
   nextTick(() => {
     setTimeout(() => {
@@ -243,7 +384,7 @@ function updateSlider(idx: number): void {
         const parentRect = tabListRef.value.getBoundingClientRect();
         const rect = el.getBoundingClientRect();
 
-        const scaleFactor = !appVM.isElectron.value ? 1.2 : 1;
+        const scaleFactor = !isElectron() ? 1.2 : 1;
         const adjustedLeft = (rect.left - parentRect.left) / scaleFactor;
         const adjustedWidth = rect.width / scaleFactor;
 
@@ -270,7 +411,7 @@ function switchTab(tabName: string, idx: number): void {
   updateSlider(idx);
 }
 
-// 处理登录
+// ========== 事件处理函数 ==========
 async function handleLogin(): Promise<void> {
   if (loginFormRef.value) {
     const valid = await loginFormRef.value.validate().catch(() => false);
@@ -284,7 +425,6 @@ async function handleLogin(): Promise<void> {
   }
 }
 
-// 处理注册
 async function handleRegister(): Promise<void> {
   if (registerFormRef.value) {
     const valid = await registerFormRef.value.validate().catch(() => false);
@@ -297,13 +437,12 @@ async function handleRegister(): Promise<void> {
   }
 }
 
-// 生命周期
+// ========== 生命周期 ==========
 onMounted(() => {
   // 初始化拖动功能
   if (dragAreaRef.value) {
-    const cleanup = appVM.setupDrag(dragAreaRef.value);
+    const cleanup = setupDragArea(dragAreaRef.value);
     if (cleanup) {
-      // 保存清理函数，在组件卸载时调用
       onUnmounted(cleanup);
     }
   }
@@ -313,9 +452,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // 清理 ViewModels
+  // 清理 ViewModel
   loginVM.dispose();
-  appVM.dispose();
 });
 </script>
 

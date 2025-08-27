@@ -12,11 +12,6 @@ const routes = [
     component: () => import('@/views/pages/main-pannel/index.vue'),
   },
   {
-    path: '/login-mvvm',
-    name: 'LoginMVVM',
-    component: () => import('@/views/pages/login/index-NEW.vue'),
-  },
-  {
     path: '/',
     redirect: '/login',
   },

@@ -12,20 +12,19 @@
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
-defineProps({
-  size: {
-    type: String,
-    default: '1',
-  },
-  zIndex: {
-    type: Number,
-    default: 20,
-  },
-});
+const props = defineProps<{
+  size?: string
+  zIndex?: number
+}>();
+
+const size = props.size ?? '1';
+const zIndex = props.zIndex ?? 20;
 
 const appTitle = import.meta.env.APP_TITLE || 'LinX';
 </script>
+
 <style scoped lang="less">
 .logo-art {
   font-family: 'Segoe Script', 'Comic Sans MS', 'Brush Script MT', cursive, sans-serif;
