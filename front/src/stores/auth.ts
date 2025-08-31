@@ -46,7 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
     try {
       await authApi.logout();
-    } catch (error) {
+    } catch {
       // 即使API调用失败，也要清除本地状态
     } finally {
       user.value = null;

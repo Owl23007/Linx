@@ -37,7 +37,7 @@
                 <div ref="tabListRef" class="tab-list">
                     <div v-for="(tab, idx) in tabs" :key="tab.name"
                         :ref="el => { if (el) tabRefs[idx] = el as HTMLElement }"
-                        :class="['tab-item', { active: loginVM.activeTab.value === tab.name }]"
+                        :class="['tab-item', { active: activeTab === tab.name }]"
                         @click="switchTab(tab.name, idx)">
                         {{ tab.label }}
                     </div>
@@ -52,10 +52,10 @@
             <div class="form-container relative">
                 <Transition :name="transitionName" mode="out-in">
                     <!-- 登录表单 -->
-                    <div v-if="loginVM.activeTab.value === 'login'" key="login" class="form-content mt-16">
-                        <el-form ref="loginFormRef" :model="loginVM.loginForm.value" :rules="loginRules">
+                    <div v-if="activeTab === 'login'" key="login" class="form-content mt-16">
+                        <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
                             <el-form-item>
-                                <el-input v-model="loginVM.serverUrl.value" clearable placeholder="输入服务器地址" size="large"
+                                <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large"
                                     class="round-input">
                                     <template #prefix>
                                         <el-icon>
@@ -66,7 +66,7 @@
                             </el-form-item>
                             <div class="h-2" />
                             <el-form-item prop="username">
-                                <el-input v-model="loginVM.loginForm.value.username" clearable placeholder="请输入账号或邮箱"
+                                <el-input v-model="loginForm.username" clearable placeholder="请输入账号或邮箱"
                                     size="large" class="round-input">
                                     <template #prefix>
                                         <el-icon>
@@ -77,7 +77,7 @@
                             </el-form-item>
                             <div class="h-2" />
                             <el-form-item prop="password">
-                                <el-input v-model="loginVM.loginForm.value.password" clearable type="password"
+                                <el-input v-model="loginForm.password" clearable type="password"
                                     placeholder="请输入密码" size="large" show-password class="round-input">
                                     <template #prefix>
                                         <el-icon>
@@ -90,10 +90,10 @@
                     </div>
 
                     <!-- 注册表单 -->
-                    <div v-else-if="loginVM.activeTab.value === 'register'" key="register" class="form-content mt-18">
-                        <el-form ref="registerFormRef" :model="loginVM.registerForm.value" :rules="registerRules">
+                    <div v-else-if="activeTab === 'register'" key="register" class="form-content mt-18">
+                        <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules">
                             <el-form-item>
-                                <el-input v-model="loginVM.serverUrl.value" clearable placeholder="输入服务器地址" size="large"
+                                <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large"
                                     class="round-input">
                                     <template #prefix>
                                         <el-icon>
@@ -103,7 +103,7 @@
                                 </el-input>
                             </el-form-item>
                             <el-form-item prop="username">
-                                <el-input v-model="loginVM.registerForm.value.username" placeholder="请输入邮箱" size="large"
+                                <el-input v-model="registerForm.username" placeholder="请输入邮箱" size="large"
                                     class="round-input" clearable>
                                     <template #prefix>
                                         <el-icon>
@@ -113,7 +113,7 @@
                                 </el-input>
                             </el-form-item>
                             <el-form-item prop="password">
-                                <el-input v-model="loginVM.registerForm.value.password" type="password"
+                                <el-input v-model="registerForm.password" type="password"
                                     placeholder="请输入密码" size="large" show-password class="round-input" clearable>
                                     <template #prefix>
                                         <el-icon>
@@ -124,7 +124,7 @@
                             </el-form-item>
                             <el-form-item prop="captchaCode">
                                 <div class="flex gap-2">
-                                    <el-input v-model="loginVM.registerForm.value.captchaCode" placeholder="输入验证码"
+                                    <el-input v-model="registerForm.captchaCode" placeholder="输入验证码"
                                         size="large" class="round-input flex-1">
                                         <template #prefix>
                                             <el-icon>
@@ -134,8 +134,8 @@
                                     </el-input>
                                     <div :class="{ 'w-35': !isElectron() }"
                                         class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
-                                        @click="loginVM.refreshCaptcha">
-                                        <img v-if="loginVM.captchaImage.value" :src="loginVM.captchaImage.value"
+                                        @click="refreshCaptcha">
+                                        <img v-if="captchaImage" :src="captchaImage"
                                             alt="验证码" class="max-w-full max-h-full">
                                         <span v-else class="flex items-center justify-center text-xs text-gray-500">
                                             <el-icon :size="16" class="mr-1">
@@ -151,8 +151,8 @@
                 </Transition>
 
                 <!-- 错误提示 -->
-                <div v-if="loginVM.error.value" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p class="text-red-600 text-sm">{{ loginVM.error.value }}</p>
+                <div v-if="error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-red-600 text-sm">{{ error }}</p>
                 </div>
             </div>
         </div>
@@ -160,14 +160,14 @@
         <!-- 底部按钮区域 -->
         <div :class="{ 'bottom-25 scale-125': !isElectron() }"
             class="px-4 pb-4 overflow-hidden absolute bottom-0 w-55">
-            <el-form-item v-if="loginVM.activeTab.value === 'login'" class="mb-4">
-                <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loginVM.loading.value"
+            <el-form-item v-if="activeTab === 'login'" class="mb-4">
+                <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loading"
                     @click="handleLogin">
                     登录
                 </el-button>
             </el-form-item>
-            <el-form-item v-else-if="loginVM.activeTab.value === 'register'" class="mb-0">
-                <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loginVM.loading.value"
+            <el-form-item v-else-if="activeTab === 'register'" class="mb-0">
+                <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loading"
                     @click="handleRegister">
                     注册
                 </el-button>
@@ -198,128 +198,29 @@ const tabs = [
   { label: '注册', name: 'register' },
 ];
 
-// ========== Composables ==========
-function useLogin() {
-  const authStore = useAuthStore();
+// ========== 状态管理 ==========
+const authStore = useAuthStore();
 
-  // 状态管理
-  const activeTab = ref<'login' | 'register'>('login');
-  const loading = ref(false);
-  const error = ref<string>('');
-  const serverUrl = ref('');
-  const captchaImage = ref<string>('');
-  const captchaId = ref<string>('');
+// 页面状态
+const activeTab = ref<'login' | 'register'>('login');
+const loading = ref(false);
+const error = ref<string>('');
+const serverUrl = ref('');
+const captchaImage = ref<string>('');
+const captchaId = ref<string>('');
 
-  // 表单数据
-  const loginForm = ref<LoginRequest>({
-    username: '',
-    password: ''
-  });
+// 表单数据
+const loginForm = ref<LoginRequest>({
+  username: '',
+  password: ''
+});
 
-  const registerForm = ref<RegisterRequest>({
-    username: '',
-    password: '',
-    captchaCode: '',
-    captchaId: ''
-  });
-
-  // Tab 切换
-  function switchTab(tab: 'login' | 'register') {
-    activeTab.value = tab;
-    error.value = '';
-
-    if (tab === 'register' && !captchaImage.value) {
-      refreshCaptcha();
-    }
-  }
-
-  // 验证码相关
-  async function refreshCaptcha() {
-    try {
-      const response = await authApi.getCaptcha();
-      if (response.data) {
-        captchaImage.value = response.data;
-        captchaId.value = Date.now().toString();
-        registerForm.value.captchaId = captchaId.value;
-      }
-    } catch {
-      error.value = '获取验证码失败，请重试';
-    }
-  }
-
-  // 登录逻辑
-  async function login(): Promise<boolean> {
-    if (loading.value) return false;
-
-    loading.value = true;
-    error.value = '';
-
-    try {
-      await authStore.login(loginForm.value);
-
-      return true;
-    } catch (err: any) {
-      error.value = err.message || '登录失败，请重试';
-
-      return false;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  // 注册逻辑
-  async function register(): Promise<boolean> {
-    if (loading.value) return false;
-
-    loading.value = true;
-    error.value = '';
-
-    try {
-      if (captchaId.value) {
-        registerForm.value.captchaId = captchaId.value;
-      }
-
-      await authStore.register(registerForm.value);
-      switchTab('login');
-
-      return true;
-    } catch (err: any) {
-      error.value = err.message || '注册失败，请重试';
-      refreshCaptcha();
-
-      return false;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  // 清理函数
-  function dispose() {
-    loginForm.value = { username: '', password: '' };
-    registerForm.value = { username: '', password: '', captchaCode: '', captchaId: '' };
-    error.value = '';
-    captchaImage.value = '';
-    captchaId.value = '';
-  }
-
-  return {
-    activeTab,
-    loading,
-    error,
-    serverUrl,
-    captchaImage,
-    loginForm,
-    registerForm,
-    switchTab,
-    refreshCaptcha,
-    login,
-    register,
-    dispose
-  };
-}
-
-// ========== 状态初始化 ==========
-const loginVM = useLogin();
+const registerForm = ref<RegisterRequest>({
+  username: '',
+  password: '',
+  captchaCode: '',
+  captchaId: ''
+});
 
 // ========== 窗口操作函数 ==========
 function handleCloseWindow() {
@@ -336,6 +237,86 @@ function setupDragArea(element: HTMLElement) {
   }
 
   return null;
+}
+
+// ========== 业务逻辑函数 ==========
+// Tab 切换
+function switchTabLogic(tab: 'login' | 'register') {
+  activeTab.value = tab;
+  error.value = '';
+
+  if (tab === 'register' && !captchaImage.value) {
+    refreshCaptcha();
+  }
+}
+
+// 验证码相关
+async function refreshCaptcha() {
+  try {
+    const response = await authApi.getCaptcha();
+    if (response.data) {
+      captchaImage.value = response.data;
+      captchaId.value = Date.now().toString();
+      registerForm.value.captchaId = captchaId.value;
+    }
+  } catch {
+    error.value = '获取验证码失败，请重试';
+  }
+}
+
+// 登录逻辑
+async function performLogin(): Promise<boolean> {
+  if (loading.value) return false;
+
+  loading.value = true;
+  error.value = '';
+
+  try {
+    await authStore.login(loginForm.value);
+
+    return true;
+  } catch (err: any) {
+    error.value = err.message || '登录失败，请重试';
+
+    return false;
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 注册逻辑
+async function performRegister(): Promise<boolean> {
+  if (loading.value) return false;
+
+  loading.value = true;
+  error.value = '';
+
+  try {
+    if (captchaId.value) {
+      registerForm.value.captchaId = captchaId.value;
+    }
+
+    await authStore.register(registerForm.value);
+    switchTabLogic('login');
+
+    return true;
+  } catch (err: any) {
+    error.value = err.message || '注册失败，请重试';
+    refreshCaptcha();
+
+    return false;
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 清理函数
+function cleanup() {
+  loginForm.value = { username: '', password: '' };
+  registerForm.value = { username: '', password: '', captchaCode: '', captchaId: '' };
+  error.value = '';
+  captchaImage.value = '';
+  captchaId.value = '';
 }
 
 // ========== DOM Refs ==========
@@ -398,7 +379,7 @@ function updateSlider(idx: number): void {
 }
 
 function switchTab(tabName: string, idx: number): void {
-  const currentIndex = tabs.findIndex(t => t.name === loginVM.activeTab.value);
+  const currentIndex = tabs.findIndex(t => t.name === activeTab.value);
   const newIndex = idx;
 
   if (newIndex > currentIndex) {
@@ -407,7 +388,7 @@ function switchTab(tabName: string, idx: number): void {
     transitionName.value = 'slide-right';
   }
 
-  loginVM.switchTab(tabName as 'login' | 'register');
+  switchTabLogic(tabName as 'login' | 'register');
   updateSlider(idx);
 }
 
@@ -418,7 +399,7 @@ async function handleLogin(): Promise<void> {
     if (!valid) return;
   }
 
-  const success = await loginVM.login();
+  const success = await performLogin();
   if (success) {
     ElMessage.success('登录成功');
     router.push('/main-panel');
@@ -431,7 +412,7 @@ async function handleRegister(): Promise<void> {
     if (!valid) return;
   }
 
-  const success = await loginVM.register();
+  const success = await performRegister();
   if (success) {
     ElMessage.success('注册成功，请登录');
   }
@@ -448,12 +429,12 @@ onMounted(() => {
   }
 
   // 初始化滑块位置
-  updateSlider(tabs.findIndex(t => t.name === loginVM.activeTab.value));
+  updateSlider(tabs.findIndex(t => t.name === activeTab.value));
 });
 
 onUnmounted(() => {
-  // 清理 ViewModel
-  loginVM.dispose();
+  // 清理数据
+  cleanup();
 });
 </script>
 
