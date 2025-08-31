@@ -221,7 +221,7 @@ class SupernodeServiceTest {
             if ("ACTIVE".equals(checked.getStatus())) {
                 foundActive = true;
                 actives = supernodeService.getActiveSupernodes();
-                assertTrue(actives.size() >= 1);
+                assertFalse(actives.isEmpty());
                 assertTrue(actives.stream().anyMatch(s -> s.getId().equals(created.getId())));
             }
         }
