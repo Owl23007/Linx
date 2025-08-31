@@ -255,12 +255,14 @@ async function refreshCaptcha() {
   try {
     const response = await authApi.getCaptcha();
     if (response.data) {
-      captchaImage.value = response.data;
-      captchaId.value = Date.now().toString();
-      registerForm.value.captchaId = captchaId.value;
+      captchaId.value = response.data.split(':')[0];
+      captchaImage.value = response.data.substring(response.data.indexOf(':') + 1);
     }
   } catch {
     error.value = '获取验证码失败，请重试';
+    // 清除旧的验证码
+    captchaImage.value = '';
+    captchaId.value = '';
   }
 }
 

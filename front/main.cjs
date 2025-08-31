@@ -1,7 +1,7 @@
 const { app, BrowserWindow, Menu, ipcMain } = require('electron')
 const path = require('path')
 
-// 注册 IPC 事件监听器（只注册一次）
+// 注册 IPC 事件监听器
 function setupIpcHandlers() {
   // 关闭窗口
   ipcMain.on('close-window', () => {
