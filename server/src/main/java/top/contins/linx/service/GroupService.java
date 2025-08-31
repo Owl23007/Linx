@@ -59,7 +59,14 @@ public class GroupService {
         GroupMember ownerMember = new GroupMember(group, owner, GroupMember.MemberRole.OWNER);
         groupMemberRepository.save(ownerMember);
         
-        return new GroupVO(group);
+        // 重新加载群组以获取正确的成员数量
+        group = groupRepository.findById(group.getId()).orElse(group);
+        GroupVO groupVO = new GroupVO(group);
+        
+        // 手动设置成员数量，因为延迟加载可能导致计数不准确
+        groupVO.setMemberCount(1);
+        
+        return groupVO;
     }
     
     /**
