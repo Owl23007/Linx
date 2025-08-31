@@ -1,4 +1,4 @@
-package top.contins.letstalk;
+package top.contins.linx;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
