@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: server
+
+# Default configuration that applies to all environments
+# Specific environment configurations will override these values
+
+# Server configuration
+server:
+  port: 8080
+
+# JWT Configuration
+jwt:
+  secret: linx-secret-key-change-in-production
+  expiration: 86400000
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.linx: DEBUG

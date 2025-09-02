@@ -2,14 +2,14 @@ spring:
   application:
     name: server
 
-  # H2 Database Configuration for development
+  # H2 Database Configuration for testing
   datasource:
-    url: jdbc:h2:mem:linxdb
+    url: jdbc:h2:mem:testdb
     driverClassName: org.h2.Driver
     username: sa
     password:
 
-  # JPA Configuration for development
+  # JPA Configuration for testing
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
@@ -19,7 +19,7 @@ spring:
       hibernate:
         format_sql: true
 
-  # H2 Console (for development)
+  # H2 Console (for testing)
   h2:
     console:
       enabled: true
@@ -27,14 +27,14 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: linx-secret-key-for-development-only-change-in-production
+  secret: linx-secret-key-for-testing-only-change-in-production
   expiration: 86400000
 
 # Server Configuration
 server:
   port: 8080
 
-# Logging configuration for development
+# Logging configuration for testing
 logging:
   level:
     root: INFO
