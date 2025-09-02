@@ -54,6 +54,25 @@ export class UserService {
   }
 
   /**
+   * 获取最近登录的用户（按更新时间排序）
+   */
+  async getRecentUsers(limit: number = 5): Promise<User[]> {
+    try {
+      const users = await database.all<User>(
+        'SELECT * FROM users ORDER BY updated_at DESC LIMIT ?',
+        [limit]
+      );
+
+      return users;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('获取最近用户失败:', error);
+
+      return [];
+    }
+  }
+
+  /**
    * 根据用户名获取用户
    */
   async getUserByUsername(username: string): Promise<User | null> {

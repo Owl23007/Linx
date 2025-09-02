@@ -48,6 +48,18 @@ function setupIpcHandlers() {
       height,
     })
   })
+
+  // 数据库初始化
+  ipcMain.handle('db:init', async () => {
+    try {
+      // 在这里可以添加数据库初始化逻辑
+      console.log('数据库初始化完成')
+      return { success: true }
+    } catch (error) {
+      console.error('数据库初始化失败:', error)
+      return { success: false, error: error.message }
+    }
+  })
 }
 
 function createWindow() {
