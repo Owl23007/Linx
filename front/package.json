@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "main.cjs",
+  "main": "electron/main.js",
   "description": "Linx - A modern communication application",
   "author": "Linx Team",
   "license": "MIT",

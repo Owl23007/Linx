@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('electronApi', {
   on: (channel, callback) => {
     const subscription = (event, ...args) => callback(...args);
     ipcRenderer.on(channel, subscription);
+
     return () => ipcRenderer.removeListener(channel, subscription);
   },
 
