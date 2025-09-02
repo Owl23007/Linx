@@ -1,6 +1,6 @@
 import { app, Menu } from 'electron';
-import IpcManager from './managers/ipc-manager.js';
-import WindowManager from './managers/window-manager.js';
+import IpcManager from './managers/ipc.js';
+import WindowManager from './managers/window.js';
 
 class ElectronApp {
   constructor() {
@@ -17,7 +17,7 @@ class ElectronApp {
 
     // 应用准备就绪时创建窗口
     app.whenReady().then(() => {
-      this.windowManager.createMainWindow();
+      this.windowManager.createAuthWindow();
     });
 
     // 所有窗口关闭时退出应用（macOS 除外）

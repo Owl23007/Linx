@@ -9,9 +9,9 @@ class WindowManager {
   }
 
   /**
-   * 创建主窗口
+   * 创建认证窗口
    */
-  createMainWindow() {
+  createAuthWindow() {
     const currentDir = getCurrentDir(import.meta.url);
     const preloadPath = path.join(currentDir, '../preload/preload.cjs');
     const webPreferences = createSecureWebPreferences(preloadPath);
