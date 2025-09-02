@@ -8,7 +8,7 @@ class ElectronApp {
     this.ipcManager = new IpcManager(this.windowManager);
   }
 
-  async initialize() {
+  async init() {
     // 禁用应用程序菜单
     Menu.setApplicationMenu(null);
 
@@ -36,4 +36,4 @@ class ElectronApp {
 
 // 创建并初始化应用
 const electronApp = new ElectronApp();
-electronApp.initialize();
+electronApp.init();

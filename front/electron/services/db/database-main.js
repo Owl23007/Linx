@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as sqlite3 from 'sqlite3';
 import { fileURLToPath } from 'url';
 
-// 获取当前模块的目录路径（ES 模块兼容）
+// 获取当前模块的目录路径
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

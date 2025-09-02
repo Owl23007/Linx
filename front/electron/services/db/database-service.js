@@ -1,6 +1,6 @@
 import path from 'path';
 import sqlite3 from 'sqlite3';
-import { getCurrentDir } from '../../utils/app-utils.js';
+import { getCurrentDir } from '../../utils/app.js';
 
 class DatabaseService {
   constructor() {
