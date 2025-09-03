@@ -1,10 +1,12 @@
 -- 用户表
 CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER PRIMARY KEY ,
   username TEXT UNIQUE NOT NULL,
+  nickname TEXT,
   email TEXT UNIQUE,
   password_hash TEXT,
-  avatar TEXT,
+  avatar_url TEXT,
+  background_url TEXT,
   status TEXT DEFAULT 'online',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

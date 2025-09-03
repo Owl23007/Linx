@@ -47,6 +47,10 @@ function createSecureWebPreferences(preloadPath) {
     enableRemoteModule: false,
     preload: preloadPath,
     webSecurity: true,
+    // 性能优化选项
+    experimentalFeatures: true,// 启用实验性功能
+    v8CacheOptions: 'code', // 启用 V8 缓存
+    backgroundThrottling: false, // 禁用后台节流
   };
 }
 

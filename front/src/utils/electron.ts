@@ -2,9 +2,6 @@
 declare global {
   interface Window {
     electronApi?: {
-      closeWindow: () => void
-      minimizeWindow: () => void
-      maximizeWindow: () => void
       invoke: (channel: string, ...args: any[]) => Promise<any>
       send: (channel: string, ...args: any[]) => void
       on: (channel: string, callback: (...args: any[]) => void) => (() => void)
@@ -24,8 +21,8 @@ export function isElectron(): boolean {
  * 通过 Electron 的 window.electronApi 关闭窗口
  */
 export function closeWindow() {
-  if (window.electronApi && window.electronApi.closeWindow) {
-    window.electronApi.closeWindow();
+  if (window.electronApi ) {
+    window.electronApi.send('close-window');
   } else {
     // fallback: 兼容非 electron 环境
     if (typeof window.close === 'function') {
@@ -38,8 +35,8 @@ export function closeWindow() {
  * 通过 Electron 的 window.electronApi 最小化窗口
  */
 export function minimizeWindow() {
-  if (window.electronApi && window.electronApi.minimizeWindow) {
-    window.electronApi.minimizeWindow();
+  if (window.electronApi) {
+    window.electronApi.send('minimize-window');
   }
 }
 
@@ -47,7 +44,7 @@ export function minimizeWindow() {
  * 通过 Electron 的 window.electronApi 最大化/还原窗口
  */
 export function maximizeWindow() {
-  if (window.electronApi && window.electronApi.maximizeWindow) {
-    window.electronApi.maximizeWindow();
+  if (window.electronApi) {
+    window.electronApi.send('maximize-window');
   }
 }

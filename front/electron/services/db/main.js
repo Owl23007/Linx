@@ -27,16 +27,12 @@ export class DatabaseMain {
    * 初始化数据库
    */
   async init() {
-    // 检查数据库文件是否已存在
-    if (fs.existsSync(this.dbPath)) {
-      return Promise.resolve();
-    }
-
     return new Promise((resolve, reject) => {
       this.db = new sqlite3.Database(this.dbPath, (err) => {
         if (err) {
           reject(err);
         } else {
+          // 如果数据库文件不存在或为空，创建表
           this.createTables()
             .then(() => resolve())
             .catch(reject);
@@ -92,6 +88,46 @@ export class DatabaseMain {
   }
 
   /**
+   * 查询数据（返回单条记录）
+   * @param {string} sql
+   * @param {Array|Object} [params]
+   */
+  async get(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        return reject(new Error('Database not initialized'));
+      }
+      this.db.get(sql, params, (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row);
+        }
+      });
+    });
+  }
+
+  /**
+   * 查询数据（返回多条记录）
+   * @param {string} sql
+   * @param {Array|Object} [params]
+   */
+  async all(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        return reject(new Error('Database not initialized'));
+      }
+      this.db.all(sql, params, (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+  }
+
+  /**
    * 关闭数据库连接
    */
   async close() {
@@ -118,6 +154,3 @@ export class DatabaseMain {
     return this.db !== null;
   }
 }
-
-// 导出单例实例
-export const databaseMain = new DatabaseMain();

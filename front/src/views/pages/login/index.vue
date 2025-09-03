@@ -149,11 +149,6 @@
                         </el-form>
                     </div>
                 </Transition>
-
-                <!-- 错误提示 -->
-                <div v-if="error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p class="text-red-600 text-sm">{{ error }}</p>
-                </div>
             </div>
         </div>
 
@@ -244,10 +239,6 @@ function setupDragArea(element: HTMLElement) {
 function switchTabLogic(tab: 'login' | 'register') {
   activeTab.value = tab;
   error.value = '';
-
-  if (tab === 'register' && !captchaImage.value) {
-    refreshCaptcha();
-  }
 }
 
 // 验证码相关
@@ -260,6 +251,7 @@ async function refreshCaptcha() {
     }
   } catch {
     error.value = '获取验证码失败，请重试';
+    showError(error.value);
     // 清除旧的验证码
     captchaImage.value = '';
     captchaId.value = '';
@@ -279,6 +271,7 @@ async function performLogin(): Promise<boolean> {
     return true;
   } catch (err: any) {
     error.value = err.message || '登录失败，请重试';
+    showError(error.value);
 
     return false;
   } finally {
@@ -304,6 +297,7 @@ async function performRegister(): Promise<boolean> {
     return true;
   } catch (err: any) {
     error.value = err.message || '注册失败，请重试';
+    showError(error.value);
     refreshCaptcha();
 
     return false;
@@ -394,6 +388,10 @@ function switchTab(tabName: string, idx: number): void {
   updateSlider(idx);
 }
 
+const showError = (message: string) => {
+  ElMessage.error({ message, offset: 50 ,customClass: 'message' });
+};
+
 // ========== 事件处理函数 ==========
 async function handleLogin(): Promise<void> {
   if (loginFormRef.value) {
@@ -403,7 +401,7 @@ async function handleLogin(): Promise<void> {
 
   const success = await performLogin();
   if (success) {
-    ElMessage.success('登录成功');
+    ElMessage.success({ message: '登录成功', offset: 50 ,customClass: 'message' });
     router.push('/main-panel');
   }
 }
@@ -420,8 +418,16 @@ async function handleRegister(): Promise<void> {
   }
 }
 
+async function getUserList(): Promise<void> {
+  try {
+    // await authApi.getUserList();
+  } catch {
+    // 忽略错误
+  }
+}
+
 // ========== 生命周期 ==========
-onMounted(() => {
+onMounted(async () => {
   // 初始化拖动功能
   if (dragAreaRef.value) {
     const cleanup = setupDragArea(dragAreaRef.value);
@@ -432,6 +438,11 @@ onMounted(() => {
 
   // 初始化滑块位置
   updateSlider(tabs.findIndex(t => t.name === activeTab.value));
+
+  if (isElectron()) {
+    // 获取用户列表
+    await getUserList();
+  }
 });
 
 onUnmounted(() => {
@@ -605,5 +616,10 @@ onUnmounted(() => {
         border: 0;
         box-shadow: 0 0 0 0px;
     }
+}
+
+.message {
+   width: 70%;
+   max-width: 300px;
 }
 </style>

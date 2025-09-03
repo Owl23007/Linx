@@ -6,7 +6,7 @@
 
 ```
 ├── server/   # 🚀 Spring Boot 后端服务
-├── front/    # 💻 Vue.js + Electron 桌面客户端 (推荐)
+├── front/    # 💻 Vue.js + Electron 桌面客户端
 └── client/   # ⚠️  JavaFX 桌面客户端 (已弃用，仅存档)
 ```
 
@@ -58,17 +58,4 @@ npm install
 npm run electron:dev
 ```
 
-## 🤖 GitHub Copilot 支持
-
-本项目已配置 GitHub Copilot 编程代理的自定义开发环境，提供：
-
-- ✅ **自动环境配置**: Java 17 + Node.js 20
-- ✅ **依赖预安装**: Maven + npm 依赖自动下载
-- ✅ **缓存优化**: 提高构建速度
-- ✅ **环境验证**: 确保开发工具正确安装
-
-详细配置说明请查看：[.github/README.md](.github/README.md)
-
 ---
-
-````

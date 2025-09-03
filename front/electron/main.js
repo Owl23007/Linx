@@ -1,7 +1,7 @@
 import { app, Menu } from 'electron';
 import IpcManager from './managers/ipc.js';
 import WindowManager from './managers/window.js';
-import { databaseMain } from './services/db/main.js';
+import { databaseService } from './services/db/index.js';
 
 class ElectronApp {
   constructor() {
@@ -18,10 +18,15 @@ class ElectronApp {
 
     // 应用准备就绪时创建窗口和初始化数据库
     app.whenReady().then(async () => {
-      // 初始化数据库
-      await databaseMain.init();
+      try {
+        // 初始化数据库服务
+        await databaseService.init();
 
-      this.windowManager.createAuthWindow();
+        this.windowManager.createAuthWindow();
+      } catch {
+        // 处理初始化错误
+        process.exit(1);
+      }
     });
 
     // 所有窗口关闭时退出应用（macOS 除外）
@@ -33,7 +38,11 @@ class ElectronApp {
 
     // 在应用退出前关闭数据库连接
     app.on('before-quit', async () => {
-      await databaseMain.close();
+      try {
+        await databaseService.close();
+      } catch {
+        // 忽略关闭错误
+      }
     });
 
     // macOS 点击 dock 图标时重新创建窗口

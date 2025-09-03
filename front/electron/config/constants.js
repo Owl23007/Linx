@@ -20,22 +20,6 @@ const WINDOW_CONFIG = {
   },
 };
 
-// IPC 频道名称
-const IPC_CHANNELS = {
-  WINDOW: {
-    CLOSE: 'close-window',
-    MINIMIZE: 'minimize-window',
-    MAXIMIZE: 'maximize-window',
-  },
-  DRAG: {
-    GET_BOUNDS: 'drag:getBounds',
-    SET_BOUNDS: 'drag:setBounds',
-  },
-  DATABASE: {
-    INIT: 'db:init',
-  },
-};
-
 // 应用信息
 const APP_INFO = {
   NAME: 'Linx',
@@ -44,5 +28,5 @@ const APP_INFO = {
 };
 
 export {
-  APP_INFO, IPC_CHANNELS, WINDOW_CONFIG
+  APP_INFO, WINDOW_CONFIG
 };

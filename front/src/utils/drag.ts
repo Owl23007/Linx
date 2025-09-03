@@ -45,10 +45,18 @@ export default function drag(elem: HTMLElement) {
     initW = 0,
     initH = 0;
 
-  const _move = async (e: PointerEvent) => {
+  // 简单的节流机制
+  let lastMoveTime = 0;
+  const THROTTLE_MS = 10;
+
+  const _move = (e: PointerEvent) => {
+    const now = performance.now();
+    if (now - lastMoveTime < THROTTLE_MS) return;
+    lastMoveTime = now;
+
     const { screenX, screenY } = e;
 
-    window.electronApi?.invoke(
+    window.electronApi?.send(
       'drag:setBounds',
       Math.round(screenX - initX + initLeft),
       Math.round(screenY - initY + initTop),
@@ -103,16 +111,9 @@ export default function drag(elem: HTMLElement) {
     }
   };
 
-  const up = async (e: PointerEvent) => {
+  const up = (e: PointerEvent) => {
     if (moving) {
-      // 只有当实际移动时才调用 _move
-      const deltaX = Math.abs(e.screenX - initX);
-      const deltaY = Math.abs(e.screenY - initY);
-
-      if (deltaX > 2 || deltaY > 2) {
-        // 只有移动超过2像素才认为是拖动
-        await _move(e);
-      }
+      _move(e);
       elem.releasePointerCapture(e.pointerId);
       elem.removeEventListener('pointermove', _move);
       moving = false;
