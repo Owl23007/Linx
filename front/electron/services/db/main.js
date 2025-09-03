@@ -72,6 +72,26 @@ export class DatabaseMain {
   }
 
   /**
+   * 执行 SQL 语句（返回 Promise）
+   * @param {string} sql
+   * @param {Array|Object} [params]
+   */
+  async run(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        return reject(new Error('Database not initialized'));
+      }
+      this.db.run(sql, params, function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ lastID: this.lastID, changes: this.changes });
+        }
+      });
+    });
+  }
+
+  /**
    * 关闭数据库连接
    */
   async close() {
