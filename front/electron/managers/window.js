@@ -31,7 +31,7 @@ class WindowManager {
   /**
    * 加载窗口内容
    */
-  loadContent(route) {
+  loadContent(route = '/') {
     if (!this.mainWindow) return;
 
     const config = getAppConfig();
@@ -43,7 +43,17 @@ class WindowManager {
       // 生产环境使用打包后的文件
       const currentDir = getCurrentDir(import.meta.url);
       const indexPath = path.join(currentDir, '../../dist/index.html');
-      this.mainWindow.loadFile(indexPath);
+
+      // 在生产环境中，使用 file:// 协议加载本地文件
+      // 由于使用了 hash 路由，路由信息会在 # 后面
+      if (route && route !== '/') {
+        // 将路径转换为 Windows 兼容的 file:// URL
+        const normalizedPath = indexPath.replace(/\\/g, '/');
+        const fileUrl = `file:///${normalizedPath}#${route}`;
+        this.mainWindow.loadURL(fileUrl);
+      } else {
+        this.mainWindow.loadFile(indexPath);
+      }
     }
   }  /**
    * 设置窗口事件

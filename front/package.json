@@ -4,32 +4,46 @@
   "version": "0.0.0",
   "type": "module",
   "main": "electron/main.js",
+  "homepage": "./",
   "description": "Linx - A modern communication application",
   "author": "Linx Team",
   "license": "MIT",
+  "keywords": [
+    "electron",
+    "vue",
+    "communication",
+    "chat"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Owl23007/Let-s-Talk.git"
+  },
   "scripts": {
     "dev": "vite",
     "electron": "cross-env NODE_ENV=development electron .",
+    "electron:prod": "cross-env NODE_ENV=production electron .",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
     "start": "npm run electron:dev",
     "build": "vue-tsc -b && vite build",
     "build:electron": "npm run build && cross-env NODE_ENV=production electron-builder",
+    "build:electron:win": "npm run build && cross-env NODE_ENV=production electron-builder --win",
+    "build:electron:mac": "npm run build && cross-env NODE_ENV=production electron-builder --mac",
+    "build:electron:linux": "npm run build && cross-env NODE_ENV=production electron-builder --linux",
     "preview": "vite preview",
     "clean": "rimraf dist release",
+    "clean:all": "rimraf dist release node_modules && npm install",
     "lint": "eslint . --ext .vue,.js,.ts,.jsx,.tsx",
     "lint:fix": "eslint . --ext .vue,.js,.ts,.jsx,.tsx --fix",
     "lint:check": "eslint . --ext .vue,.js,.ts,.jsx,.tsx --max-warnings 0",
     "format": "eslint . --ext .vue,.js,.ts,.jsx,.tsx --fix",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "rebuild": "electron-rebuild"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.12",
     "axios": "^1.11.0",
     "element-plus": "^2.10.7",
-    "less": "^4.4.0",
     "pinia": "^3.0.3",
     "sqlite3": "^5.1.7",
-    "tailwindcss": "^4.1.12",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1"
   },
@@ -37,6 +51,7 @@
     "@electron/rebuild": "^3.7.2",
     "@eslint/js": "^9.34.0",
     "@stylistic/eslint-plugin": "^5.2.3",
+    "@tailwindcss/vite": "^4.1.12",
     "@typescript-eslint/eslint-plugin": "^8.40.0",
     "@typescript-eslint/parser": "^8.40.0",
     "@vitejs/plugin-vue": "^6.0.1",
@@ -48,7 +63,9 @@
     "eslint": "^9.34.0",
     "eslint-plugin-vue": "^10.4.0",
     "globals": "^16.3.0",
+    "less": "^4.4.0",
     "rimraf": "^6.0.1",
+    "tailwindcss": "^4.1.12",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.40.0",
     "vite": "^7.1.2",
@@ -64,34 +81,38 @@
     },
     "files": [
       "dist/**/*",
-      "main.cjs",
-      "public/preload.js",
+      "electron/**/*",
       "package.json"
     ],
     "extraResources": [
       {
-        "from": "dist",
-        "to": "dist"
+        "from": "public/database",
+        "to": "database"
       }
     ],
+    "npmRebuild": true,
+    "buildDependenciesFromSource": true,
+    "nodeGypRebuild": false,
     "win": {
       "target": "nsis",
-      "icon": "public/favicon.ico"
+      "icon": "build/icon.ico"
     },
     "mac": {
       "target": "dmg",
-      "icon": "public/favicon.ico"
+      "icon": "build/icon.icns"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "public/favicon.ico"
+      "icon": "build/icon.png"
     },
     "nsis": {
       "oneClick": false,
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
     }
   }
 }

@@ -1,4 +1,4 @@
-import type { LoginForm, RegisterForm, AuthState } from '@/types/models';
+import type { AuthState, LoginForm, RegisterForm } from '@/types/models';
 
 /**
  * 认证模型类
@@ -9,6 +9,7 @@ export class AuthModel {
     isAuthenticated: false,
     user: null,
     token: null,
+    isLoading: false,
   };
 
   // 获取认证状态
@@ -46,6 +47,7 @@ export class AuthModel {
       isAuthenticated: false,
       user: null,
       token: null,
+      isLoading: false,
     };
   }
 

@@ -1,28 +1,32 @@
 {
-    "name": "linx-project",
-    "version": "1.0.0",
-    "description": "Linx - A modern communication application",
-    "private": true,
-    "scripts": {
-        "setup": "npm run setup:front && npm run install-hooks",
-        "setup:front": "cd front && npm install",
-        "install-hooks": "node ./scripts/install-hooks.js",
-        "install-hooks-ps1": "powershell -ExecutionPolicy Bypass -File ./scripts/install-hooks.ps1",
-        "install-hooks-bash": "bash ./scripts/install-hooks.sh",
-        "dev": "cd front && npm run dev",
-        "dev:electron": "cd front && npm run electron:dev",
-        "dev:server": "cd server && mvnw.cmd spring-boot:run",
-        "lint": "cd front && npm run lint",
-        "lint:fix": "cd front && npm run lint:fix",
-        "lint:check": "cd front && npm run lint:check",
-        "build:front": "cd front && npm run build",
-        "build:electron": "cd front && npm run build:electron",
-        "clean": "cd front && npm run clean"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Owl23007/Let-s-Talk.git"
-    },
-    "author": "Linx Team",
-    "license": "MIT"
+  "name": "linx-project",
+  "version": "1.0.0",
+  "description": "Linx - A modern communication application",
+  "private": true,
+  "scripts": {
+    "setup": "npm run setup:front && npm run install-hooks",
+    "setup:front": "cd front && npm install",
+    "install-hooks": "node ./scripts/install-hooks.js",
+    "install-hooks-ps1": "powershell -ExecutionPolicy Bypass -File ./scripts/install-hooks.ps1",
+    "install-hooks-bash": "bash ./scripts/install-hooks.sh",
+    "dev": "cd front && npm run dev",
+    "dev:electron": "cd front && npm run electron:dev",
+    "dev:server": "cd server && mvnw.cmd spring-boot:run",
+    "lint": "cd front && npm run lint",
+    "lint:fix": "cd front && npm run lint:fix",
+    "lint:check": "cd front && npm run lint:check",
+    "build:front": "cd front && npm run build",
+    "build:electron": "cd front && npm run build:electron",
+    "build:electron:win": "cd front && npm run build:electron -- --win",
+    "build:electron:mac": "cd front && npm run build:electron -- --mac",
+    "build:electron:linux": "cd front && npm run build:electron -- --linux",
+    "clean": "cd front && npm run clean",
+    "clean:all": "cd front && npm run clean && cd ../server && mvnw.cmd clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Owl23007/Let-s-Talk.git"
+  },
+  "author": "Linx Team",
+  "license": "MIT"
 }

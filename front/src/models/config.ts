@@ -10,6 +10,16 @@ export class ConfigModel {
     theme: 'light',
     language: 'zh-CN',
     autoLogin: false,
+    fontSize: 0,
+    notifications: {
+      enabled: false,  // 是否启用通知
+      sound: false,    // 是否启用声音
+      desktop: false   // 是否启用桌面通知
+    },
+    privacy: {
+      showOnlineStatus: false,
+      allowDirectMessages: false
+    }
   };
 
   // 获取配置
@@ -30,12 +40,12 @@ export class ConfigModel {
   }
 
   // 获取主题
-  get theme(): 'light' | 'dark' {
+  get theme(): 'light' | 'dark' | 'auto' {
     return this._config.theme;
   }
 
   // 设置主题
-  setTheme(theme: 'light' | 'dark'): void {
+  setTheme(theme: 'light' | 'dark' | 'auto'): void {
     this._config.theme = theme;
   }
 
@@ -90,6 +100,16 @@ export class ConfigModel {
       theme: 'light',
       language: 'zh-CN',
       autoLogin: false,
+      fontSize: 0,
+      notifications: {
+        enabled: false,
+        sound: false,
+        desktop: false
+      },
+      privacy: {
+        showOnlineStatus: false,
+        allowDirectMessages: false
+      }
     };
   }
 

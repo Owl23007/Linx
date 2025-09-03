@@ -24,6 +24,10 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
       },
     },
+    // 优化生产构建
+    minify: 'esbuild',
+    sourcemap: false,
+    target: 'esnext',
   },
   server: {
     port: 5173,
