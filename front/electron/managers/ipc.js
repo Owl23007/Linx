@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../config/constants.js';
-import { databaseMain } from '../services/database/database-main.js';
+import { databaseMain } from '../services/db/main.js';
 
 class IpcManager {
   constructor(windowManager) {

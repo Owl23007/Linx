@@ -4,7 +4,7 @@
 
 // 窗口配置
 const WINDOW_CONFIG = {
-  MAIN: {
+  Auth: {
     width: 320,
     height: 450,
     minWidth: 320,
