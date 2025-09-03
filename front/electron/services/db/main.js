@@ -1,7 +1,7 @@
-import { app } from 'electron';
+import { app, dialog } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as sqlite3 from 'sqlite3';
+import sqlite3 from 'sqlite3';
 import { fileURLToPath } from 'url';
 
 // 获取当前模块的目录路径
@@ -27,6 +27,11 @@ export class DatabaseMain {
    * 初始化数据库
    */
   async init() {
+    // 检查数据库文件是否已存在
+    if (fs.existsSync(this.dbPath)) {
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
       this.db = new sqlite3.Database(this.dbPath, (err) => {
         if (err) {
@@ -45,7 +50,7 @@ export class DatabaseMain {
    */
   async createTables() {
     // 获取 init.sql 文件路径
-    const initSqlPath = path.join(__dirname, '..', '..', 'public', 'database', 'init.sql');
+    const initSqlPath = path.join(__dirname, '..', '..', '..', 'public', 'database', 'init.sql');
 
     try {
       // 读取 SQL 文件内容
@@ -60,96 +65,10 @@ export class DatabaseMain {
           await this.run(trimmedStatement);
         }
       }
-    } catch {
-      // 如果 SQL 文件不存在，创建基本的用户表
-      await this.createDefaultTables();
+    } catch (err) {
+      // 显示错误弹窗
+      dialog.showErrorBox('初始化数据库失败', err.message);
     }
-  }
-
-  /**
-   * 创建默认数据表
-   */
-  async createDefaultTables() {
-    const createUserTableSql = `
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        avatar_url TEXT,
-        status TEXT DEFAULT 'offline',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
-
-    await this.run(createUserTableSql);
-  }
-
-  /**
-   * 执行查询
-   */
-  async query(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('Database not initialized'));
-
-        return;
-      }
-
-      this.db.all(sql, params, (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      });
-    });
-  }
-
-  /**
-   * 执行更新操作
-   */
-  async run(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('Database not initialized'));
-
-        return;
-      }
-
-      this.db.run(sql, params, function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({
-            lastID: this.lastID,
-            changes: this.changes
-          });
-        }
-      });
-    });
-  }
-
-  /**
-   * 获取单条记录
-   */
-  async get(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('Database not initialized'));
-
-        return;
-      }
-
-      this.db.get(sql, params, (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row);
-        }
-      });
-    });
   }
 
   /**

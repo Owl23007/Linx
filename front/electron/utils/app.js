@@ -2,7 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 /**
- * 获取当前模块的目录路径（ES 模块兼容）
+ * 获取当前模块的目录路径
  */
 function getCurrentDir(importMetaUrl) {
   const __filename = fileURLToPath(importMetaUrl);

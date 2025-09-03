@@ -1,6 +1,7 @@
 import { app, Menu } from 'electron';
 import IpcManager from './managers/ipc.js';
 import WindowManager from './managers/window.js';
+import { databaseMain } from './services/db/main.js';
 
 class ElectronApp {
   constructor() {
@@ -15,8 +16,11 @@ class ElectronApp {
     // 设置 IPC 处理器
     this.ipcManager.setupHandlers();
 
-    // 应用准备就绪时创建窗口
-    app.whenReady().then(() => {
+    // 应用准备就绪时创建窗口和初始化数据库
+    app.whenReady().then(async () => {
+      // 初始化数据库
+      await databaseMain.init();
+
       this.windowManager.createAuthWindow();
     });
 
@@ -25,6 +29,11 @@ class ElectronApp {
       if (process.platform !== 'darwin') {
         app.quit();
       }
+    });
+
+    // 在应用退出前关闭数据库连接
+    app.on('before-quit', async () => {
+      await databaseMain.close();
     });
 
     // macOS 点击 dock 图标时重新创建窗口
