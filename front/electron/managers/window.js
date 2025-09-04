@@ -55,7 +55,9 @@ class WindowManager {
         this.mainWindow.loadFile(indexPath);
       }
     }
-  }  /**
+  }
+
+  /**
    * 设置窗口事件
    */
   setupWindowEvents() {

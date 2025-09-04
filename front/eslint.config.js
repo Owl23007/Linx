@@ -109,7 +109,15 @@ export default defineConfig([
     },
   },
 
-  // CommonJS 文件 (如 Electron 主进程)
+  // Electron 目录特殊规则 - 允许 console
+  {
+    files: ['electron/**/*.js'],
+    rules: {
+      'no-console': 'off'
+    }
+  },
+
+  // CommonJS 文件
   {
     files: ['**/*.cjs'],
     languageOptions: {

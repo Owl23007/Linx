@@ -1,4 +1,3 @@
-import { setupDatabaseHandlers } from '../ipc/databaseHandler.js';
 import { setupDragHandlers } from '../ipc/dragHandler.js';
 import { setupUserIpcHandlers } from '../ipc/userHandler.js';
 import { setupWindowHandlers } from '../ipc/windowsHandler.js';
@@ -14,7 +13,6 @@ class IpcManager {
   setupHandlers() {
     setupWindowHandlers(this.windowManager);
     setupDragHandlers();
-    setupDatabaseHandlers();
 
     // 设置用户相关处理器
     setupUserIpcHandlers();

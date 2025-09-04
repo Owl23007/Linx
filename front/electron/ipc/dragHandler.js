@@ -21,7 +21,7 @@ export function setupDragHandlers() {
           height,
         });
       } catch {
-        // 忽略可能的错误，避免阻塞
+        // 忽略错误
       }
     }
   });
