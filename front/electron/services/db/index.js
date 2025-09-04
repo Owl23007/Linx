@@ -10,10 +10,10 @@ class DatabaseService {
    * 初始化所有数据库服务
    */
   async init() {
-    const dbMain = await databaseManager.init();
+    const dbInstance = await databaseManager.init();
 
     // 初始化各个服务
-    this.userDb = new UserDb(dbMain);
+    this.userDb = new UserDb(dbInstance);
   }
 
   /**

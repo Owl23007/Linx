@@ -45,9 +45,9 @@ export default function drag(elem: HTMLElement) {
     initW = 0,
     initH = 0;
 
-  // 简单的节流机制
+  // 节流机制
   let lastMoveTime = 0;
-  const THROTTLE_MS = 10;
+  const THROTTLE_MS = 24;
 
   const _move = (e: PointerEvent) => {
     const now = performance.now();
