@@ -1,3 +1,5 @@
+import { hashSHA256 } from '../utils/hash';
+
 /**
  * 用户服务类，封装与主进程的通信
  * 用于auth窗口中进行用户相关操作
@@ -95,9 +97,8 @@ export class UserService {
    * @param {string} password - 原始密码
    */
   hashPassword(password) {
-    // 这里可以使用crypto-js或其他加密库
-    // 暂时使用简单的方式，实际项目中应该使用更安全的加密方式
-    return btoa(password); // 简单的base64编码，实际应该使用更安全的hash算法
+    // 使用SHA-256加密
+    return hashSHA256(password);
   }
 
   /**
@@ -134,7 +135,7 @@ export class UserService {
   }
 
   /**
-   * 用户注册（完整流程）
+   * 用户注册
    * @param {Object} userData - 用户数据
    */
   async register(userData) {

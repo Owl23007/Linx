@@ -45,3 +45,6 @@ client/target/
 
 front/node_modules/
 front/package-lock.json
+
+package-lock.json
+node_modules/

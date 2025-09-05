@@ -1,5 +1,5 @@
-import { get, post } from './request';
 import type { ApiResponse } from './request';
+import { get, post } from './request';
 
 /**
  * 认证相关API
@@ -9,12 +9,14 @@ export type CaptchaResponse = string;
 
 // 登录请求数据类型
 export interface LoginRequest {
+  serverEndpoint?: string
   username: string
   password: string
 }
 
 // 注册请求数据类型
 export interface RegisterRequest {
+  serverEndpoint?: string
   username: string
   password: string
   captchaCode: string

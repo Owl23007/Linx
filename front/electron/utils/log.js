@@ -8,32 +8,32 @@ import * as path from 'path';
 // 引入日志器
 import { logger, LOG_LEVELS } from './utils/log.js';
 
-// 调试信息（不保存到文件，仅开发环境控制台）
+// 调试信息（仅开发环境控制台输出，不保存到文件）
 logger.debug('APP_INIT', '应用程序初始化开始');
 
-// 信息日志 保存到 log-{timestamp}.log
+// 信息日志（保存到 log-{timestamp}.log）
 logger.info('USER_LOGIN', '用户登录成功', { userId: 123, username: 'john' });
 
-// 警告日志
+// 警告日志（保存到 log-{timestamp}.log）
 logger.warn('DEPRECATED_API', '使用了已废弃的API', { apiName: 'oldMethod' });
 
-// 错误日志（同时保存到 log-{timestamp}.log 和 error.log）
+// 错误日志（保存到 log-{timestamp}.log 和 error.log）
 logger.error('DATABASE_ERROR', '数据库连接失败', { errorCode: 'CONN_TIMEOUT' });
 
-// 也可以传入 Error 对象
+// 传入 Error 对象
 try {
-  // 一些可能出错的代码
+  // 可能出错的代码
 } catch (error) {
   logger.error('UNEXPECTED_ERROR', error, { operation: 'userUpdate' });
 }
 
-// 设置日志级别（可选，默认为 DEBUG）
-logger.setLevel(LOG_LEVELS.INFO); // 只记录 INFO 及以上级别的日志
+// 设置日志级别（默认为 DEBUG）
+logger.setLevel(LOG_LEVELS.INFO); // 只记录 INFO 及以上级别
 
 // 日志文件说明：
 // - log-{timestamp}.log: 包含 INFO、WARN、ERROR 级别的日志
-// - error.log: 只包含 ERROR 级别的日志，格式更详细
-// - DEBUG 级别的日志不会保存到文件，仅在开发环境输出到控制台
+// - error.log: 仅包含 ERROR 级别的日志，格式更详细
+// - DEBUG 级别日志不保存到文件，仅开发环境控制台输出
 */
 
 // 日志级别常量
@@ -54,6 +54,9 @@ class Logger {
     this.init();
   }
 
+  /**
+   * 初始化日志器，设置路径和全局处理器
+   */
   init() {
     // 获取日志文件路径
     const userDataPath = app.getPath('userData');
@@ -78,6 +81,9 @@ class Logger {
     this.setupGlobalHandlers();
   }
 
+  /**
+   * 设置全局错误处理器
+   */
   setupGlobalHandlers() {
     // 处理未捕获的异常（同步错误）
     process.on('uncaughtException', async (error, origin) => {
@@ -148,17 +154,17 @@ class Logger {
 
   /**
    * 设置日志级别
-   * @param {number} level - 日志级别
+   * @param {number} level - 日志级别（使用 LOG_LEVELS 常量）
    */
   setLevel(level) {
     this.currentLevel = level;
   }
 
   /**
-   * DEBUG 级别日志 - 不保存到文件，仅在开发环境输出到控制台
+   * 记录 DEBUG 级别日志（仅开发环境控制台，不保存文件）
    * @param {string} tag - 日志标签
    * @param {string} message - 日志消息
-   * @param {object} context - 额外的上下文信息
+   * @param {object} [context={}] - 额外上下文
    */
   debug(tag, message, context = {}) {
     if (this.currentLevel > LOG_LEVELS.DEBUG) return;
@@ -172,10 +178,10 @@ class Logger {
   }
 
   /**
-   * INFO 级别日志 - 保存到 log-xxxx.log
+   * 记录 INFO 级别日志（保存到 log-{timestamp}.log）
    * @param {string} tag - 日志标签
    * @param {string} message - 日志消息
-   * @param {object} context - 额外的上下文信息
+   * @param {object} [context={}] - 额外上下文
    */
   info(tag, message, context = {}) {
     if (this.currentLevel > LOG_LEVELS.INFO) return;
@@ -194,10 +200,10 @@ class Logger {
   }
 
   /**
-   * WARN 级别日志 - 保存到 log-xxxx.log
+   * 记录 WARN 级别日志（保存到 log-{timestamp}.log）
    * @param {string} tag - 日志标签
    * @param {string} message - 日志消息
-   * @param {object} context - 额外的上下文信息
+   * @param {object} [context={}] - 额外上下文
    */
   warn(tag, message, context = {}) {
     if (this.currentLevel > LOG_LEVELS.WARN) return;
@@ -216,46 +222,98 @@ class Logger {
   }
 
   /**
-   * ERROR 级别日志 - 保存到两个文件：log-xxxx.log 和 error.log
+   * 记录 ERROR 级别日志（保存到 log-{timestamp}.log 和 error.log）
    * @param {string} tag - 日志标签
    * @param {string|Error} message - 日志消息或错误对象
-   * @param {object} context - 额外的上下文信息
+   * @param {object} [context={}] - 额外上下文
    * @returns {Promise<void>}
    */
   async error(tag, message, context = {}) {
-    const error = message instanceof Error ? message : new Error(String(message));
+    // 简化处理：直接使用传入的Error或构造新Error
+    let errObj;
+    if (message instanceof Error) {
+      errObj = message;
+    } else {
+      errObj = new Error(String(message));
+      // 如果context中有stack，使用它；否则生成调用堆栈
+      if (context.stack) {
+        errObj.stack = context.stack;
+      } else if (Error.captureStackTrace) {
+        Error.captureStackTrace(errObj, this.error);
+      }
+    }
 
-    const logInfo = this.createLogEntry('ERROR', tag, error.message, {
+    // 清理堆栈
+    const cleanedStack = this.cleanStack(errObj.stack);
+
+    const logInfo = this.createLogEntry('ERROR', tag, errObj.message, {
       ...context,
-      stack: error.stack
+      stack: cleanedStack
     });
 
     // 写入到两个文件
     this.writeToLogFile(logInfo, true);
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[ERROR][${tag}]`, error);
+      console.error(`[ERROR][${tag}]`, errObj);
       if (Object.keys(context).length > 0) {
         console.error('Context:', context);
       }
+      // 输出清理后的堆栈，便于开发者快速定位
+      console.error('Cleaned Stack:', cleanedStack);
     }
 
     // 只有在应用准备就绪后才显示错误对话框
     if (app.isReady()) {
-      await this.showErrorDialog(tag, error);
+      await this.showErrorDialog(tag, errObj);
     } else {
       await app.whenReady();
-      await this.showErrorDialog(tag, error);
+      await this.showErrorDialog(tag, errObj);
     }
   }
 
   /**
-   * 创建日志条目
+   * 清理错误堆栈，去除内部帧
+   * @param {string} stackRaw - 原始堆栈
+   * @returns {string} 清理后的堆栈
+   */
+  cleanStack(stackRaw) {
+    try {
+      if (!stackRaw || typeof stackRaw !== 'string') return String(stackRaw || '');
+      const lines = stackRaw.split('\n').map(l => l.trim());
+      if (lines.length <= 1) return stackRaw;
+
+      // 第一行是错误消息，保留
+      const header = lines[0];
+      const frames = lines.slice(1);
+
+      // 过滤条件：排除包含 utils/log.js、Logger. 或明显的内部调用的位置
+      const filteredFrames = frames.filter(frame => {
+        const lower = frame.toLowerCase();
+        if (lower.includes('utils/log.js')) return false;
+        if (lower.includes('logger.')) return false;
+        // 排除 node internals 中明显属于本文件或错误处理的行
+        if (lower.includes('at object.error') || lower.includes('at logger.error')) return false;
+
+        return true;
+      });
+
+      // 如果过滤后为空，退回到原始 frames 中移除第一条内部帧（保底）
+      const finalFrames = filteredFrames.length > 0 ? filteredFrames : frames.slice(1);
+
+      return [header, ...finalFrames].join('\n');
+    } catch {
+      return stackRaw;
+    }
+  }
+
+  /**
+   * 创建日志条目对象
    * @param {string} level - 日志级别
    * @param {string} tag - 日志标签
    * @param {string} message - 日志消息
-   * @param {object} context - 额外的上下文信息
-   * @returns {object}
+   * @param {object} [context={}] - 额外上下文
+   * @returns {object} 日志条目
    */
   createLogEntry(level, tag, message, context = {}) {
     return {
@@ -272,15 +330,20 @@ class Logger {
   }
 
   /**
-   * 将日志信息写入文件
-   * @param {object} logInfo - 日志信息对象
-   * @param {boolean} isError - 是否为错误日志（需要同时写入error.log）
+   * 将日志写入文件
+   * @param {object} logInfo - 日志信息
+   * @param {boolean} [isError=false] - 是否为错误日志
    */
   writeToLogFile(logInfo, isError = false) {
     try {
-      // 通用日志格式
+      // 提取上下文，去除stack以单独处理
+      const contextWithoutStack = { ...logInfo.context };
+      delete contextWithoutStack.stack;
+
+      // 通用日志格式，展开stack为多行
       const logEntry = `[${logInfo.timestamp}] [${logInfo.level}] [${logInfo.tag}] ${logInfo.message}${
-        Object.keys(logInfo.context).length > 0 ? '\nContext: ' + JSON.stringify(logInfo.context, null, 2) : ''
+        logInfo.context.stack ? `\nStack Trace:\n${logInfo.context.stack}` : ''
+      }${Object.keys(contextWithoutStack).length > 0 ? '\nContext: ' + JSON.stringify(contextWithoutStack, null, 2) : ''
       }\n`;
 
       // 写入到时间戳日志文件
@@ -309,13 +372,15 @@ Node.js Version: ${logInfo.nodeVersion}
       }
     } catch (logError) {
       // 如果无法写入日志文件，至少在控制台输出
-      console.error('Failed to write to log file:', logError);
-      console.error('Original log:', logInfo);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to write to log file:', logError);
+        console.error('Original log:', logInfo);
+      }
     }
   }
 
   /**
-   * 判断是否应该在发生错误时退出应用
+   * 判断是否应在错误时退出应用
    * @param {Error} error - 错误对象
    * @returns {boolean}
    */
@@ -340,7 +405,7 @@ Node.js Version: ${logInfo.nodeVersion}
   }
 
   /**
-   * 判断是否应该显示恢复选项
+   * 判断是否显示恢复选项
    * @param {string} type - 错误类型
    * @returns {boolean}
    */
@@ -387,10 +452,14 @@ Node.js Version: ${logInfo.nodeVersion}
    */
   async showErrorDialog(type, error) {
     try {
-      console.log('[ErrorHandler] Starting to show error dialog');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ErrorHandler] Starting to show error dialog');
+      }
       const logPath = this.getLogPath();
 
-      console.log('[ErrorHandler] Calling dialog.showMessageBox');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ErrorHandler] Calling dialog.showMessageBox');
+      }
       const result = await dialog.showMessageBox({
         type: 'error',
         title: '应用程序错误',
@@ -402,37 +471,45 @@ Node.js Version: ${logInfo.nodeVersion}
         noLink: true
       });
 
-      console.log('[ErrorHandler] Dialog result:', result.response);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ErrorHandler] Dialog result:', result.response);
+      }
 
       // 如果用户选择打开日志
       if (result.response === 1) {
         try {
           await shell.openPath(logPath);
         } catch (openError) {
-          console.error('Failed to open log file:', openError);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Failed to open log file:', openError);
+          }
           // 如果无法打开文件，尝试打开文件夹
           try {
             const logDir = path.dirname(logPath);
             await shell.openPath(logDir);
           } catch (dirError) {
-            console.error('Failed to open log directory:', dirError);
+            if (process.env.NODE_ENV === 'development') {
+              console.error('Failed to open log directory:', dirError);
+            }
             dialog.showErrorBox('无法打开日志', `请手动导航到日志文件：\n${logPath}`);
           }
         }
       }
     } catch (dialogError) {
       // 如果对话框显示失败，至少在控制台输出错误信息
-      console.error('Failed to show error dialog:', dialogError);
-      console.error('Original error:', error.message);
-      console.error('Log file location:', this.getLogPath());
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to show error dialog:', dialogError);
+        console.error('Original error:', error.message);
+        console.error('Log file location:', this.getLogPath());
+      }
     }
   }
 
   /**
-   * 手动记录错误（供其他模块调用）
+   * 手动记录错误
    * @param {string} type - 错误类型
-   * @param {Error|string} error - 错误对象或错误消息
-   * @param {object} context - 额外的上下文信息
+   * @param {Error|string} error - 错误对象或消息
+   * @param {object} [context={}] - 额外上下文
    * @returns {Promise<void>}
    */
   async logError(type, error, context = {}) {
@@ -456,9 +533,9 @@ Node.js Version: ${logInfo.nodeVersion}
   }
 
   /**
-   * 清理旧的日志文件
-   * @param {number} daysToKeep - 保留天数，默认30天
-   * @param {number} maxFiles - 最大文件数，默认50个
+   * 清理旧日志文件
+   * @param {number} [daysToKeep=30] - 保留天数
+   * @param {number} [maxFiles=50] - 最大文件数
    */
   cleanOldLogs(daysToKeep = 30, maxFiles = 50) {
     try {
@@ -494,14 +571,18 @@ Node.js Version: ${logInfo.nodeVersion}
             isFile: stats.isFile()
           };
         } catch (error) {
-          console.error(`[Logger] 获取文件信息失败 ${file}:`, error);
+          if (process.env.NODE_ENV === 'development') {
+            console.error(`[Logger] 获取文件信息失败 ${file}:`, error);
+          }
 
           return null;
         }
       }).filter(info => info && info.isFile)
         .sort((a, b) => a.timestamp - b.timestamp); // 按时间戳排序，最旧的在前
 
-      console.log(`[Logger] 找到 ${fileInfos.length} 个时间戳日志文件`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Logger] 找到 ${fileInfos.length} 个时间戳日志文件`);
+      }
 
       // 1. 删除超过指定天数的文件（基于文件名中的时间戳）
       let deletedCount = 0;
@@ -509,10 +590,14 @@ Node.js Version: ${logInfo.nodeVersion}
         if (fileInfo.timestamp < cutoffTime) {
           try {
             fs.unlinkSync(fileInfo.path);
-            console.log(`[Logger] 已删除过期日志文件: ${fileInfo.name}`);
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[Logger] 已删除过期日志文件: ${fileInfo.name}`);
+            }
             deletedCount++;
           } catch (error) {
-            console.error(`[Logger] 删除过期文件失败 ${fileInfo.name}:`, error);
+            if (process.env.NODE_ENV === 'development') {
+              console.error(`[Logger] 删除过期文件失败 ${fileInfo.name}:`, error);
+            }
           }
         }
       });
@@ -526,20 +611,26 @@ Node.js Version: ${logInfo.nodeVersion}
         filesToDelete.forEach(fileInfo => {
           try {
             fs.unlinkSync(fileInfo.path);
-            console.log(`[Logger] 已删除超出数量限制的日志文件: ${fileInfo.name}`);
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[Logger] 已删除超出数量限制的日志文件: ${fileInfo.name}`);
+            }
             deletedCount++;
           } catch (error) {
-            console.error(`[Logger] 删除文件失败 ${fileInfo.name}:`, error);
+            if (process.env.NODE_ENV === 'development') {
+              console.error(`[Logger] 删除文件失败 ${fileInfo.name}:`, error);
+            }
           }
         });
       }
 
-      if (deletedCount > 0) {
+      if (deletedCount > 0 && process.env.NODE_ENV === 'development') {
         console.log(`[Logger] 总共删除了 ${deletedCount} 个日志文件`);
       }
 
     } catch (error) {
-      console.error('[Logger] 清理旧日志失败:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Logger] 清理旧日志失败:', error);
+      }
     }
   }
 }

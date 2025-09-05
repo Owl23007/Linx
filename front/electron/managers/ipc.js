@@ -1,5 +1,4 @@
 import { setupDragHandlers } from '../ipc/dragHandler.js';
-import { setupUserIpcHandlers } from '../ipc/userHandler.js';
 import { setupWindowHandlers } from '../ipc/windowsHandler.js';
 
 class IpcManager {
@@ -15,7 +14,7 @@ class IpcManager {
     setupDragHandlers();
 
     // 设置用户相关处理器
-    setupUserIpcHandlers();
+    // setupUserIpcHandlers();
   }
 }
 

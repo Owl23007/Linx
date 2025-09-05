@@ -1,5 +1,6 @@
 import { app, Menu } from 'electron';
 import IpcManager from './managers/ipc.js';
+import KeytarManager from './managers/keytar.js';
 import WindowManager from './managers/window.js';
 import { databaseService } from './services/db/index.js';
 import { logger } from './utils/log.js';
@@ -8,6 +9,7 @@ class ElectronApp {
   constructor() {
     this.windowManager = new WindowManager();
     this.ipcManager = new IpcManager(this.windowManager);
+    this.keytarManager = new KeytarManager(logger);
   }
 
   async init() {
@@ -20,12 +22,18 @@ class ElectronApp {
     // 应用准备就绪时创建窗口和初始化数据库
     app.whenReady().then(async () => {
       try {
+
         logger.info('APP_STARTUP', '应用程序启动中...');
 
         // 初始化数据库服务
         await databaseService.init();
         logger.info('DATABASE_INIT', '数据库初始化成功');
 
+        // 初始化密钥管理器
+        await this.keytarManager.init();
+        logger.info('KEYTAR_INIT', '密钥管理器初始化成功');
+
+        // 创建认证窗口
         this.windowManager.createAuthWindow();
         logger.info('WINDOW_CREATED', '认证窗口创建成功');
 
@@ -35,8 +43,8 @@ class ElectronApp {
 
       } catch (error) {
         // 记录初始化错误
-        await logger.error('APP_INITIALIZATION', error);
-        logger.error('APP_EXIT', '应用程序因初始化失败退出');
+        const err = error instanceof Error ? error : new Error(error);
+        await logger.error('APP_INITIALIZATION', err, { exitMessage: '应用程序因初始化失败退出' });
 
         // 退出应用
         process.exit(1);
@@ -58,7 +66,8 @@ class ElectronApp {
         await databaseService.close();
         logger.info('DATABASE_CLOSE', '数据库连接已关闭');
       } catch (error) {
-        await logger.error('DATABASE_CLOSE', error);
+        const err = error instanceof Error ? error : new Error(error);
+        await logger.error('DATABASE_CLOSE', err);
       }
     });
 
