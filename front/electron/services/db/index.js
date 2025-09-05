@@ -1,9 +1,11 @@
+import { AppDb } from './appDb.js';
 import { databaseManager } from './manager.js';
 import { UserDb } from './userDb.js';
 
 class DatabaseService {
   constructor() {
     this.userDb = null;
+    this.appDb = null;
   }
 
   /**
@@ -13,6 +15,7 @@ class DatabaseService {
     const dbInstance = await databaseManager.init();
     // 初始化各个服务
     this.userDb = new UserDb(dbInstance);
+    this.appDb = new AppDb(dbInstance);
 
     console.log('[DatabaseService] 数据库服务初始化完成');
   }
@@ -27,6 +30,17 @@ class DatabaseService {
     }
 
     return this.userDb;
+  }
+
+  /**
+   * 获取App数据库服务
+   */
+  getAppDb() {
+    if (!this.appDb) {
+      throw new Error('App数据库服务未初始化');
+    }
+
+    return this.appDb;
   }
 
   /**
@@ -57,6 +71,7 @@ class DatabaseService {
   async close() {
     await databaseManager.close();
     this.userDb = null;
+    this.appDb = null;
   }
 }
 

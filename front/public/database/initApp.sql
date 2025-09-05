@@ -1,10 +1,11 @@
--- 用户表
+-- 用户表 (App级别) - 本地存储已登录的用户账号
 create table if not exists user (
-    id int primary key auto_increment, -- 自增主键
+    user_id integer primary key autoincrement,
     server_url varchar(255) not null,
-    username varchar(50) not null unique,
+    username varchar(50) not null,
     nickname varchar(50) not null,
-    instance_id varchar(100) not null, -- 实例ID
+    avatar_url varchar(255),
     created_at timestamp default current_timestamp,
-    updated_at timestamp default current_timestamp
+    updated_at timestamp default current_timestamp,
+    unique(server_url, username)
 );

@@ -1,8 +1,8 @@
 import { app, Menu } from 'electron';
+import DatabaseManager from './managers/database.js';
 import IpcManager from './managers/ipc.js';
 import KeytarManager from './managers/keytar.js';
 import WindowManager from './managers/window.js';
-import { databaseService } from './services/db/index.js';
 import { logger } from './utils/log.js';
 
 class ElectronApp {
@@ -10,6 +10,7 @@ class ElectronApp {
     this.windowManager = new WindowManager();
     this.ipcManager = new IpcManager(this.windowManager);
     this.keytarManager = new KeytarManager(logger);
+    this.databaseManager = new DatabaseManager(logger,this.keytarManager);
   }
 
   async init() {
@@ -30,7 +31,7 @@ class ElectronApp {
         logger.info('KEYTAR_INIT', '密钥管理器初始化成功');
 
         // 初始化数据库服务
-        await databaseService.init();
+        await this.databaseManager.init();
         logger.info('DATABASE_INIT', '数据库初始化成功');
 
         // 创建认证窗口
