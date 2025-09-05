@@ -1,5 +1,5 @@
-import type { LoginRequest, RegisterRequest, UserInfo } from '@/api/auth';
-import * as authApi from '@/api/auth';
+import type { LoginRequest, RegisterRequest, UserInfo } from '@/request/auth';
+import * as authApi from '@/request/auth';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 

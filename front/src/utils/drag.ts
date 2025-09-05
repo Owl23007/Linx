@@ -3,6 +3,8 @@
  * 参考：https://rmw.link/zh/log/2022-03-14.electron-drag.html
  */
 
+import { invokeIpc, isElectron, sendIpc } from './electron';
+
 // 需要忽略的元素标签名
 const IGNORE = new Set([
   'SELECT',
@@ -35,7 +37,7 @@ let moving = false;
 
 export default function drag(elem: HTMLElement) {
   // 只在 Electron 环境下启用
-  if (typeof window.electronApi === 'undefined') return;
+  if (!isElectron()) return;
   (elem.style as any).webkitAppRegion = 'no-drag';
 
   let initX = 0,
@@ -47,7 +49,7 @@ export default function drag(elem: HTMLElement) {
 
   // 节流机制
   let lastMoveTime = 0;
-  const THROTTLE_MS = 24;
+  const THROTTLE_MS = 12;
 
   const _move = (e: PointerEvent) => {
     const now = performance.now();
@@ -56,7 +58,7 @@ export default function drag(elem: HTMLElement) {
 
     const { screenX, screenY } = e;
 
-    window.electronApi?.send(
+    sendIpc(
       'drag:setBounds',
       Math.round(screenX - initX + initLeft),
       Math.round(screenY - initY + initTop),
@@ -101,13 +103,29 @@ export default function drag(elem: HTMLElement) {
     elem.addEventListener('pointermove', _move);
 
     // 获取当前窗口位置和大小
-    const bounds = await window.electronApi?.invoke('drag:getBounds');
+    try {
+      const res = await invokeIpc('drag:getBounds');
 
-    if (bounds) {
-      initLeft = bounds.x;
-      initTop = bounds.y;
-      initW = bounds.width;
-      initH = bounds.height;
+      if (res && res.success && res.data) {
+        const bounds = res.data;
+        initLeft = bounds.x || 0;
+        initTop = bounds.y || 0;
+        initW = bounds.width || 800; // 默认宽度
+        initH = bounds.height || 600; // 默认高度
+      } else {
+        // 如果获取失败，使用默认值
+        initLeft = 0;
+        initTop = 0;
+        initW = 800;
+        initH = 600;
+      }
+    } catch {
+      // 发生错误时停止拖动
+      moving = false;
+      elem.releasePointerCapture(e.pointerId);
+      elem.removeEventListener('pointermove', _move);
+
+      return;
     }
   };
 

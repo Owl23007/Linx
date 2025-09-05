@@ -5,7 +5,17 @@ export function setupDragHandlers() {
   ipcMain.handle('drag:getBounds', (event) => {
     const win = event.sender.getOwnerBrowserWindow();
 
-    return win ? win.getBounds() : null;
+    if (win && !win.isDestroyed()) {
+      try {
+        const bounds = win.getBounds();
+
+        return { success: true, data: bounds };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    }
+
+    return { success: false, error: 'Window not found' };
   });
 
   // 设置窗口位置

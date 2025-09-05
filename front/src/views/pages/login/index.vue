@@ -173,8 +173,8 @@
 
 <script setup lang="ts">
 // ========== 导入依赖 ==========
-import type { LoginRequest, RegisterRequest } from '@/api/auth';
-import * as authApi from '@/api/auth';
+import type { LoginRequest, RegisterRequest } from '@/request/auth';
+import * as authApi from '@/request/auth';
 import { useAuthStore } from '@/stores/auth';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
@@ -439,10 +439,8 @@ onMounted(async () => {
   // 初始化滑块位置
   updateSlider(tabs.findIndex(t => t.name === activeTab.value));
 
-  if (isElectron()) {
-    // 获取用户列表
-    await getUserList();
-  }
+  // 获取用户列表
+  await getUserList();
 });
 
 onUnmounted(() => {

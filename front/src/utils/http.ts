@@ -39,9 +39,6 @@ instance.interceptors.response.use(
     if (data.code === 200 || data.code === 0) {
       return response; // 返回完整的响应对象
     } else {
-      // 业务错误处理
-      console.error('API Error:', data.message);
-
       return Promise.reject(new Error(data.message || '请求失败'));
     }
   },

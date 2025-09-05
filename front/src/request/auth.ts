@@ -1,5 +1,5 @@
-import type { ApiResponse } from './request';
-import { get, post } from './request';
+import type { ApiResponse } from '../utils/http';
+import { get, post } from '../utils/http';
 
 /**
  * 认证相关API

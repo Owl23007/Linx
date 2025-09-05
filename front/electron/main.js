@@ -61,17 +61,15 @@ class ElectronApp {
     });
 
     // 在应用退出前关闭数据库连接
-    app.on('before-quit', async () => {
+    app.on('before-quit', async function() {
       try {
-        logger.info('DATABASE_CLOSE', '正在关闭数据库连接...');
-        await databaseService.close();
+        await this.databaseManager.close();
         logger.info('DATABASE_CLOSE', '数据库连接已关闭');
-        //  await this.keytarManager.deleteInstance(this.keytarManager.getCurrentInstanceId());
       } catch (error) {
         const err = error instanceof Error ? error : new Error(error);
         await logger.error('DATABASE_CLOSE', err);
       }
-    });
+    }.bind(this));
 
     // macOS 点击 dock 图标时重新创建窗口
     app.on('activate', () => {
