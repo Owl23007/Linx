@@ -45,7 +45,16 @@ const LOG_LEVELS = {
 };
 
 class Logger {
+  // 添加静态实例变量，确保单例
+  static instance = null;
+
   constructor() {
+    // 如果已有实例，返回现有实例
+    if (Logger.instance) {
+      return Logger.instance;
+    }
+    Logger.instance = this;
+
     this.logPath = null;
     this.errorLogPath = null;
     this.currentLogPath = null;
@@ -452,14 +461,7 @@ Node.js Version: ${logInfo.nodeVersion}
    */
   async showErrorDialog(type, error) {
     try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[ErrorHandler] Starting to show error dialog');
-      }
       const logPath = this.getLogPath();
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[ErrorHandler] Calling dialog.showMessageBox');
-      }
       const result = await dialog.showMessageBox({
         type: 'error',
         title: '应用程序错误',
@@ -470,10 +472,6 @@ Node.js Version: ${logInfo.nodeVersion}
         cancelId: 0,
         noLink: true
       });
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[ErrorHandler] Dialog result:', result.response);
-      }
 
       // 如果用户选择打开日志
       if (result.response === 1) {
