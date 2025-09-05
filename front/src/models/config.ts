@@ -124,8 +124,8 @@ export class ConfigModel {
     if (json) {
       try {
         config.updateConfig(json);
-      } catch (error) {
-        console.warn('配置数据无效，使用默认配置:', error);
+      } catch  {
+        // 忽略无效配置，保持默认值
       }
     }
 

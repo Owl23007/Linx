@@ -25,3 +25,7 @@ release
 *.njsproj
 *.sln
 *.sw?
+
+# linx
+*.linx
+*.backup

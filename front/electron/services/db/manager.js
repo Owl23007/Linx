@@ -11,10 +11,7 @@ const __dirname = path.dirname(__filename);
 class DatabaseManager {
   constructor() {
     this.db = null;
-
-    // 获取用户数据目录
-    const userDataPath = app.getPath('userData');
-    this.dbPath = path.join(userDataPath, 'linx.db');
+    this.dbPath = path.join(app.getPath('userData'), 'AppData', 'db', 'linx.db');
 
     // 确保目录存在
     const dbDir = path.dirname(this.dbPath);

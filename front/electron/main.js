@@ -25,13 +25,13 @@ class ElectronApp {
 
         logger.info('APP_STARTUP', '应用程序启动中...');
 
-        // 初始化数据库服务
-        await databaseService.init();
-        logger.info('DATABASE_INIT', '数据库初始化成功');
-
         // 初始化密钥管理器
         await this.keytarManager.init();
         logger.info('KEYTAR_INIT', '密钥管理器初始化成功');
+
+        // 初始化数据库服务
+        await databaseService.init();
+        logger.info('DATABASE_INIT', '数据库初始化成功');
 
         // 创建认证窗口
         this.windowManager.createAuthWindow();
@@ -65,6 +65,7 @@ class ElectronApp {
         logger.info('DATABASE_CLOSE', '正在关闭数据库连接...');
         await databaseService.close();
         logger.info('DATABASE_CLOSE', '数据库连接已关闭');
+        //  await this.keytarManager.deleteInstance(this.keytarManager.getCurrentInstanceId());
       } catch (error) {
         const err = error instanceof Error ? error : new Error(error);
         await logger.error('DATABASE_CLOSE', err);

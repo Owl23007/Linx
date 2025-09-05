@@ -2,304 +2,310 @@ import crypto from 'crypto';
 import { app } from 'electron';
 import fs from 'fs';
 import keytar from 'keytar';
-import { join } from 'path';
+import path from 'path';
 
 import { aesDecrypt, aesEncrypt, generateSalt, hashWithSalt } from '../utils/secret.js';
 
 // ================ 路径配置 ================
-const appDataPath = app.getPath('userData'); // 用户数据目录（自动用户隔离）
-const appPath = app.getAppPath();           // 应用安装路径（区分不同副本）
+const appDataPath = app.getPath('userData');
 
-// instance.id 存储路径（优先级：安装目录 > 用户数据）
-const INSTANCE_ID_DIRS = [
-  join(appPath, '.linx'),           // 安装内（只读，优先级高）
-  join(appPath, '.backup'),         // 安装内备份目录（只读，优先级高）
-  join(appDataPath, '.linx'),       // 用户数据（可写）
-  join(appDataPath, '.backup')
-];
+// 当前项目中标识当前实例
+const CURRENT_INSTANCE_FILE = path.join(appDataPath, 'AppData', 'instance.id');
 
-// Keytar 凭据标识
-const KEYTAR_SERVICE = 'LinxAppMainKEK';            // 服务名
-const KEYTAR_ACCOUNT_MAIN_KEK = 'mainKEK';          // 主密钥
-const KEYTAR_ACCOUNT_INSTANCE_ID = 'instanceId';    // instanceId 缓存
+// 用户数据目录下的多实例管理
+const USER_DATA_LINX = path.join(appDataPath, 'AppData');
+const INSTANCES_DIR = path.join(USER_DATA_LINX, 'instances'); // 所有 instanceId（加密存储）
+const DB_ROOT = path.join(USER_DATA_LINX, 'db');               // 数据库存放根目录
 
-// 文件名
-const INSTANCE_ID_FILE = 'instance.id';             // 加密存储 instanceId
+// Keytar 凭据
+const KEYTAR_SERVICE = 'LinxAppMainKEK';
+const KEYTAR_ACCOUNT_MAIN_KEK = 'mainKEK'; // 全局主密钥
 
-// ================ 工具函数 ================
-/**
- * 生成安装唯一的 instanceId
- * 基于：用户路径 + 安装路径 + 随机盐（首次生成）
- */
-function generateInstanceId() {
-  const fingerprint = `${appDataPath}:${appPath}`;
-  const salt = generateSalt();
-
-  return hashWithSalt(fingerprint, salt);
-}
-
-/**
- * 推导用于加密 instance.id 文件的密钥
- */
-function deriveFileEncryptionKey(instanceId) {
-  return hashWithSalt(instanceId, 'instance-id-file-encryption-salt-v1');
-}
-
-/**
- * 确保目录存在
- */
+// 工具函数
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+/**
+ * 生成 instanceId 的短哈希（用于路径命名）
+ */
+function getInstanceIdHash(instanceId) {
+  return crypto.createHash('sha256').update(Buffer.from(instanceId, 'utf8')).digest('hex').slice(0, 16);
+}
+
 // ================ 核心类 ================
 class KeytarManager {
-  /**
-   * 构造函数
-   * @param {Object} logger - 日志对象，支持 info/warn/error
-   */
   constructor(logger = console) {
     this.Logger = logger;
-    this._mainKEK = null; // 内存缓存主密钥（绝不明文持久化）
+    this._mainKEK = null;     // mainKEK（Buffer）
+    this._instanceId = null;  // 当前实例 ID（Buffer）
   }
 
-  // ================ 对外统一入口：init ================
-  /**
-   * 初始化或加载主密钥
-   * 外部只需调用一次 init()，内部自动判断是否首次运行
-   * 成功后可通过 getMainKEK() 获取主密钥
-   *
-   * @returns {Promise<{ mainKEK: string, instanceId: string, isNew: boolean }>}
-   */
+  // ================ 1. 初始化 mainKEK ================
   async init() {
     try {
-      const isInitialized = await this._isInitialized();
+      const mainKEK = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK);
+      const isNew = !mainKEK;
 
-      if (!isInitialized) {
-        return await this._initialize();
+      if (!mainKEK) {
+        const newMainKEK = crypto.randomBytes(32);
+        await keytar.setPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK, newMainKEK.toString('hex'));
+        this._mainKEK = newMainKEK;
+        this.Logger.info('KEYTAR_INIT', 'mainKEK 已生成');
       } else {
-        const mainKEK = await this._loadMainKEK();
-        const instanceId = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_INSTANCE_ID);
-        this._mainKEK = mainKEK;
-
-        this.Logger.info('KEYTAR_INIT', `已加载现有环境（instance: ${instanceId.slice(0, 8)}...）`);
-
-        return { mainKEK, instanceId, isNew: false };
+        this._mainKEK = Buffer.from(mainKEK, 'hex');
+        this.Logger.info('KEYTAR_INIT', 'mainKEK 已加载');
       }
+
+      return { mainKEK: this._mainKEK.toString('hex'), isNew };
     } catch (error) {
       this.Logger.error('KEYTAR_INIT', `初始化失败: ${error.message}`);
       throw error;
     }
   }
 
-  // ================ 内部：状态检查 ================
+  // ================ 2. 随机生成 instanceId ================
   /**
-   * 检查是否已完成初始化
-   * 条件：keytar 中存在 mainKEK 且至少一个 instance.id 文件存在
+   * 生成一个完全随机的 instanceId
    */
-  async _isInitialized() {
-    const hasMainKEK = !!(await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK));
-    const hasInstanceIdFile = INSTANCE_ID_DIRS.some(dir =>
-      fs.existsSync(join(dir, INSTANCE_ID_FILE))
+  _generateRandomInstanceId() {
+    return crypto.randomBytes(32); // 返回 Buffer
+  }
+
+  // ================ 3. 读取当前 instanceId ================
+  async _readCurrentInstanceId() {
+    if (!fs.existsSync(CURRENT_INSTANCE_FILE)) {
+      this.Logger.info('INSTANCE', 'instance.id 文件不存在');
+
+      return null;
+    }
+
+    try {
+      const content = fs.readFileSync(CURRENT_INSTANCE_FILE, 'utf8').trim();
+      const parts = content.split('|');
+      if (parts.length !== 3) {
+        this.Logger.warn('INSTANCE', `instance.id 格式错误: ${content}`);
+
+        return null;
+      }
+      const [salt, storedHash, encrypted] = parts;
+      const decrypted = aesDecrypt(Buffer.from(encrypted, 'hex'), this._mainKEK);
+      const computedHash = hashWithSalt(decrypted, Buffer.from(salt, 'hex'));
+      const storedHashBuffer = Buffer.from(storedHash, 'hex');
+      if (Buffer.from(computedHash, 'hex').equals(storedHashBuffer)) {
+        return decrypted;
+      } else {
+        this.Logger.warn('INSTANCE', '哈希验证失败');
+
+        return null;
+      }
+    } catch (err) {
+      this.Logger.warn('INSTANCE', `读取 instance.id 失败: ${err.message}`);
+
+      return null;
+    }
+  }
+
+  // ================ 4. 创建新实例 ================
+  async _createNewInstance() {
+    const instanceId = this._generateRandomInstanceId();
+
+    // 加密保存到当前项目
+    const encSalt = generateSalt();
+    const hash = hashWithSalt(instanceId, encSalt);
+    const encrypted = aesEncrypt(instanceId, this._mainKEK);
+    const content = `${encSalt.toString('hex')}|${hash.toString('hex')}|${encrypted.toString('hex')}`;
+
+    ensureDir(path.dirname(CURRENT_INSTANCE_FILE));
+    fs.writeFileSync(CURRENT_INSTANCE_FILE, content, 'utf8');
+
+    this.Logger.info('INSTANCE', `新实例已创建: ${instanceId.toString('hex').slice(0, 8)}...`);
+
+    return instanceId;
+  }
+
+  // ================ 5. 注册 instanceId 到 userData ================
+  async _registerInstance(instanceId) {
+    ensureDir(INSTANCES_DIR);
+    const files = fs.readdirSync(INSTANCES_DIR);
+
+    for (const file of files) {
+      const filePath = path.join(INSTANCES_DIR, file);
+      try {
+        const encrypted = fs.readFileSync(filePath, 'utf8');
+        const existingId = aesDecrypt(Buffer.from(encrypted, 'hex'), this._mainKEK);
+        if (existingId.equals(instanceId)) return; // 已存在
+      } catch { /* 忽略损坏文件 */ }
+    }
+
+    // 不存在才写入
+    const encrypted = aesEncrypt(instanceId, this._mainKEK);
+    fs.writeFileSync(
+      path.join(INSTANCES_DIR, instanceId.slice(0,16).toString('hex')),
+      encrypted.toString('hex'),
+      'utf8'
+    );
+  }
+
+  // ================ 6. 加载当前实例 ================
+  /**
+   * 加载当前运行环境的 instanceId
+   * - 优先从 AppData/instance.id 读
+   * - 若无，则生成新实例
+   */
+  async loadCurrentInstance() {
+    try {
+      let instanceId = await this._readCurrentInstanceId();
+
+      if (!instanceId) {
+        instanceId = await this._createNewInstance();
+      }
+
+      // 注册到全局实例列表
+      await this._registerInstance(instanceId);
+
+      this._instanceId = instanceId;
+      this.Logger.info('INSTANCE', `当前实例已加载: ${instanceId.toString('hex').slice(0, 8)}...`);
+
+      return instanceId.toString('hex');
+    } catch (error) {
+      this.Logger.error('INSTANCE', `加载实例失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // ================ 7. 列出所有已知实例 ================
+  /**
+   * 获取所有已注册的 instanceId（用于切换实例）
+   */
+  async listAllInstances() {
+    if (!fs.existsSync(INSTANCES_DIR)) return [];
+
+    const files = fs.readdirSync(INSTANCES_DIR);
+    const instances = [];
+
+    for (const file of files) {
+      try {
+        const filePath = path.join(INSTANCES_DIR, file);
+        const encrypted = fs.readFileSync(filePath, 'utf8');
+        const instanceId = aesDecrypt(Buffer.from(encrypted, 'hex'), this._mainKEK);
+        instances.push(instanceId.toString('hex'));
+      } catch (err) {
+        this.Logger.warn('INSTANCE', `跳过无效实例文件 ${file}: ${err.message}`);
+      }
+    }
+
+    return instances;
+  }
+
+  // ================ 8. 获取数据库路径 ================
+  getDatabaseDir() {
+    if (!this._instanceId) throw new Error('未加载实例');
+    const hash = getInstanceIdHash(this._instanceId.toString('hex'));
+
+    return path.join(DB_ROOT, hash);
+  }
+
+  getDatabasePath() {
+    return path.join(this.getDatabaseDir(), 'data.db');
+  }
+
+  ensureDatabaseDir() {
+    ensureDir(this.getDatabaseDir());
+  }
+
+  // ================ 9. 派生用户密钥（绑定实例） ================
+  /**
+   * 为用户生成绑定当前实例的 userKEK
+   * 防止跨实例使用
+   */
+  deriveUserKEK(userId) {
+    if (!this._instanceId) throw new Error('未加载实例');
+    const id = userId ? Buffer.from(String(userId).trim(), 'utf8') : Buffer.from('default', 'utf8');
+
+    const info = Buffer.concat([
+      Buffer.from('userKEK:', 'utf8'),
+      this._instanceId,
+      Buffer.from(':', 'utf8'),
+      id
+    ]);
+    const derived = crypto.hkdfSync('sha256',
+      this._mainKEK,
+      Buffer.from('linx-user-key-salt-v1', 'utf8'),
+      info,
+      32
     );
 
-    return hasMainKEK && hasInstanceIdFile;
+    return derived.toString('hex');
   }
 
-  // ================ 内部：首次初始化 ================
+  // ================ 10. 获取当前 instanceId ================
+  getCurrentInstanceId() {
+    return this._instanceId ? this._instanceId.toString('hex') : null;
+  }
+
+  // ================ 11. 重置当前实例数据（不清除 mainKEK） ================
+  async resetCurrentInstanceData() {
+    if (!this._instanceId) return;
+
+    const dbDir = this.getDatabaseDir();
+    if (fs.existsSync(dbDir)) {
+      fs.rmSync(dbDir, { recursive: true });
+    }
+
+    this.Logger.info('RESET', `实例 ${this._instanceId.toString('hex').slice(0, 8)}... 的数据已清除`);
+  }
+
+  // ================ 12. 删除指定实例 ================
   /**
-   * 首次运行：生成 instanceId 和 mainKEK
+   * 删除指定的实例（从实例列表中移除，并可选清除其数据库）
+   * @param {string} instanceIdHex - 要删除的实例 ID（十六进制字符串）
+   * @param {boolean} [clearData=true] - 是否同时清除数据库数据
    */
-  async _initialize() {
-    this.Logger.info('KEYTAR_INIT', '正在初始化新环境...');
+  async deleteInstance(instanceIdHex, clearData = true) {
+    if (!instanceIdHex) throw new Error('实例 ID 不能为空');
 
-    // 1. 生成唯一 instanceId（绑定用户 + 安装路径）
-    const instanceId = generateInstanceId();
+    const instanceId = Buffer.from(instanceIdHex, 'hex');
+    const fileName = instanceId.slice(0, 16).toString('hex');
+    const filePath = path.join(INSTANCES_DIR, fileName);
 
-    // 2. 生成主密钥加密密钥（mainKEK）
-    const mainKEK = crypto.randomBytes(32).toString('hex');
+    // 检查文件是否存在
+    if (!fs.existsSync(filePath)) {
+      this.Logger.warn('DELETE_INSTANCE', `实例文件不存在: ${fileName}`);
 
-    // 3. 加密 instanceId 并写入多路径
-    const fileEncryptionKey = deriveFileEncryptionKey(instanceId);
-    const salt = generateSalt();
-    const hash = hashWithSalt(instanceId, salt);
-    const encryptedInstanceId = aesEncrypt(instanceId, fileEncryptionKey);
-    const content = `${salt}|${hash}|${encryptedInstanceId}`;
+      return false;
+    }
 
-    for (const dir of INSTANCE_ID_DIRS) {
-      try {
-        ensureDir(dir);
-        const filePath = join(dir, INSTANCE_ID_FILE);
-        fs.writeFileSync(filePath, content, 'utf8');
-        this.Logger.info('KEYTAR_INIT', `已写入 instance.id: ${filePath}`);
-      } catch (err) {
-        this.Logger.warn('KEYTAR_INIT', `无法写入路径 ${dir}: ${err.message}`);
+    try {
+      // 验证文件内容是否匹配
+      const encrypted = fs.readFileSync(filePath, 'utf8');
+      const storedId = aesDecrypt(Buffer.from(encrypted, 'hex'), this._mainKEK);
+      if (!storedId.equals(instanceId)) {
+        this.Logger.warn('DELETE_INSTANCE', `实例文件内容不匹配: ${fileName}`);
+
+        return false;
       }
-    }
 
-    // 4. 将密钥安全存入系统凭据（keytar）
-    await keytar.setPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK, mainKEK);
-    await keytar.setPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_INSTANCE_ID, instanceId);
+      // 删除实例文件
+      fs.unlinkSync(filePath);
+      this.Logger.info('DELETE_INSTANCE', `实例文件已删除: ${fileName}`);
 
-    this.Logger.info('KEYTAR_INIT', '初始化完成：KEK 与 instanceId 已生成并保护');
-    this._mainKEK = mainKEK;
-
-    return { mainKEK, instanceId, isNew: true };
-  }
-
-  // ================ 内部：常规加载 ================
-  /**
-   * 加载已有的 mainKEK 并验证 instance.id 完整性
-   */
-  async _loadMainKEK() {
-    const mainKEK = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK);
-    if (!mainKEK) {
-      throw new Error('mainKEK 不存在，凭据丢失');
-    }
-
-    const storedInstanceId = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_INSTANCE_ID);
-    if (!storedInstanceId) {
-      throw new Error('instanceId 缓存丢失，初始化不完整');
-    }
-
-    // 验证本地 instance.id 是否匹配（防篡改/复制）
-    const recoveredInstanceId = await this._recoverInstanceId();
-    if (recoveredInstanceId !== storedInstanceId) {
-      throw new Error('instance.id 验证失败！应用可能被复制或篡改');
-    }
-
-    return mainKEK;
-  }
-
-  /**
-   * 从 instance.id 文件恢复 instanceId
-   */
-  async _recoverInstanceId() {
-    for (const dir of INSTANCE_ID_DIRS) {
-      const filePath = join(dir, INSTANCE_ID_FILE);
-      if (!fs.existsSync(filePath)) continue;
-
-      try {
-        const content = fs.readFileSync(filePath, 'utf8').trim();
-        const [salt, storedHash, encrypted] = content.split('|');
-        if (!salt || !storedHash || !encrypted) continue;
-
-        // 尝试用缓存的 instanceId 推导密钥来解密（验证一致性）
-        let decrypted;
-        try {
-          const knownInstanceId = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_INSTANCE_ID);
-          const encryptionKey = deriveFileEncryptionKey(knownInstanceId);
-          decrypted = aesDecrypt(encrypted, encryptionKey);
-        } catch {
-          continue;
+      // 如果需要清除数据
+      if (clearData) {
+        const hash = getInstanceIdHash(instanceIdHex);
+        const dbDir = path.join(DB_ROOT, hash);
+        if (fs.existsSync(dbDir)) {
+          fs.rmSync(dbDir, { recursive: true });
+          this.Logger.info('DELETE_INSTANCE', `实例数据库已清除: ${hash}`);
         }
-
-        const computedHash = hashWithSalt(decrypted, salt);
-        if (computedHash === storedHash) {
-          this.Logger.info('KEYTAR_INIT', `验证通过（来源: ${dir}）`);
-
-          return decrypted;
-        }
-      } catch (err) {
-        this.Logger.warn('KEYTAR_INIT', `验证失败 ${filePath}: ${err.message}`);
       }
+
+      return true;
+    } catch (error) {
+      this.Logger.error('DELETE_INSTANCE', `删除实例失败: ${error.message}`);
+
+      return false;
     }
-
-    throw new Error('未找到有效的 instance.id');
-  }
-
-  // ================ 对外：获取主密钥 ================
-  /**
-   * 获取主密钥（必须先调用 init）
-   * @returns {string} mainKEK
-   */
-  getMainKEK() {
-    if (!this._mainKEK) {
-      throw new Error('主密钥未加载，请先调用 init()');
-    }
-
-    return this._mainKEK;
-  }
-
-  // ================ 业务密钥操作 ================
-  /**
-   * 对 userId 做 SHA-256 哈希（十六进制），避免在凭据中泄露明文 userId
-   * @param {string} id
-   * @returns {string}
-   */
-  hashUserId(id) {
-    return crypto.createHash('sha256').update(id, 'utf8').digest('hex');
-  }
-
-  /**
-   * 将 userId 映射为 keytar 中的 account 名称
-   * - 未提供 userId（undefined/null/''）：使用 'userMainKey:default'（兼容默认行为）
-   * - 提供 userId：对 userId 做哈希后使用 'userMainKey:{hash}'
-   *
-   * @param {string} [userId]
-   * @returns {string} account
-   */
-  userAccount(userId) {
-    if (typeof userId === 'undefined' || userId === null || String(userId).trim() === '') {
-      return 'userMainKey:default';
-    }
-
-    const id = String(userId).trim();
-    const idHash = this.hashUserId(id);
-
-    return `userMainKey:${idHash}`;
-  }
-
-  /**
-   * 设置用户主密钥（如登录 token），支持按 userId 保存（默认 userId='default'）
-   * @param {string} key
-   * @param {string} [userId] 可选，用户标识
-   */
-  async setMainKey(key, userId) {
-    if (typeof key !== 'string') throw new TypeError('密钥必须是字符串');
-    const account = this.userAccount(userId);
-    await keytar.setPassword(KEYTAR_SERVICE, account, key);
-    this.Logger.info('KEYTAR', `用户主密钥已保存（account=${account}）`);
-  }
-
-  /**
-   * 获取用户主密钥（可按 userId 获取，默认 userId='default'）
-   * @param {string} [userId]
-   * @returns {Promise<string|null>}
-   */
-  async getMainKey(userId) {
-    const account = this.userAccount(userId);
-    const key = await keytar.getPassword(KEYTAR_SERVICE, account);
-    if (!key) this.Logger.warn('KEYTAR', `用户主密钥未设置（account=${account}）`);
-
-    return key;
-  }
-
-  /**
-   * 清除用户主密钥（支持按 userId，默认 userId='default'）
-   * @param {string} [userId]
-   */
-  async clearMainKey(userId) {
-    const account = this.userAccount(userId);
-    await keytar.deletePassword(KEYTAR_SERVICE, account);
-    this.Logger.info('KEYTAR', `用户主密钥已清除（account=${account}）`);
-  }
-
-  /**
-   * 重置所有凭据（用于登出或重装）
-   */
-  async reset() {
-    // 删除主 KEK 与 instanceId
-    await keytar.deletePassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK);
-    await keytar.deletePassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_INSTANCE_ID);
-    // 向后兼容：尝试删除旧命名
-    await keytar.deletePassword(KEYTAR_SERVICE, 'userMainKey').catch(() => {});
-    // 向后兼容：旧的未哈希默认用户命名
-    await keytar.deletePassword(KEYTAR_SERVICE, 'userMainKey:default').catch(() => {});
-    // 删除新的哈希命名的默认用户（如果 userAccount('default') 产生哈希名）
-    await keytar.deletePassword(KEYTAR_SERVICE, this.userAccount('default')).catch(() => {});
-    this._mainKEK = null;
-    this.Logger.info('KEYTAR_RESET', '所有凭据已清除（包含历史命名与哈希命名）');
   }
 }
 

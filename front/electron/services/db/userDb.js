@@ -1,4 +1,4 @@
-export default class UserDb {
+export class UserDb {
   constructor(dbInstance) {
     this.dbInstance = dbInstance;
   }

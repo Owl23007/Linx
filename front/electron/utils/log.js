@@ -326,7 +326,7 @@ class Logger {
    */
   createLogEntry(level, tag, message, context = {}) {
     return {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toLocaleString(),
       level,
       tag,
       message,
@@ -570,7 +570,7 @@ Node.js Version: ${logInfo.nodeVersion}
           };
         } catch (error) {
           if (process.env.NODE_ENV === 'development') {
-            console.error(`[Logger] 获取文件信息失败 ${file}:`, error);
+            console.error(`[ERROR][Logger] 获取文件信息失败 ${file}:`, error);
           }
 
           return null;
@@ -579,7 +579,7 @@ Node.js Version: ${logInfo.nodeVersion}
         .sort((a, b) => a.timestamp - b.timestamp); // 按时间戳排序，最旧的在前
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[Logger] 找到 ${fileInfos.length} 个时间戳日志文件`);
+        console.log(`[INFO][Logger] 找到 ${fileInfos.length} 个时间戳日志文件`);
       }
 
       // 1. 删除超过指定天数的文件（基于文件名中的时间戳）
@@ -589,12 +589,12 @@ Node.js Version: ${logInfo.nodeVersion}
           try {
             fs.unlinkSync(fileInfo.path);
             if (process.env.NODE_ENV === 'development') {
-              console.log(`[Logger] 已删除过期日志文件: ${fileInfo.name}`);
+              console.log(`[INFO][Logger] 已删除过期日志文件: ${fileInfo.name}`);
             }
             deletedCount++;
           } catch (error) {
             if (process.env.NODE_ENV === 'development') {
-              console.error(`[Logger] 删除过期文件失败 ${fileInfo.name}:`, error);
+              console.error(`[ERROR][Logger] 删除过期文件失败 ${fileInfo.name}:`, error);
             }
           }
         }
@@ -610,24 +610,24 @@ Node.js Version: ${logInfo.nodeVersion}
           try {
             fs.unlinkSync(fileInfo.path);
             if (process.env.NODE_ENV === 'development') {
-              console.log(`[Logger] 已删除超出数量限制的日志文件: ${fileInfo.name}`);
+              console.log(`[INFO][Logger] 已删除超出数量限制的日志文件: ${fileInfo.name}`);
             }
             deletedCount++;
           } catch (error) {
             if (process.env.NODE_ENV === 'development') {
-              console.error(`[Logger] 删除文件失败 ${fileInfo.name}:`, error);
+              console.error(`[ERROR][Logger] 删除文件失败 ${fileInfo.name}:`, error);
             }
           }
         });
       }
 
       if (deletedCount > 0 && process.env.NODE_ENV === 'development') {
-        console.log(`[Logger] 总共删除了 ${deletedCount} 个日志文件`);
+        console.log(`[INFO][Logger] 总共删除了 ${deletedCount} 个日志文件`);
       }
 
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('[Logger] 清理旧日志失败:', error);
+        console.error('[ERROR][Logger] 清理旧日志失败:', error);
       }
     }
   }
