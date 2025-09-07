@@ -17,7 +17,6 @@ class KeytarManager {
   async init() {
     try {
       const mainKEK = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK);
-      const isNew = !mainKEK;
 
       if (!mainKEK) {
         const newMainKEK = crypto.randomBytes(32);
@@ -28,8 +27,6 @@ class KeytarManager {
         this._mainKEK = Buffer.from(mainKEK, 'hex');
         this.Logger.info('KEYTAR_INIT', 'mainKEK 已加载');
       }
-
-      return { mainKEK: this._mainKEK.toString('hex'), isNew };
     } catch (error) {
       this.Logger.error('KEYTAR_INIT', `初始化失败: ${error.message}`);
       throw error;

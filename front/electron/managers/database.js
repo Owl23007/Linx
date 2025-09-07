@@ -3,6 +3,7 @@ import path from 'path';
 import sqlite3 from 'sqlite3';
 
 class DatabaseManager {
+
   constructor(logger = console,keytarManager) {
     this.Logger = logger;
     this.keytarManager = keytarManager;
@@ -10,12 +11,12 @@ class DatabaseManager {
     this.userDatabases = new Map(); // 缓存用户数据库连接
   }
 
+  async getInstance() {
+    return this.appDb;
+  }
+
   // ================ 1. 初始化 ================
   async init() {
-    // 初始化keytar管理器
-    await this.keytarManager.init();
-
-    // 初始化App级别数据库
     await this.initAppDatabase();
 
     this.Logger.info('DATABASE_MANAGER', '数据库管理器初始化完成');
@@ -278,6 +279,10 @@ class DatabaseManager {
       this.appDb = null;
       this.Logger.info('CLOSE', 'App数据库连接已关闭');
     }
+  }
+
+  getAppDb() {
+    return this.appDb;
   }
 }
 

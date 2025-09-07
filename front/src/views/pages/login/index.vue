@@ -175,6 +175,7 @@
 // ========== 导入依赖 ==========
 import type { LoginRequest, RegisterRequest } from '@/request/auth';
 import * as authApi from '@/request/auth';
+import { getUserList } from '@/request/userLocal';
 import { useAuthStore } from '@/stores/auth';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
@@ -418,14 +419,6 @@ async function handleRegister(): Promise<void> {
   }
 }
 
-async function getUserList(): Promise<void> {
-  try {
-    // await authApi.getUserList();
-  } catch {
-    // 忽略错误
-  }
-}
-
 // ========== 生命周期 ==========
 onMounted(async () => {
   // 初始化拖动功能
@@ -438,6 +431,9 @@ onMounted(async () => {
 
   // 初始化滑块位置
   updateSlider(tabs.findIndex(t => t.name === activeTab.value));
+
+  // 设置默认服务器地址
+  serverUrl.value = import.meta.env.VITE_API_BASE_URL || 'loclalhost:8080';
 
   // 获取用户列表
   await getUserList();

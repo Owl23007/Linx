@@ -10,10 +10,10 @@ class IpcManager {
   /**
    * 设置所有 IPC 处理器
    */
-  setupHandlers() {
+  setupHandlers(appDb) {
     setupWindowHandlers(this.windowManager);
     setupDragHandlers();
-    setupUserHandlers();
+    setupUserHandlers(appDb);
   }
 }
 

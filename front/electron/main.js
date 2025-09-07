@@ -8,22 +8,18 @@ import { logger } from './utils/log.js';
 class ElectronApp {
   constructor() {
     this.windowManager = new WindowManager();
-    this.ipcManager = new IpcManager(this.windowManager);
     this.keytarManager = new KeytarManager(logger);
-    this.databaseManager = new DatabaseManager(logger,this.keytarManager);
+    this.databaseManager = new DatabaseManager(logger, this.keytarManager);
+    this.ipcManager = new IpcManager(this.windowManager);
   }
 
   async init() {
     // 禁用应用程序菜单
     Menu.setApplicationMenu(null);
 
-    // 设置 IPC 处理器
-    this.ipcManager.setupHandlers();
-
     // 应用准备就绪时创建窗口和初始化数据库
     app.whenReady().then(async () => {
       try {
-
         logger.info('APP_STARTUP', '应用程序启动中...');
 
         // 初始化密钥管理器
@@ -33,6 +29,9 @@ class ElectronApp {
         // 初始化数据库服务
         await this.databaseManager.init();
         logger.info('DATABASE_INIT', '数据库初始化成功');
+
+        // 创建 IPC 管理器
+        this.ipcManager.setupHandlers(this.databaseManager.appDb);
 
         // 创建认证窗口
         this.windowManager.createAuthWindow();
