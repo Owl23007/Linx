@@ -5,6 +5,7 @@ create table if not exists user (
     username varchar(50) not null,
     nickname varchar(50) not null,
     avatar_url varchar(255),
+    refresh_token varchar(255) not null,
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp,
     unique(server_url, username)

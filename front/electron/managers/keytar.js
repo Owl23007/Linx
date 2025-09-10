@@ -16,6 +16,7 @@ class KeytarManager {
   constructor(logger = console) {
     this.Logger = logger;
     this._mainKEK = null;     // mainKEK（Buffer）
+    this._deviceId = null;  // 设备标识（字符串）
   }
 
   // ================ 1. 初始化 mainKEK ================
@@ -74,12 +75,17 @@ class KeytarManager {
   async storeUserCredential(userId, key, value) {
     if (!userId || !key) throw new Error('用户ID和密钥不能为空');
 
-    const service = `linx-user-${userId}`;
+    const deviceId = this.getDeviceId();
+    const service = `linx-user-${userId}-${deviceId}`;
+    const encryptData = aesEncrypt(Buffer.from(value, 'utf8'), this._mainKEK);
+    // hash keytar 服务和账号名
+    const hashedService = hashWithSalt(service, 'linx-user-dek-salt-v1');
+
     const account = key;
 
     try {
-      await keytar.setPassword(service, account, value);
-      this.Logger.info('STORE_CREDENTIAL', `用户 ${userId} 凭据 ${key} 已存储`);
+      await keytar.setPassword(hashedService, account, encryptData);
+      this.Logger.info('STORE_CREDENTIAL', '用户凭据已存储');
     } catch (error) {
       this.Logger.error('STORE_CREDENTIAL', `存储凭据失败: ${error.message}`);
       throw error;
@@ -128,6 +134,8 @@ class KeytarManager {
   getDeviceId() {
     if (!this._mainKEK) throw new Error('mainKEK未初始化');
 
+    if (this._deviceId) return this._deviceId;
+
     // 从cwd获取唯一标识
     const cwd = process.cwd();
     const filePath = path.join(cwd, '.linx_id');
@@ -149,7 +157,9 @@ class KeytarManager {
           const rewServiceId = aesDecrypt(Buffer.from(encryptData, 'hex'), this._mainKEK);
           const computedHash = hashWithSalt(data, hashSalt);
           if (computedHash === hashedValue) {
-            return rewServiceId.toString('hex');
+            this._deviceId = rewServiceId;
+
+            return rewServiceId; // 返回设备标识
           }
         } catch (error) {
           this.Logger.warn('DEVICE_ID', `验证设备标识失败: ${error.message}`);
@@ -160,6 +170,8 @@ class KeytarManager {
     // 创建并保存设备标识
     const deviceId = this.generateDeviceId();
     SaveToFile(filePath, deviceId);
+
+    this._deviceId = deviceId;
 
     return deviceId;
   }
