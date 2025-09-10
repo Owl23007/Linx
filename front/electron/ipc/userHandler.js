@@ -1,21 +1,19 @@
 import { ipcMain } from 'electron';
 import KeytarManager from '../managers/keytar.js';
-import UserDb from '../services/db/userDb.js';
 
 let userDb = null;
 let keytarManager = null;
 
 /**
  * 设置用户相关的IPC处理器
- * @param {object} appDb - 应用数据库实例
  */
-export function setupUserHandlers(appDb) {
+export function setupUserHandlers() {
   // 初始化KeytarManager
   keytarManager = new KeytarManager();
   keytarManager.init().catch(console.error);
 
   // 初始化UserDb
-  userDb = new UserDb(appDb, keytarManager);
+  //userDb = new UserDb(appDb, keytarManager);
 
   // IPC处理器：加密数据
   ipcMain.handle('user:encryptData', async (event, { userId, server, data }) => {

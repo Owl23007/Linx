@@ -29,3 +29,5 @@ release
 # linx
 *.linx
 *.backup
+
+.linx_id

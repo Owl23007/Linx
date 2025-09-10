@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3-multiple-ciphers';
 import crypto from 'crypto';
+import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
 
@@ -26,8 +27,13 @@ class DatabaseManager {
   // ================ 2. App级别数据库 ================
   async initAppDatabase() {
     try {
-      const appDbPath = path.join(process.env.USERDATA_PATH || './userData', 'app.db');
+      // get userData path
+      const appDataPath = path.join(app.getPath('userData'), 'UserData');
+      const appDbPath = path.join(appDataPath, 'app.db');
       this.ensureDir(path.dirname(appDbPath));
+
+      // 检查数据库文件是否已存在且可能损坏
+      const dbExists = fs.existsSync(appDbPath);
 
       this.appDb = new Database(appDbPath);
 
@@ -35,6 +41,25 @@ class DatabaseManager {
       const dbPassword = await this.getDatabasePassword('app');
       this.appDb.pragma('cipher = sqlcipher');
       this.appDb.pragma(`key = '${dbPassword}'`);
+
+      try {
+        // 尝试测试数据库连接
+        this.appDb.prepare('SELECT 1').get();
+      } catch (testError) {
+        if (testError.code === 'SQLITE_NOTADB' && dbExists) {
+          // 数据库文件损坏，删除并重新创建
+          this.Logger.warn('APP_DB', '检测到损坏的数据库文件，正在删除并重新创建');
+          this.appDb.close();
+          fs.unlinkSync(appDbPath);
+
+          // 重新创建数据库
+          this.appDb = new Database(appDbPath);
+          this.appDb.pragma('cipher = sqlcipher');
+          this.appDb.pragma(`key = '${dbPassword}'`);
+        } else {
+          throw testError;
+        }
+      }
 
       // 读取并执行初始化脚本
       const initScript = await fs.promises.readFile(
@@ -105,15 +130,37 @@ class DatabaseManager {
       return await this.initUserDatabase(userId);
     }
 
-    // 打开已存在的数据库
-    const userDb = new Database(userDbPath);
-    // 设置加密
-    const dbPassword = await this.getDatabasePassword(userId);
-    userDb.pragma('cipher = sqlcipher');
-    userDb.pragma(`key = '${dbPassword}'`);
-    this.userDatabases.set(userId, userDb);
+    try {
+      // 打开已存在的数据库
+      const userDb = new Database(userDbPath);
+      // 设置加密
+      const dbPassword = await this.getDatabasePassword(userId);
+      userDb.pragma('cipher = sqlcipher');
+      userDb.pragma(`key = '${dbPassword}'`);
 
-    return userDb;
+      try {
+        // 测试数据库连接
+        userDb.prepare('SELECT 1').get();
+      } catch (testError) {
+        if (testError.code === 'SQLITE_NOTADB') {
+          // 数据库文件损坏，删除并重新创建
+          this.Logger.warn('USER_DB', `用户 ${userId} 数据库文件损坏，正在重新创建`);
+          userDb.close();
+          fs.unlinkSync(userDbPath);
+
+          return await this.initUserDatabase(userId);
+        } else {
+          throw testError;
+        }
+      }
+
+      this.userDatabases.set(userId, userDb);
+
+      return userDb;
+    } catch (error) {
+      this.Logger.error('USER_DB', `打开用户 ${userId} 数据库失败: ${error.message}`);
+      throw error;
+    }
   }
 
   // ================ 5. 数据加密存储 ================
@@ -231,15 +278,19 @@ class DatabaseManager {
       if (!password) {
         // 生成新密码
         password = this.generateSecurePassword();
+        // 确保密码是字符串类型
+        if (typeof password !== 'string') {
+          password = String(password);
+        }
         await this.keytarManager.storeUserCredential(identifier, account, password);
+        this.Logger.info('DB_PASSWORD', `为 ${identifier} 生成新的数据库密码`);
       }
 
-      return password;
+      // 确保返回字符串
+      return String(password);
     } catch (error) {
       this.Logger.error('DB_PASSWORD', `获取数据库密码失败: ${error.message}`);
-
-      // 回退到默认密码
-      return 'default-fallback-password';
+      throw error;
     }
   }
 

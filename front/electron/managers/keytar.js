@@ -3,8 +3,8 @@ import { app } from 'electron';
 import fs from 'fs';
 import keytar from 'keytar';
 import path from 'path';
-import { loadFromFile, SaveToFile } from '../utils/file';
-import { aesDecrypt, aesEncrypt, generateSalt, hashWithSalt } from '../utils/secret';
+import { loadFromFile, SaveToFile } from '../utils/file.js';
+import { aesDecrypt, aesEncrypt, generateSalt, hashWithSalt } from '../utils/secret.js';
 
 // ================ 全局配置 ================
 // Keytar 凭据
@@ -74,17 +74,21 @@ class KeytarManager {
   // ================ 4. 用户凭据管理 ================
   async storeUserCredential(userId, key, value) {
     if (!userId || !key) throw new Error('用户ID和密钥不能为空');
+    if (!value) throw new Error('值不能为空');
+
+    // 确保 value 是字符串类型
+    const stringValue = typeof value === 'string' ? value : String(value);
 
     const deviceId = this.getDeviceId();
     const service = `linx-user-${userId}-${deviceId}`;
-    const encryptData = aesEncrypt(Buffer.from(value, 'utf8'), this._mainKEK);
+    const encryptData = aesEncrypt(Buffer.from(stringValue, 'utf8'), this._mainKEK);
     // hash keytar 服务和账号名
     const hashedService = hashWithSalt(service, 'linx-user-dek-salt-v1');
 
     const account = key;
 
     try {
-      await keytar.setPassword(hashedService, account, encryptData);
+      await keytar.setPassword(hashedService, account, encryptData.toString('hex'));
       this.Logger.info('STORE_CREDENTIAL', '用户凭据已存储');
     } catch (error) {
       this.Logger.error('STORE_CREDENTIAL', `存储凭据失败: ${error.message}`);
@@ -95,13 +99,23 @@ class KeytarManager {
   async getUserCredential(userId, key) {
     if (!userId || !key) throw new Error('用户ID和密钥不能为空');
 
-    const service = `linx-user-${userId}`;
+    const deviceId = this.getDeviceId();
+    const service = `linx-user-${userId}-${deviceId}`;
+    // hash keytar 服务和账号名，保持与存储时一致
+    const hashedService = hashWithSalt(service, 'linx-user-dek-salt-v1');
     const account = key;
 
     try {
-      const password = await keytar.getPassword(service, account);
+      const encryptedData = await keytar.getPassword(hashedService, account);
 
-      return password;
+      if (!encryptedData) {
+        return null;
+      }
+
+      // 解密数据
+      const decryptedData = aesDecrypt(Buffer.from(encryptedData, 'hex'), this._mainKEK);
+
+      return decryptedData.toString('utf8');
     } catch (error) {
       this.Logger.error('GET_CREDENTIAL', `获取凭据失败: ${error.message}`);
 
@@ -125,7 +139,7 @@ class KeytarManager {
 
       return userDbDir;
     } catch (err) {
-      // 忽略 race 或记录日志
+      // 记录日志
       this.Logger.warn('MKDIR_USER_DB', err.message);
     }
   }
@@ -157,9 +171,9 @@ class KeytarManager {
           const rewServiceId = aesDecrypt(Buffer.from(encryptData, 'hex'), this._mainKEK);
           const computedHash = hashWithSalt(data, hashSalt);
           if (computedHash === hashedValue) {
-            this._deviceId = rewServiceId;
+            this._deviceId = rewServiceId.toString('hex'); // 确保返回字符串格式的设备ID
 
-            return rewServiceId; // 返回设备标识
+            return this._deviceId; // 返回设备标识
           }
         } catch (error) {
           this.Logger.warn('DEVICE_ID', `验证设备标识失败: ${error.message}`);
@@ -168,25 +182,25 @@ class KeytarManager {
     }
 
     // 创建并保存设备标识
-    const deviceId = this.generateDeviceId();
-    SaveToFile(filePath, deviceId);
+    const deviceIdHex = crypto.randomBytes(16).toString('hex');
+    const storageString = this.createDeviceIdStorage(deviceIdHex);
+    SaveToFile(filePath, storageString);
 
-    this._deviceId = deviceId;
+    this._deviceId = deviceIdHex;
 
-    return deviceId;
+    return deviceIdHex;
   }
 
-  // ================ 6. 生成基于KEK的设备标识 ================
-  generateDeviceId() {
+  // ================ 6. 创建设备标识存储格式 ================
+  createDeviceIdStorage(deviceIdHex) {
     if (!this._mainKEK) throw new Error('mainKEK未初始化');
 
-    const deviceId = crypto.randomBytes(16);
-    const data = Buffer.concat([this._mainKEK, deviceId]);
+    const data = Buffer.concat([this._mainKEK, Buffer.from(deviceIdHex, 'hex')]);
 
     const salt = generateSalt();
     const hash = hashWithSalt(data, salt);
 
-    const encryptedData = aesEncrypt(deviceId, this._mainKEK);
+    const encryptedData = aesEncrypt(Buffer.from(deviceIdHex, 'hex'), this._mainKEK);
 
     return `${salt}|${hash}|${encryptedData.toString('hex')}`;
   }

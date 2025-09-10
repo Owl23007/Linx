@@ -27,7 +27,7 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: linx-secret-key-for-development-only-change-in-production
+  secret: secret-key-for-development-only
   expiration: 86400000
 
 # Server Configuration
