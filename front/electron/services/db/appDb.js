@@ -302,7 +302,7 @@ export class AppDb {
   }
 
   /**
-   * 清空所有用户数据 (慎用!)
+   * 清空所有用户数据
    * @returns {Promise<boolean>} 是否清空成功
    */
   async clearAllUsers() {

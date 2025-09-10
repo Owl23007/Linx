@@ -150,30 +150,29 @@ class KeytarManager {
 
     if (this._deviceId) return this._deviceId;
 
-    // 从cwd获取唯一标识
-    const cwd = process.cwd();
-    const filePath = path.join(cwd, '.linx_id');
+    const filePath = path.join(process.cwd(), '.linx_id');
+
     const deviceString = loadFromFile(filePath);
 
     if (deviceString) {
-      // 使用 Buffer.concat 显式连接，避免隐式字符串转换
-      const marker = Buffer.from('forDeviceId', 'utf8');
-      const data = Buffer.concat([this._mainKEK, marker]);
-
       const parts = deviceString.split('|');
       if (parts.length === 3) {
-        const hashSalt = parts[0]; // 取文件内容的前一部分作为盐
-        const hashedValue = parts[1]; // 取文件内容的第二部分作为哈希值
-        const encryptData = parts[2]; // 取文件内容的后一部分作为加密值
+        const hashSalt = parts[0];
+        const hashedValue = parts[1];
+        const encryptData = parts[2];
 
         try {
-          // 反向推导服务标识
+        // 解密得到 deviceId
           const rewServiceId = aesDecrypt(Buffer.from(encryptData, 'hex'), this._mainKEK);
-          const computedHash = hashWithSalt(data, hashSalt);
-          if (computedHash === hashedValue) {
-            this._deviceId = rewServiceId.toString('hex'); // 确保返回字符串格式的设备ID
+          const deviceIdHex = rewServiceId.toString('hex');
 
-            return this._deviceId; // 返回设备标识
+          const data = Buffer.concat([this._mainKEK, Buffer.from(deviceIdHex, 'hex')]);
+          const computedHash = hashWithSalt(data, hashSalt);
+
+          if (computedHash === hashedValue) {
+            this._deviceId = deviceIdHex;
+
+            return this._deviceId;
           }
         } catch (error) {
           this.Logger.warn('DEVICE_ID', `验证设备标识失败: ${error.message}`);
@@ -181,7 +180,7 @@ class KeytarManager {
       }
     }
 
-    // 创建并保存设备标识
+    // 创建新 deviceId
     const deviceIdHex = crypto.randomBytes(16).toString('hex');
     const storageString = this.createDeviceIdStorage(deviceIdHex);
     SaveToFile(filePath, storageString);

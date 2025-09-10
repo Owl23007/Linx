@@ -28,7 +28,7 @@ class DatabaseManager {
   async initAppDatabase() {
     try {
       // get userData path
-      const appDataPath = path.join(app.getPath('userData'), 'UserData');
+      const appDataPath = path.join(app.getPath('userData'), 'UserData'); // 存储用户数据的目录
       const appDbPath = path.join(appDataPath, 'app.db');
       this.ensureDir(path.dirname(appDbPath));
 
@@ -39,6 +39,7 @@ class DatabaseManager {
 
       // 设置数据库加密
       const dbPassword = await this.getDatabasePassword('app');
+      console.log('dbPassword',dbPassword);
       this.appDb.pragma('cipher = sqlcipher');
       this.appDb.pragma(`key = '${dbPassword}'`);
 
@@ -270,7 +271,15 @@ class DatabaseManager {
   }
 
   async getDatabasePassword(identifier) {
-    const account = 'db-password';
+    if (!identifier) throw new Error('标识符不能为空');
+
+    if (identifier === 'app') {
+      let password = await this.keytarManager.deriveUserDEK('app', 'db-password');
+
+      return password;
+    }
+
+    const account = 'db-password'; // 固定账户名
 
     try {
       let password = await this.keytarManager.getUserCredential(identifier, account);

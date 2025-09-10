@@ -1,112 +1,77 @@
+// utils/http.ts
+import { useGlobalStore } from '@/stores/global';
 import axios from 'axios';
+import { ref } from 'vue';
 
-/**
- * 基础请求封装
- */
-
-// 响应数据接口
-export interface ApiResponse<T = any> {
-  code: number
-  message: string
-  data: T
-}
-
-// 创建axios实例
-const instance = axios.create({
-  baseURL: 'http://localhost:8081',
+// 创建实例（baseURL 留空，后面动态设置）
+const http = axios.create({
   timeout: 10000,
+  baseURL: '',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// 请求拦截器
-instance.interceptors.request.use(
-  config => {
-    return config;
-  },
-  error => {
-    return Promise.reject(error);
-  },
+const tempEndpoint = ref<string>('');
+
+// 请求拦截器 —— 每次请求前设置 baseURL + token
+http.interceptors.request.use(config => {
+  // 从 localStorage 读 endpoint（登录后设置）
+  const endpoint = tempEndpoint.value || useGlobalStore().endpoint || localStorage.getItem('apiEndpoint') || import.meta.env.VITE_DEFAULT_BASE_URL;
+  config.baseURL = endpoint;
+
+  // 自动加 token
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+// 响应拦截器 —— 统一处理错误 + 只返回 data
+http.interceptors.response.use(
+  res => res.data, // 直接返回后端 data，不用 res.data.data
+  err => {
+    return Promise.reject(err);
+  }
 );
 
-// 响应拦截器
-instance.interceptors.response.use(
-  response => {
-    const { data } = response;
+// 导出简单易用的方法
+export const get = (url: string, params?: any,endpoint?: string) => {
+  if (endpoint) {
+    tempEndpoint.value = endpoint;
+  }
 
-    // 这里可以根据后端的响应格式进行调整
-    if (data.code === 200 || data.code === 0) {
-      return response; // 返回完整的响应对象
-    } else {
-      return Promise.reject(new Error(data.message || '请求失败'));
+  return http.get(url, { params }).finally(() => {
+    if (endpoint) {
+      tempEndpoint.value = ''; // 请求完成后清空
     }
-  },
-  error => {
-    // HTTP错误处理
-    if (error.response) {
-      const { status, data } = error.response;
-
-      console.error(`HTTP ${status}:`, data?.message || error.message);
-
-      // 可以根据状态码进行特殊处理
-      switch (status) {
-        case 401:
-        // 未授权，可以跳转到登录页
-          break;
-        case 403:
-        // 禁止访问
-          break;
-        case 404:
-        // 资源不存在
-          break;
-        case 500:
-        // 服务器错误
-          break;
-      }
-    } else {
-      console.error('Network Error:', error.message);
-    }
-
-    return Promise.reject(error);
-  },
-);
-
-/**
- * GET 请求
- */
-export function get<T = any>(url: string, params?: any, config?: any): Promise<T> {
-  return instance.get(url, { params, ...config }).then(res => res.data);
-}
-
-/**
- * POST 请求
- */
-export function post<T = any>(url: string, data?: any, config?: any): Promise<T> {
-  return instance.post(url, data, config).then(res => res.data);
-}
-
-/**
- * PUT 请求
- */
-export function put<T = any>(url: string, data?: any, config?: any): Promise<T> {
-  return instance.put(url, data, config).then(res => res.data);
-}
-
-/**
- * DELETE 请求
- */
-export function del<T = any>(url: string, params?: any, config?: any): Promise<T> {
-  return instance.delete(url, { params, ...config }).then(res => res.data);
-}
-
-// 导出实例，以便在其他地方直接使用
-export { instance as axiosInstance };
-
-export default {
-  get,
-  post,
-  put,
-  delete: del,
-  instance,
+  });
 };
+
+export const post = (url: string, data?: any, endpoint?: string) => {
+  if (endpoint) tempEndpoint.value = endpoint;
+
+  return http.post(url, data).finally(() => {
+    if (endpoint) tempEndpoint.value = '';
+  });
+};
+
+export const put = (url: string, data?: any, endpoint?: string) => {
+  if (endpoint) tempEndpoint.value = endpoint;
+
+  return http.put(url, data).finally(() => {
+    if (endpoint) tempEndpoint.value = '';
+  });
+};
+
+export const del = (url: string, endpoint?: string) => {
+  if (endpoint) tempEndpoint.value = endpoint;
+
+  return http.delete(url).finally(() => {
+    if (endpoint) tempEndpoint.value = '';
+  });
+};
+// 导出原始实例
+export default http;

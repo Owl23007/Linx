@@ -41,8 +41,8 @@ export interface LoginResponse {
 /**
  * 获取验证码
  */
-export function getCaptcha(): Promise<ApiResponse<CaptchaResponse>> {
-  return get<ApiResponse<CaptchaResponse>>('/auth/captcha');
+export function getCaptcha(serverUrl: string): Promise<ApiResponse<CaptchaResponse>> {
+  return get<ApiResponse<CaptchaResponse>>('/auth/captcha', { serverUrl });
 }
 
 /**

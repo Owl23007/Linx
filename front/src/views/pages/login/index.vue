@@ -174,8 +174,7 @@
 <script setup lang="ts">
 // ========== 导入依赖 ==========
 import type { LoginRequest, RegisterRequest } from '@/request/auth';
-import * as authApi from '@/request/auth';
-import { getUserList } from '@/request/userLocal';
+import authService from '@/services/authService';
 import { useAuthStore } from '@/stores/auth';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
@@ -245,7 +244,7 @@ function switchTabLogic(tab: 'login' | 'register') {
 // 验证码相关
 async function refreshCaptcha() {
   try {
-    const response = await authApi.getCaptcha();
+    const response = await authService.getCaptcha(serverUrl.value);
     if (response.data) {
       captchaId.value = response.data.split(':')[0];
       captchaImage.value = response.data.substring(response.data.indexOf(':') + 1);
@@ -421,6 +420,7 @@ async function handleRegister(): Promise<void> {
 
 // ========== 生命周期 ==========
 onMounted(async () => {
+
   // 初始化拖动功能
   if (dragAreaRef.value) {
     const cleanup = setupDragArea(dragAreaRef.value);
@@ -436,7 +436,7 @@ onMounted(async () => {
   serverUrl.value = import.meta.env.VITE_API_BASE_URL || 'loclalhost:8080';
 
   // 获取用户列表
-  await getUserList();
+  // await getUserList();
 });
 
 onUnmounted(() => {
