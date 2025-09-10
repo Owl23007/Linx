@@ -60,8 +60,6 @@ public class SupernodeController {
         try {
             SupernodeVO supernode = supernodeService.createSupernode(request);
             return ApiResponse.success("创建Supernode成功", supernode);
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("创建Supernode失败: " + e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("创建Supernode失败: " + e.getMessage());
         }
@@ -77,8 +75,6 @@ public class SupernodeController {
         try {
             SupernodeVO supernode = supernodeService.updateSupernode(id, request);
             return ApiResponse.success("更新Supernode成功", supernode);
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("更新Supernode失败: " + e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("更新Supernode失败: " + e.getMessage());
         }
@@ -108,8 +104,6 @@ public class SupernodeController {
         try {
             SupernodeVO supernode = supernodeService.checkSupernodeStatus(id);
             return ApiResponse.success("检测Supernode状态成功", supernode);
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("检测Supernode状态失败: " + e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("检测Supernode状态失败: " + e.getMessage());
         }

@@ -81,8 +81,6 @@ public class MessageController {
         try {
             messageService.markMessageAsRead(messageId, userId);
             return ApiResponse.success("标记消息已读成功", "消息已标记为已读");
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("标记消息已读失败: " + e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("标记消息已读失败: " + e.getMessage());
         }
@@ -139,8 +137,6 @@ public class MessageController {
         try {
             messageService.deleteMessage(messageId, userId);
             return ApiResponse.success("删除消息成功", "消息已删除");
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("删除消息失败: " + e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("删除消息失败: " + e.getMessage());
         }

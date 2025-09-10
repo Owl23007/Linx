@@ -1,6 +1,7 @@
+import Database from 'better-sqlite3-multiple-ciphers';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import sqlite3 from 'sqlite3';
 
 class DatabaseManager {
 
@@ -28,7 +29,12 @@ class DatabaseManager {
       const appDbPath = path.join(process.env.USERDATA_PATH || './userData', 'app.db');
       this.ensureDir(path.dirname(appDbPath));
 
-      this.appDb = new sqlite3.Database(appDbPath);
+      this.appDb = new Database(appDbPath);
+
+      // 设置数据库加密
+      const dbPassword = await this.getDatabasePassword('app');
+      this.appDb.pragma('cipher = sqlcipher');
+      this.appDb.pragma(`key = '${dbPassword}'`);
 
       // 读取并执行初始化脚本
       const initScript = await fs.promises.readFile(
@@ -36,7 +42,7 @@ class DatabaseManager {
         'utf8'
       );
 
-      await this.executeScript(this.appDb, initScript);
+      this.appDb.exec(initScript);
       this.Logger.info('APP_DB', 'App数据库初始化成功');
     } catch (error) {
       this.Logger.error('APP_DB', `App数据库初始化失败: ${error.message}`);
@@ -53,7 +59,12 @@ class DatabaseManager {
       this.keytarManager.ensureUserDatabaseDir(userId);
 
       const userDbPath = this.keytarManager.getUserDatabasePath(userId);
-      const userDb = new sqlite3.Database(userDbPath);
+      const userDb = new Database(userDbPath);
+
+      // 设置数据库加密
+      const dbPassword = await this.getDatabasePassword(userId);
+      userDb.pragma('cipher = sqlcipher');
+      userDb.pragma(`key = '${dbPassword}'`);
 
       // 读取并执行用户数据库初始化脚本
       const initScript = await fs.promises.readFile(
@@ -61,7 +72,7 @@ class DatabaseManager {
         'utf8'
       );
 
-      await this.executeScript(userDb, initScript);
+      userDb.exec(initScript);
 
       // 记录用户数据库元信息到App数据库
       await this.recordUserDatabase(userId, userDbPath);
@@ -95,7 +106,11 @@ class DatabaseManager {
     }
 
     // 打开已存在的数据库
-    const userDb = new sqlite3.Database(userDbPath);
+    const userDb = new Database(userDbPath);
+    // 设置加密
+    const dbPassword = await this.getDatabasePassword(userId);
+    userDb.pragma('cipher = sqlcipher');
+    userDb.pragma(`key = '${dbPassword}'`);
     this.userDatabases.set(userId, userDb);
 
     return userDb;
@@ -113,69 +128,54 @@ class DatabaseManager {
       `${userId}:${dataType}` // 附加认证数据
     );
 
-    return new Promise((resolve, reject) => {
-      const sql = `
-        INSERT INTO user_data (data_type, title, content, tags, is_encrypted, created_at)
-        VALUES (?, ?, ?, ?, ?, datetime('now'))
-      `;
+    const sql = `
+      INSERT INTO user_data (data_type, title, content, tags, is_encrypted, created_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'))
+    `;
 
-      userDb.run(sql, [
-        dataType,
-        title,
-        JSON.stringify(encryptedData),
-        tags,
-        true
-      ], function(error) {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(this.lastID);
-        }
-      });
-    });
+    const stmt = userDb.prepare(sql);
+    const result = stmt.run([
+      dataType,
+      title,
+      JSON.stringify(encryptedData),
+      tags,
+      true
+    ]);
+
+    return result.lastInsertRowid;
   }
 
   // ================ 6. 数据解密读取 ================
   async getDecryptedUserData(userId, dataId) {
     const userDb = await this.getUserDatabase(userId);
 
-    return new Promise((resolve, reject) => {
-      const sql = 'SELECT * FROM user_data WHERE id = ?';
+    const sql = 'SELECT * FROM user_data WHERE id = ?';
+    const stmt = userDb.prepare(sql);
+    const row = stmt.get([dataId]);
 
-      userDb.get(sql, [dataId], (error, row) => {
-        if (error) {
-          reject(error);
+    if (!row) {
+      return null;
+    }
 
-          return;
-        }
+    try {
+      if (row.is_encrypted) {
+        const userKey = this.keytarManager.deriveUserDEK(userId, row.data_type);
+        const encryptedData = JSON.parse(row.content);
+        const decryptedContent = this.keytarManager.decryptData(
+          encryptedData,
+          userKey,
+          `${userId}:${row.data_type}`
+        );
 
-        if (!row) {
-          resolve(null);
+        row.content = JSON.parse(decryptedContent);
+      } else {
+        row.content = JSON.parse(row.content);
+      }
 
-          return;
-        }
-
-        try {
-          if (row.is_encrypted) {
-            const userKey = this.keytarManager.deriveUserDEK(userId, row.data_type);
-            const encryptedData = JSON.parse(row.content);
-            const decryptedContent = this.keytarManager.decryptData(
-              encryptedData,
-              userKey,
-              `${userId}:${row.data_type}`
-            );
-
-            row.content = JSON.parse(decryptedContent);
-          } else {
-            row.content = JSON.parse(row.content);
-          }
-
-          resolve(row);
-        } catch (decryptError) {
-          reject(new Error(`解密失败: ${decryptError.message}`));
-        }
-      });
-    });
+      return row;
+    } catch (decryptError) {
+      throw new Error(`解密失败: ${decryptError.message}`);
+    }
   }
 
   // ================ 7. 用户凭据管理 ================
@@ -222,46 +222,50 @@ class DatabaseManager {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  executeScript(db, script) {
-    return new Promise((resolve, reject) => {
-      db.exec(script, (error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
-    });
+  async getDatabasePassword(identifier) {
+    const account = 'db-password';
+
+    try {
+      let password = await this.keytarManager.getUserCredential(identifier, account);
+
+      if (!password) {
+        // 生成新密码
+        password = this.generateSecurePassword();
+        await this.keytarManager.storeUserCredential(identifier, account, password);
+      }
+
+      return password;
+    } catch (error) {
+      this.Logger.error('DB_PASSWORD', `获取数据库密码失败: ${error.message}`);
+
+      // 回退到默认密码
+      return 'default-fallback-password';
+    }
+  }
+
+  generateSecurePassword() {
+    return crypto.randomBytes(32).toString('hex');
   }
 
   async recordUserDatabase(userId, dbPath) {
-    return new Promise((resolve, reject) => {
-      const sql = `
-        INSERT OR REPLACE INTO user_database_meta
-        (user_id, database_path, last_accessed_at)
-        VALUES (?, ?, datetime('now'))
-      `;
+    const sql = `
+      INSERT OR REPLACE INTO user_database_meta
+      (user_id, database_path, last_accessed_at)
+      VALUES (?, ?, datetime('now'))
+    `;
 
-      this.appDb.run(sql, [userId, dbPath], function(error) {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(this.lastID);
-        }
-      });
-    });
+    const stmt = this.appDb.prepare(sql);
+    const result = stmt.run([userId, dbPath]);
+
+    return result.lastInsertRowid;
   }
 
   async deleteUserFromApp(userId) {
-    return new Promise((resolve, reject) => {
-      this.appDb.run('DELETE FROM user WHERE id = ?', [userId], function(error) {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(this.changes);
-        }
-      });
-    });
+    const sql = 'DELETE FROM user WHERE id = ?';
+    const stmt = this.appDb.prepare(sql);
+    const result = stmt.run([userId]);
+
+    return result.changes;
   }
 
   // ================ 清理资源 ================

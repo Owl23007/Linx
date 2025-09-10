@@ -3,6 +3,7 @@ package top.contins.linx.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import top.contins.linx.model.entity.User;
@@ -20,8 +21,13 @@ import java.util.List;
 @Tag(name = "用户管理", description = "用户管理相关API")
 public class UserController {
     
+
+    private UserService userService  = null;
+
     @Autowired
-    private UserService userService;
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
     
     @Operation(summary = "获取用户信息", description = "根据用户ID获取用户信息")
     @GetMapping("/{userId}")
@@ -31,8 +37,6 @@ public class UserController {
         try {
             UserVO user = userService.getUserVO(userId);
             return ApiResponse.success("获取用户信息成功", user);
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("获取用户信息失败: " + e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("获取用户信息失败: " + e.getMessage());
         }
@@ -46,8 +50,6 @@ public class UserController {
         try {
             UserVO user = userService.getUserVO(userId);
             return ApiResponse.success("获取用户信息成功", user);
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("获取用户信息失败: " + e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("获取用户信息失败: " + e.getMessage());
         }
@@ -62,8 +64,6 @@ public class UserController {
         try {
             User user = userService.updateUser(userId, request.getNickname(), request.getEmail());
             return ApiResponse.success("更新用户信息成功", new UserVO(user));
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("更新用户信息失败: " + e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("更新用户信息失败: " + e.getMessage());
         }
@@ -74,13 +74,11 @@ public class UserController {
     public ApiResponse<UserVO> updateUserStatus(
             @Parameter(description = "当前用户ID", required = true)
             @RequestHeader("User-Id") Long userId,
-            @RequestBody UpdateStatusRequest request) {
+            @RequestBody String status) {
         try {
-            User.UserStatus status = User.UserStatus.valueOf(request.getStatus().toUpperCase());
-            User user = userService.updateUserStatus(userId, status);
+            User.UserStatus updateStatus = User.UserStatus.valueOf(status);
+            User user = userService.updateUserStatus(userId, updateStatus);
             return ApiResponse.success("更新用户状态成功", new UserVO(user));
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error("更新用户状态失败: " + e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("更新用户状态失败: " + e.getMessage());
         }
@@ -139,28 +137,21 @@ public class UserController {
     /**
      * 更新用户信息请求
      */
+    @Data
     public static class UpdateUserRequest {
         private String nickname;
         private String email;
         
         public UpdateUserRequest() {}
-        
-        public String getNickname() { return nickname; }
-        public void setNickname(String nickname) { this.nickname = nickname; }
-        
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
+
     }
     
     /**
      * 更新状态请求
      */
+    @Data
     public static class UpdateStatusRequest {
         private String status;
-        
         public UpdateStatusRequest() {}
-        
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
     }
 }
