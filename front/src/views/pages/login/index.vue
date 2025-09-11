@@ -447,7 +447,7 @@ async function handleLogin(): Promise<void> {
   if (success) {
     ElMessage.success({ message: '登录成功', offset: 50 ,customClass: 'message' });
     await authService.switchToMainWindow();
-    router.push('/main-panel');
+    router.push('/main');
   }
 }
 

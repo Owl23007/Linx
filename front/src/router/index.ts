@@ -1,3 +1,4 @@
+// router/index.ts
 import { createRouter, createWebHashHistory } from 'vue-router';
 
 const routes = [
@@ -8,8 +9,8 @@ const routes = [
   },
   {
     path: '/main',
-    name: 'MainPannel',
-    component: () => import('@/views/pages/main-pannel/index.vue'),
+    name: 'Main',
+    component: () => import('@/views/pages/main/index.vue'),
   },
   {
     path: '/',
