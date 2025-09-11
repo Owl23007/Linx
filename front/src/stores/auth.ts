@@ -1,5 +1,6 @@
-import type { LoginRequest, RegisterRequest, UserInfo } from '@/request/auth';
+import type { RegisterRequest, UserInfo } from '@/request/auth';
 import * as authApi from '@/request/auth';
+import authService from '@/services/authService';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
@@ -14,16 +15,16 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => !!user.value);
 
   // 动作
-  async function login(form: LoginRequest) {
+  async function login(form: any, endpoint: string) {
+    if (loading.value) return;
     loading.value = true;
     try {
-      const response = await authApi.login(form);
-      token.value = response.data.token;
-      user.value = response.data.userInfo;
-
-      // 保存到本地存储
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.userInfo));
+      const response = await authService.login(form, endpoint);
+      if (response.code == 0) {
+        token.value = response.data;
+        // 保存到本地存储
+        localStorage.setItem('token', response.data.token);
+      }
 
       return response;
     } finally {
@@ -31,10 +32,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function register(form: RegisterRequest) {
+  async function register(form: RegisterRequest, endpoint: string) {
+    if (loading.value) return;
     loading.value = true;
     try {
-      const response = await authApi.register(form);
+      const response = await authService.register(form, endpoint);
 
       return response;
     } finally {
@@ -42,7 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function logoutUser() {
+  async function logout() {
     loading.value = true;
     try {
       await authApi.logout();
@@ -75,7 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
     isLoggedIn,
     login,
     register,
-    logout: logoutUser,
+    logout,
     initAuth
   };
 });

@@ -146,6 +146,20 @@ class WindowManager {
       });
     }
   }
+
+  /**
+   * 切换为主窗口
+   */
+  switchToMainWindow() {
+    this.mainWindow.setResizable(true);
+    this.mainWindow.setMaximizable(true);
+    this.mainWindow.setMinimizable(true);
+    this.mainWindow.setClosable(true);
+
+    this.mainWindow.setMinimumSize(800, 600);
+    this.mainWindow.setSize(1200, 800);
+    this.mainWindow.center();
+  }
 }
 
 export default WindowManager;

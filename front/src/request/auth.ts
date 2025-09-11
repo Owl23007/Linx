@@ -1,44 +1,6 @@
+import type { RegisterRequest } from '@/models/auth';
+import type { Result } from '@/models/common';
 import { get, post } from '../utils/http';
-
-// ============ 类型定义 ============
-
-// 登录请求
-export interface LoginRequest {
-  serverEndpoint?: string
-  username: string
-  password: string
-}
-
-// 注册请求
-export interface RegisterRequest {
-  serverEndpoint?: string
-  username: string
-  password: string
-  captchaCode: string
-  captchaId?: string
-}
-
-// 用户信息
-export interface UserInfo {
-  id: string
-  username: string
-  email?: string
-  avatar?: string
-  createTime?: string
-}
-
-// 登录响应
-export interface LoginResponse {
-  token: string
-  userInfo: UserInfo
-}
-
-export interface Result {
-  code: number
-  message: string
-  data: any
-}
-// ============ API 函数 ============
 
 /**
  * 获取验证码（base64 字符串）
@@ -50,28 +12,28 @@ export function getCaptcha(serverUrl: string): Promise<Result> {
 /**
  * 用户登录
  */
-export function login(data: LoginRequest): Promise<LoginResponse> {
-  return post('/auth/login', data, data.serverEndpoint);
+export function login(data:any, endpoint: string): Promise<Result> {
+  return post('/auth/login', data, endpoint);
 }
 
 /**
  * 用户注册
  */
-export function register(data: RegisterRequest): Promise<UserInfo> {
-  return post('/auth/register', data, data.serverEndpoint);
+export function register(data: RegisterRequest, endpoint: string): Promise<Result> {
+  return post('/registration/register', data, endpoint);
 }
 
 /**
  * 获取当前用户信息
  */
-export function getUserInfo(): Promise<UserInfo> {
+export function getUserInfo(): Promise<Result> {
   return get('/auth/userinfo');
 }
 
 /**
  * 刷新 token
  */
-export function refreshToken(): Promise<{ token: string }> {
+export function refreshToken(): Promise<Result> {
   return post('/auth/refresh');
 }
 

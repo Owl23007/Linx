@@ -1,4 +1,6 @@
-import { getCaptcha, register } from '@/request/auth';
+import type { LoginRequest, RegisterRequest } from '@/models/auth';
+import auth, { getCaptcha, register } from '@/request/auth';
+import { isElectron, sendIpc } from '@/utils/electron';
 
 /**
  * 用户服务类，封装与主进程的通信
@@ -7,23 +9,15 @@ import { getCaptcha, register } from '@/request/auth';
 class AuthService {
   /**
    * 创建用户（注册）
-   * @param {string} username - 用户名
-   * @param {string} password - 密码
-   * @param {string} email - 邮箱
-   * @param {string} captchaId - 验证码ID
-   * @param {string} captchaCode - 验证码
+    * @param {RegisterRequest} data - 注册请求数据
+    * @param {string} endpoint - 服务器URL
+    *
+    * @return {Promise<void>}
    */
-  async register(username: string, password: string, email: string, captchaId: string, captchaCode: string, endpoint: string) {
-    const registerRequest = {
-      username,
-      password,
-      email,
-      captchaId,
-      captchaCode,
-      endpoint,
-    };
-    const res =  await register(registerRequest);
-    if (res) return;
+  async register(data:RegisterRequest, endpoint: string) {
+    const res =  await register(data, endpoint);
+
+    return res;
   }
 
   /**
@@ -35,12 +29,27 @@ class AuthService {
 
     return response;
   }
+
   /**
    * 登录
-   * @param {string} username - 用户名
+   * @param {string} account - 账号
    * @param {string} password - 密码
    */
+  async login(data: LoginRequest, endpoint: string) {
+    const res = await auth.login(data, endpoint);
 
+    return res;
+  }
+
+  /**
+   * 切换为主窗口
+   * @return {Promise<void>}
+   */
+  async switchToMainWindow() {
+    if (isElectron()) {
+      await sendIpc('set-main-window');
+    }
+  }
 }
 
 const authService = new AuthService();

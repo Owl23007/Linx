@@ -39,7 +39,6 @@ class DatabaseManager {
 
       // 设置数据库加密
       const dbPassword = await this.getDatabasePassword('app');
-      console.log('dbPassword',dbPassword);
       this.appDb.pragma('cipher = sqlcipher');
       this.appDb.pragma(`key = '${dbPassword}'`);
 

@@ -26,12 +26,16 @@
         </div>
 
         <!-- 标题图标 -->
-        <div class="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
+        <div v-if="!(isElectron() && activeTab === 'register')" class="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
             <TitleLogo :size="isElectron() ? '1' : '1.5'" />
         </div>
 
         <!-- Tab 区域 -->
-        <div :class="{ 'scale-120 top-40': !isElectron() }"
+        <div :class="[
+              { 'scale-120 top-40': !isElectron() },
+              { 'tab-shift-up': isElectron() && activeTab === 'register' },
+              { 'tab-shift-down': isElectron() && activeTab === 'login' }
+            ]"
             class="overflow-hidden w-50 max-w-md absolute top-24 z-10">
             <div class="custom-tabs">
                 <div ref="tabListRef" class="tab-list">
@@ -65,8 +69,8 @@
                                 </el-input>
                             </el-form-item>
                             <div class="h-2" />
-                            <el-form-item prop="username">
-                                <el-input v-model="loginForm.username" clearable placeholder="请输入账号或邮箱"
+                            <el-form-item prop="account">
+                                <el-input v-model="loginForm.account" clearable placeholder="请输入账号或邮箱"
                                     size="large" class="round-input">
                                     <template #prefix>
                                         <el-icon>
@@ -90,24 +94,33 @@
                     </div>
 
                     <!-- 注册表单 -->
-                    <div v-else-if="activeTab === 'register'" key="register" class="form-content mt-18">
-                        <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules">
-                            <el-form-item>
-                                <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large"
-                                    class="round-input">
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Server />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
+                    <div v-else-if="activeTab === 'register'" key="register" :class="['form-content mt-18', { 'form-shift-up': isElectron() }]">
+                      <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" :class="[ { 'register-form': isElectron() }]">
+                        <el-form-item>
+                            <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large" class="round-input">
+                                <template #prefix>
+                                    <el-icon>
+                                      <Server />
+                                    </el-icon>
+                                </template>
+                              </el-input>
                             </el-form-item>
                             <el-form-item prop="username">
-                                <el-input v-model="registerForm.username" placeholder="请输入邮箱" size="large"
+                                <el-input v-model="registerForm.username" placeholder="请输入用户名" size="large"
                                     class="round-input" clearable>
                                     <template #prefix>
                                         <el-icon>
                                             <User />
+                                        </el-icon>
+                                    </template>
+                                </el-input>
+                            </el-form-item>
+                            <el-form-item prop="email">
+                                <el-input v-model="registerForm.email" placeholder="请输入邮箱" size="large"
+                                    class="round-input" clearable>
+                                    <template #prefix>
+                                        <el-icon>
+                                            <Message />
                                         </el-icon>
                                     </template>
                                 </el-input>
@@ -132,6 +145,7 @@
                                             </el-icon>
                                         </template>
                                     </el-input>
+
                                     <div :class="{ 'w-35': !isElectron() }"
                                         class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
                                         v-loading="captchaLoading"
@@ -174,12 +188,12 @@
 
 <script setup lang="ts">
 // ========== 导入依赖 ==========
-import type { LoginRequest, RegisterRequest } from '@/request/auth';
+import type { LoginRequest, RegisterRequest } from '@/models/auth';
 import authService from '@/services/authService';
 import { useAuthStore } from '@/stores/auth';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
-import { Close, Key, Lock, Minus, Refresh, Setting, User } from '@element-plus/icons-vue';
+import { Close, Key, Lock, Message, Minus, Refresh, Setting, User } from '@element-plus/icons-vue';
 import { type FormInstance, type FormRules, ElMessage } from 'element-plus';
 import { nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -208,12 +222,13 @@ const captchaId = ref<string>('');
 
 // 表单数据
 const loginForm = ref<LoginRequest>({
-  username: '',
+  account: '',
   password: ''
 });
 
 const registerForm = ref<RegisterRequest>({
   username: '',
+  email: '',
   password: '',
   captchaCode: '',
   captchaId: ''
@@ -278,9 +293,15 @@ async function performLogin(): Promise<boolean> {
   error.value = '';
 
   try {
-    await authStore.login(loginForm.value);
+    const res = await authStore.login(loginForm.value, serverUrl.value);
+    if (res.code == 0) {
+      return true;
+    }
 
-    return true;
+    error.value = res.message;
+    showError(error.value);
+
+    return false;
   } catch (err: any) {
     error.value = err.message || '登录失败，请重试';
     showError(error.value);
@@ -303,10 +324,17 @@ async function performRegister(): Promise<boolean> {
       registerForm.value.captchaId = captchaId.value;
     }
 
-    await authStore.register(registerForm.value);
-    switchTabLogic('login');
+    const res =  await authService.register(registerForm.value, serverUrl.value);
+    if (res.code == 0) {
+      switchTab('login',0);
 
-    return true;
+      return true;
+    }
+    error.value = res.message;
+    showError(error.value);
+    refreshCaptcha();
+
+    return false;
   } catch (err: any) {
     error.value = err.message || '注册失败，请重试';
     showError(error.value);
@@ -320,8 +348,8 @@ async function performRegister(): Promise<boolean> {
 
 // 清理函数
 function cleanup() {
-  loginForm.value = { username: '', password: '' };
-  registerForm.value = { username: '', password: '', captchaCode: '', captchaId: '' };
+  loginForm.value = { account: '', password: '' };
+  registerForm.value = { username: '',email: '', password: '', captchaCode: '', captchaId: '' };
   error.value = '';
   captchaImage.value = '';
   captchaId.value = '';
@@ -341,17 +369,21 @@ const sliderStyle = ref({ left: '0px', width: '0px' });
 // ========== 表单验证规则 ==========
 const loginRules: FormRules = {
   username: [
-    { required: true, trigger: 'none' },
+    { required: true, message: '请输入账号/用户名或邮箱', trigger: 'none' },
     { min: 3, max: 50, message: '账号长度应为 3-50 个字符', trigger: 'none' },
   ],
   password: [
-    { required: true, trigger: 'none' },
+    { required: true, message: '请输入密码', trigger: 'none' },
     { min: 6, max: 20, message: '密码长度应为 6-20 个字符', trigger: 'none' },
   ],
 };
 
 const registerRules: FormRules = {
   username: [
+    { required: true, message: '请输入用户名', trigger: 'none' },
+    { min: 3, max: 50, message: '账号长度应为 3-50 个字符', trigger: 'none' },
+  ],
+  email: [
     { required: true, message: '请输入邮箱', trigger: 'none' },
     { type: 'email', message: '请输入有效的邮箱地址', trigger: 'none' },
   ],
@@ -414,6 +446,7 @@ async function handleLogin(): Promise<void> {
   const success = await performLogin();
   if (success) {
     ElMessage.success({ message: '登录成功', offset: 50 ,customClass: 'message' });
+    await authService.switchToMainWindow();
     router.push('/main-panel');
   }
 }
@@ -426,7 +459,7 @@ async function handleRegister(): Promise<void> {
 
   const success = await performRegister();
   if (success) {
-    ElMessage.success('注册成功，请登录');
+    ElMessage.success('注册成功，请前往邮箱验证');
   }
 }
 
@@ -445,7 +478,7 @@ onMounted(async () => {
   updateSlider(tabs.findIndex(t => t.name === activeTab.value));
 
   // 设置默认服务器地址
-  serverUrl.value = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  serverUrl.value = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
   // 获取用户列表
   // await getUserList();
@@ -464,6 +497,35 @@ onUnmounted(() => {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+// 表单切换动画 - 向右滑动（注册->登录）
+.slide-right-enter-active,
+.slide-right-leave-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-shift-up {
+    transform: translateY(-50px);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 30;
+}
+
+/* 注册表单在 Electron 下上移并添加过渡动画 */
+.form-shift-up {
+    transform: translateY(-32px);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 25;
+}
+
+/* 切换到登录时的回落动画 */
+.tab-shift-down {
+    transform: translateY(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 20;
+}
+::v-deep .register-form .el-form-item {
+  margin-bottom: 15px !important;
+}
+
 .slide-left-enter-from {
     opacity: 0;
     transform: translateX(20px);
@@ -478,12 +540,6 @@ onUnmounted(() => {
 .slide-left-leave-from {
     opacity: 1;
     transform: translateX(0);
-}
-
-// 表单切换动画 - 向右滑动（注册->登录）
-.slide-right-enter-active,
-.slide-right-leave-active {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-right-enter-from {

@@ -15,4 +15,9 @@ export function setupWindowHandlers(windowManager) {
   ipcMain.on('maximize-window', () => {
     windowManager.toggleMaximizeMainWindow();
   });
+
+  // 切换为主窗口
+  ipcMain.on('set-main-window', () => {
+    windowManager.switchToMainWindow();
+  });
 }
