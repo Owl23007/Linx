@@ -1,9 +1,8 @@
 // utils/http.ts
 import { useGlobalStore } from '@/stores/global';
-import axios from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
 import { ref } from 'vue';
 
-// 创建实例（baseURL 留空，后面动态设置）
 const http = axios.create({
   timeout: 10000,
   baseURL: '',
@@ -14,64 +13,89 @@ const http = axios.create({
 
 const tempEndpoint = ref<string>('');
 
-// 请求拦截器 —— 每次请求前设置 baseURL + token
+// 请求拦截器
 http.interceptors.request.use(config => {
-  // 从 localStorage 读 endpoint（登录后设置）
-  const endpoint = tempEndpoint.value || useGlobalStore().endpoint || localStorage.getItem('apiEndpoint') || import.meta.env.VITE_DEFAULT_BASE_URL;
+  const endpoint =
+    tempEndpoint.value ||
+    useGlobalStore().endpoint ||
+    localStorage.getItem('apiEndpoint') ||
+    import.meta.env.VITE_DEFAULT_BASE_URL;
+
   config.baseURL = endpoint;
 
-  // 自动加 token
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  // 可选：如果是 FormData，移除 Content-Type
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+
   return config;
 });
 
-// 响应拦截器 —— 统一处理错误 + 只返回 data
+// 响应拦截器 —— 返回 res.data
 http.interceptors.response.use(
-  res => res.data, // 直接返回后端 data，不用 res.data.data
-  err => {
-    return Promise.reject(err);
-  }
+  res => res.data,
+  err => Promise.reject(err)
 );
 
-// 导出简单易用的方法
-export const get = (url: string, params?: any,endpoint?: string) => {
-  if (endpoint) {
-    tempEndpoint.value = endpoint;
-  }
-
-  return http.get(url, { params }).finally(() => {
-    if (endpoint) {
-      tempEndpoint.value = ''; // 请求完成后清空
-    }
-  });
+// 断言 http 为一个“直接返回 T”的客户端
+const client = http as {
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
+  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
 };
 
-export const post = (url: string, data?: any, endpoint?: string) => {
+// 导出的方法基于 `client`
+export const get = <T = any>(
+  url: string,
+  params?: Record<string, any>,
+  endpoint?: string
+): Promise<T> => {
   if (endpoint) tempEndpoint.value = endpoint;
 
-  return http.post(url, data).finally(() => {
+  return client.get<T>(url, { params }).finally(() => {
     if (endpoint) tempEndpoint.value = '';
   });
 };
 
-export const put = (url: string, data?: any, endpoint?: string) => {
+export const post = <T = any>(
+  url: string,
+  data?: Record<string, any> | FormData,
+  endpoint?: string
+): Promise<T> => {
   if (endpoint) tempEndpoint.value = endpoint;
 
-  return http.put(url, data).finally(() => {
+  return client.post<T>(url, data).finally(() => {
     if (endpoint) tempEndpoint.value = '';
   });
 };
 
-export const del = (url: string, endpoint?: string) => {
+export const put = <T = any>(
+  url: string,
+  data?: Record<string, any> | FormData,
+  endpoint?: string
+): Promise<T> => {
   if (endpoint) tempEndpoint.value = endpoint;
 
-  return http.delete(url).finally(() => {
+  return client.put<T>(url, data).finally(() => {
     if (endpoint) tempEndpoint.value = '';
   });
 };
-// 导出原始实例
+
+export const del = <T = any>(
+  url: string,
+  endpoint?: string
+): Promise<T> => {
+  if (endpoint) tempEndpoint.value = endpoint;
+
+  return client.delete<T>(url).finally(() => {
+    if (endpoint) tempEndpoint.value = '';
+  });
+};
+
 export default http;

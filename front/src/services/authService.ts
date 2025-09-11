@@ -5,12 +5,6 @@ import { getCaptcha, register } from '@/request/auth';
  * 用于auth窗口中进行用户相关操作
  */
 class AuthService {
-
-  endpoint = '';
-  constructor() {
-    this.endpoint = import.meta.env.VITE_DEFAULT_BASE_URL;
-  }
-
   /**
    * 创建用户（注册）
    * @param {string} username - 用户名
@@ -19,23 +13,34 @@ class AuthService {
    * @param {string} captchaId - 验证码ID
    * @param {string} captchaCode - 验证码
    */
-  async register(username: string, password: string, email: string, captchaId: string, captchaCode: string) {
+  async register(username: string, password: string, email: string, captchaId: string, captchaCode: string, endpoint: string) {
     const registerRequest = {
       username,
       password,
       email,
       captchaId,
       captchaCode,
+      endpoint,
     };
     const res =  await register(registerRequest);
     if (res) return;
   }
 
+  /**
+   * 获取验证码
+   * @param {string} serverUrl - 服务器URL
+   */
   async getCaptcha(serverUrl: string) {
     const response = await getCaptcha(serverUrl);
 
     return response;
   }
+  /**
+   * 登录
+   * @param {string} username - 用户名
+   * @param {string} password - 密码
+   */
+
 }
 
 const authService = new AuthService();

@@ -1,20 +1,15 @@
-import type { ApiResponse } from '../utils/http';
 import { get, post } from '../utils/http';
 
-/**
- * 认证相关API
- */
+// ============ 类型定义 ============
 
-export type CaptchaResponse = string;
-
-// 登录请求数据类型
+// 登录请求
 export interface LoginRequest {
   serverEndpoint?: string
   username: string
   password: string
 }
 
-// 注册请求数据类型
+// 注册请求
 export interface RegisterRequest {
   serverEndpoint?: string
   username: string
@@ -23,7 +18,7 @@ export interface RegisterRequest {
   captchaId?: string
 }
 
-// 用户信息类型
+// 用户信息
 export interface UserInfo {
   id: string
   username: string
@@ -32,52 +27,59 @@ export interface UserInfo {
   createTime?: string
 }
 
-// 登录响应数据类型
+// 登录响应
 export interface LoginResponse {
   token: string
   userInfo: UserInfo
 }
 
+export interface Result {
+  code: number
+  message: string
+  data: any
+}
+// ============ API 函数 ============
+
 /**
- * 获取验证码
+ * 获取验证码（base64 字符串）
  */
-export function getCaptcha(serverUrl: string): Promise<ApiResponse<CaptchaResponse>> {
-  return get<ApiResponse<CaptchaResponse>>('/auth/captcha', { serverUrl });
+export function getCaptcha(serverUrl: string): Promise<Result> {
+  return get('/auth/captcha', {}, serverUrl);
 }
 
 /**
  * 用户登录
  */
-export function login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-  return post<ApiResponse<LoginResponse>>('/auth/login', data);
+export function login(data: LoginRequest): Promise<LoginResponse> {
+  return post('/auth/login', data, data.serverEndpoint);
 }
 
 /**
  * 用户注册
  */
-export function register(data: RegisterRequest) {
-  return post<ApiResponse<UserInfo>>('/auth/register', data);
+export function register(data: RegisterRequest): Promise<UserInfo> {
+  return post('/auth/register', data, data.serverEndpoint);
 }
 
 /**
- * 获取用户信息
+ * 获取当前用户信息
  */
-export function getUserInfo(): Promise<ApiResponse<UserInfo>> {
-  return get<ApiResponse<UserInfo>>('/auth/userinfo');
+export function getUserInfo(): Promise<UserInfo> {
+  return get('/auth/userinfo');
 }
 
 /**
- * 刷新token
+ * 刷新 token
  */
-export function refreshToken(): Promise<ApiResponse<{ token: string }>> {
-  return post<ApiResponse<{ token: string }>>('/auth/refresh');
+export function refreshToken(): Promise<{ token: string }> {
+  return post('/auth/refresh');
 }
 
 /**
  * 用户登出
  */
-export function logout(): Promise<ApiResponse<null>> {
-  return post<ApiResponse<null>>('/auth/logout');
+export function logout(): Promise<void> {
+  return post('/auth/logout');
 }
 
 export default {

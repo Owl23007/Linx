@@ -134,6 +134,7 @@
                                     </el-input>
                                     <div :class="{ 'w-35': !isElectron() }"
                                         class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
+                                        v-loading="captchaLoading"
                                         @click="refreshCaptcha">
                                         <img v-if="captchaImage" :src="captchaImage"
                                             alt="验证码" class="max-w-full max-h-full">
@@ -199,6 +200,7 @@ const authStore = useAuthStore();
 // 页面状态
 const activeTab = ref<'login' | 'register'>('login');
 const loading = ref(false);
+const captchaLoading = ref(false);
 const error = ref<string>('');
 const serverUrl = ref('');
 const captchaImage = ref<string>('');
@@ -244,17 +246,27 @@ function switchTabLogic(tab: 'login' | 'register') {
 // 验证码相关
 async function refreshCaptcha() {
   try {
+    captchaLoading.value = true;
     const response = await authService.getCaptcha(serverUrl.value);
-    if (response.data) {
+    if (response) {
       captchaId.value = response.data.split(':')[0];
       captchaImage.value = response.data.substring(response.data.indexOf(':') + 1);
     }
-  } catch {
-    error.value = '获取验证码失败，请重试';
-    showError(error.value);
+  } catch (e: any) {
+    if (e.message.includes('Network Error')) {
+      error.value = '无法连接到服务器，请检查地址是否正确';
+      showError(error.value);
+
+      return;
+    }
+
+    error.value = '获取验证码失败，请重试:';
+    showError(error.value + e);
     // 清除旧的验证码
     captchaImage.value = '';
     captchaId.value = '';
+  } finally {
+    captchaLoading.value = false;
   }
 }
 
@@ -433,7 +445,7 @@ onMounted(async () => {
   updateSlider(tabs.findIndex(t => t.name === activeTab.value));
 
   // 设置默认服务器地址
-  serverUrl.value = import.meta.env.VITE_API_BASE_URL || 'loclalhost:8080';
+  serverUrl.value = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
   // 获取用户列表
   // await getUserList();
