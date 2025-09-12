@@ -1,13 +1,15 @@
 spring:
   application:
-    name: server
-
-# Default configuration that applies to all environments
-# Specific environment configurations will override these values
+    name: linx
+  profiles:
+    active: dev
 
 # Server configuration
 server:
   port: 8080
+
+service:
+  pathPrefix: /api/linx
 
 # JWT Configuration
 jwt:

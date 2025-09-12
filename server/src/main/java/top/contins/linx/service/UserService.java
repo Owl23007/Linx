@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.contins.linx.model.entity.User;
+import top.contins.linx.model.entity.UserStatus;
 import top.contins.linx.model.vo.UserVO;
 import top.contins.linx.repository.UserRepository;
 
@@ -14,147 +15,71 @@ import java.util.stream.Collectors;
 
 /**
  * 用户服务类
+ * 注意：本服务仅管理聊天相关的用户状态和活跃信息，
+ * 不涉及用户名、邮箱、昵称等认证或个性化数据。
+ * 所有用户基础信息（如昵称、头像）由 Profile Service 统一管理，
+ * 用户列表通过 Kafka 事件异步同步。
  */
 @Service
 @Transactional
 public class UserService {
-    
-    @Autowired
+
     private UserRepository userRepository;
-    
+
+    @Autowired
+    public void setUserRepository(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
     /**
-     * 根据ID查找用户
+     * 根据 Auth 的 user_id 查找用户（用于聊天上下文）
      */
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
-    
+
     /**
-     * 根据用户名查找用户
+     * 更新用户在线状态（由事件或客户端触发）
+     * - ONLINE / AWAY / DND：更新状态 + 记录 lastSeenAt
+     * - OFFLINE：主动下线，记录时间
      */
-    public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
-    }
-    
-    /**
-     * 根据邮箱查找用户
-     */
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
-    
-    /**
-     * 根据用户名或邮箱查找用户
-     */
-    public Optional<User> findByUsernameOrEmail(String loginId) {
-        return userRepository.findByUsernameOrEmail(loginId);
-    }
-    
-    /**
-     * 创建用户
-     */
-    public User createUser(String username, String email, String password) {
-        if (userRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException("用户名已存在");
-        }
-        if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("邮箱已存在");
-        }
-        
-        User user = new User(username, email, password);
-        return userRepository.save(user);
-    }
-    
-    /**
-     * 更新用户信息
-     */
-    public User updateUser(Long userId, String nickname, String email) {
+    public User updateUserStatus(Long userId, UserStatus status) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
-        
-        if (nickname != null && !nickname.trim().isEmpty()) {
-            user.setNickname(nickname);
-        }
-        
-        if (email != null && !email.equals(user.getEmail())) {
-            if (userRepository.existsByEmail(email)) {
-                throw new IllegalArgumentException("邮箱已存在");
-            }
-            user.setEmail(email);
-        }
-        
-        return userRepository.save(user);
-    }
-    
-    /**
-     * 更新用户状态
-     */
-    public User updateUserStatus(Long userId, User.UserStatus status) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
-        
+                .orElseThrow(() -> new IllegalArgumentException("用户不存在: " + userId));
+
         user.setStatus(status);
-        if (status == User.UserStatus.OFFLINE) {
-            user.setLastOnline(LocalDateTime.now());
-        }
-        
+
+        // 更新最后活跃时间
+        user.updateLastSeenAt(LocalDateTime.now());
+
         return userRepository.save(user);
     }
-    
+
     /**
-     * 获取在线用户列表
-     */
-    @Transactional(readOnly = true)
-    public List<UserVO> getOnlineUsers() {
-        return userRepository.findOnlineUsers()
-                .stream()
-                .map(UserVO::new)
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * 根据昵称搜索用户
-     */
-    @Transactional(readOnly = true)
-    public List<UserVO> searchUsersByNickname(String nickname) {
-        return userRepository.findByNicknameContaining(nickname)
-                .stream()
-                .map(UserVO::new)
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * 获取用户信息VO
+     * 根据 ID 获取用户 VO（前端显示单个用户）
      */
     @Transactional(readOnly = true)
     public UserVO getUserVO(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("用户不存在: " + userId));
         return new UserVO(user);
     }
-    
+
     /**
-     * 检查用户名是否存在
+     * 检查用户是否存在
      */
     @Transactional(readOnly = true)
-    public boolean existsByUsername(String username) {
-        return userRepository.existsByUsername(username);
+    public boolean existsById(Long userId) {
+        return userRepository.existsById(userId);
     }
-    
+
     /**
-     * 检查邮箱是否存在
+     * 更新最后活跃时间（心跳机制调用）
      */
-    @Transactional(readOnly = true)
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
-    }
-    
-    /**
-     * 删除用户
-     */
-    public void deleteUser(Long userId) {
+    public void updateLastSeenAt(Long userId, LocalDateTime now) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
-        userRepository.delete(user);
+                .orElseThrow(() -> new IllegalArgumentException("用户不存在: " + userId));
+        user.updateLastSeenAt(now);
+        userRepository.save(user);
     }
 }
