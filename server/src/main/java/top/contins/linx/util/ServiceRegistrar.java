@@ -3,8 +3,10 @@ package top.contins.linx.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -45,6 +47,13 @@ public class ServiceRegistrar {
     // AuthService 地址
     @Value("${upstream.auth-service.endpoint}")
     private String authServiceUrl;
+
+    private final JwtUtil jwtUtil;
+
+    @Autowired
+    public ServiceRegistrar(@Lazy JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -122,7 +131,10 @@ public class ServiceRegistrar {
             throw new RuntimeException("注册失败: " + msg);
         }
 
-        log.info("服务注册成功: {}", result.getBody().get("data"));
+        log.info("服务注册成功: {}", result.getBody().get("message"));
+
+        String jwtKey = result.getBody().get("data").toString();
+        jwtUtil.setPublicKey(jwtKey);
         registered.set(true);
     }
 

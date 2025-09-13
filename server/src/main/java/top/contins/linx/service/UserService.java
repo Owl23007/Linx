@@ -9,9 +9,7 @@ import top.contins.linx.model.vo.UserVO;
 import top.contins.linx.repository.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * 用户服务类
@@ -82,4 +80,5 @@ public class UserService {
         user.updateLastSeenAt(now);
         userRepository.save(user);
     }
+
 }

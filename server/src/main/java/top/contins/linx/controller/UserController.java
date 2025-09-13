@@ -50,7 +50,7 @@ public class UserController {
     @Operation(summary = "获取当前登录用户信息", description = "基于JWT令牌自动识别当前用户")
     @GetMapping("/me")
     public Result<UserVO> getCurrentUser(
-            @AuthenticationPrincipal Long currentUserId) { // ← ✅ Spring Security 自动注入
+            @AuthenticationPrincipal Long currentUserId) { // ← Spring Security 自动注入
         try {
             UserVO userVO = userService.getUserVO(currentUserId);
             return Result.success("获取当前用户信息成功", userVO);
