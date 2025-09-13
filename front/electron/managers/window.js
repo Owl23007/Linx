@@ -20,6 +20,7 @@ class WindowManager {
       ...WINDOW_CONFIG.Auth,
       webPreferences,
       show: false,
+      backgroundColor: '#f5f9ff',
     });
 
     this.loadContent('/login');
@@ -151,14 +152,19 @@ class WindowManager {
    * 切换为主窗口
    */
   switchToMainWindow() {
-    this.mainWindow.setResizable(true);
-    this.mainWindow.setMaximizable(true);
-    this.mainWindow.setMinimizable(true);
-    this.mainWindow.setClosable(true);
+    this.mainWindow.hide();
 
-    this.mainWindow.setMinimumSize(800, 600);
-    this.mainWindow.setSize(1200, 800);
-    this.mainWindow.center();
+    setTimeout(() => {
+      this.mainWindow.setResizable(true);
+      this.mainWindow.setMaximizable(true);
+      this.mainWindow.setMinimizable(true);
+      this.mainWindow.setClosable(true);
+      this.mainWindow.setMinimumSize(800, 600);
+      this.mainWindow.setContentSize(1200, 800);
+      this.mainWindow.center();
+      this.mainWindow.show();
+    }, 240);
+
   }
 }
 

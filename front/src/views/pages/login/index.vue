@@ -7,7 +7,7 @@
             class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
             <div ref="dragAreaRef" class="flex-1 h-full drag-area" />
             <div class="flex">
-                <el-button size="small" class="window-btn minimize-btn">
+                <el-button size="small" class="window-btn minimize-btn" @click="handleTest">
                     <el-icon :size="16">
                         <Setting />
                     </el-icon>
@@ -449,6 +449,12 @@ async function handleLogin(): Promise<void> {
     await authService.switchToMainWindow();
     router.push('/main');
   }
+}
+
+async function handleTest(): Promise<void> {
+  await authService.switchToMainWindow();
+  router.push('/main');
+
 }
 
 async function handleRegister(): Promise<void> {

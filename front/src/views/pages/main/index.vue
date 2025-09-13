@@ -1,7 +1,7 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col p-4 relative overflow-hidden">
-      <!-- Electron 拖动区域（移动到最外层，避免影响 Header 布局） -->
-      <div v-if="isElectron()" class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
+    <div class="min-h-screen h-full overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col p-4 relative">
+      <!-- Electron 拖动区域 -->
+      <header v-if="isElectron()" class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
         <div ref="dragAreaRef" class="flex-1 h-full drag-area" />
         <div class="flex">
             <el-button size="small" class="window-btn minimize-btn">
@@ -20,57 +20,21 @@
                 </el-icon>
             </el-button>
         </div>
-      </div>
-
-      <header class="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between mt-12 z-10">
-         <!-- 拖动区域和顶部操作按钮 -->
-        <!-- Electron 拖动区域已移到外层，Header 保持简单布局 -->
-
-       <div class="flex items-center space-x-3">
-         <el-avatar :size="40" src="https://via.placeholder.com/40" />
-         <h1 class="text-lg font-semibold text-gray-800">聊天室</h1>
-       </div>
-       <div>
-         <el-button text circle>
-           <template #icon>
-             <el-icon><Setting /></el-icon>
-           </template>
-         </el-button>
-       </div>
-     </header>
+      </header>
 
      <!-- 主内容区 -->
-          <div class="flex-1 flex overflow-hidden min-h-0">
+      <div class="flex-1 flex overflow-hidden min-h-0" :class="{ 'mt-6': isElectron() }">
        <!-- 侧边栏：联系人/会话列表 -->
-       <aside class="w-64 bg-white border-r border-gray-200 overflow-y-auto">
-         <div class="p-4">
-           <el-input
-             v-model="searchQuery"
-             placeholder="搜索联系人"
-             :prefix-icon="Search"
-             clearable
-             size="small"
-           />
-         </div>
-         <ul class="divide-y divide-gray-100">
-           <li
-             v-for="item in mockSessions"
-             :key="item.id"
-             class="p-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center space-x-3"
-             :class="{ 'bg-blue-50 border-r-2 border-blue-500': item.active }"
-             @click="item.active = true"
-           >
-             <el-badge :value="item.unread" :hidden="item.unread === 0" class="!mr-2">
-               <el-avatar :size="36" :src="item.avatar" />
-             </el-badge>
-             <div class="flex-1 min-w-0">
-               <p class="text-sm font-medium text-gray-900 truncate">{{ item.name }}</p>
-               <p class="text-xs text-gray-500 truncate">{{ item.lastMessage }}</p>
-             </div>
-             <span class="text-xs text-gray-400 whitespace-nowrap">{{ item.time }}</span>
-           </li>
-         </ul>
-       </aside>
+    <!-- 左侧侧边栏 -->
+    <aside class="w-80 bg-white border-r border-gray-200 overflow-y-auto flex flex-row">
+      <!-- 个人信息卡片 -->
+       <div class="w-1">
+            <SideBar />
+      </div>
+
+      <!-- 消息列表 -->
+      <MessageList />
+    </aside>
 
        <!-- 聊天区域 -->
         <div class="flex-1 flex flex-col bg-white min-h-0">
@@ -132,18 +96,10 @@ import {
   Minus,
   MoreFilled,
   Phone,
-  Search,
   Setting,
   VideoCamera
 } from '@element-plus/icons-vue';
 import { nextTick, onMounted, onUnmounted, ref } from 'vue';
-
-// 模拟数据（仅用于 UI 展示）
-const mockSessions = ref([
-  { id: '1', name: '李四', avatar: 'https://via.placeholder.com/40/3b82f6/ffffff?text=李', lastMessage: '在干嘛呢？', time: '10:30', unread: 2, active: true },
-  { id: '2', name: '王五', avatar: 'https://via.placeholder.com/40/ef4444/ffffff?text=王', lastMessage: '晚上吃饭吗？', time: '昨天', unread: 0, active: false },
-  { id: '3', name: '赵六', avatar: 'https://via.placeholder.com/40/10b981/ffffff?text=赵', lastMessage: '项目进度怎么样？', time: '周一', unread: 0, active: false }
-]);
 
 const mockMessages = ref([
   { id: '1', text: '你好啊！', sender: 'other', timestamp: new Date(Date.now() - 60000) },
@@ -152,7 +108,6 @@ const mockMessages = ref([
   { id: '4', text: '没问题，稍后发你 GitHub', sender: 'me', timestamp: new Date() }
 ]);
 
-const searchQuery = ref('');
 const inputMessage = ref('');
 
 function handleCloseWindow() {
@@ -176,7 +131,7 @@ const scrollToBottom = () => {
 
 onMounted(() => {
   scrollToBottom();
-  // 初始化 Electron 拖拽区域（如果存在）
+  // 初始化 Electron 拖拽区域
   if (dragAreaRef.value) {
     const cleanup = dragSetup(dragAreaRef.value);
     if (cleanup) {

@@ -1,1 +1,9 @@
 @import 'tailwindcss';
+
+/* 设置 html 和 body 占满视口 */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
