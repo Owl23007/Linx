@@ -1,189 +1,179 @@
 <template>
-    <div
-        class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
+  <div
+    class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
 
-        <!-- 拖动区域和顶部操作按钮 -->
-        <div v-if="isElectron()"
-            class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
-            <div ref="dragAreaRef" class="flex-1 h-full drag-area" />
-            <div class="flex">
-                <el-button size="small" class="window-btn minimize-btn" @click="handleTest">
-                    <el-icon :size="16">
-                        <Setting />
-                    </el-icon>
-                </el-button>
-                <el-button size="small" class="window-btn minimize-btn" @click="handleMinimizeWindow">
-                    <el-icon :size="16">
-                        <Minus />
-                    </el-icon>
-                </el-button>
-                <el-button size="small" class="window-btn close-btn" @click="handleCloseWindow">
-                    <el-icon :size="16">
-                        <Close />
-                    </el-icon>
-                </el-button>
-            </div>
-        </div>
-
-        <!-- 标题图标 -->
-        <div v-if="!(isElectron() && activeTab === 'register')" class="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
-            <TitleLogo :size="isElectron() ? '1' : '1.5'" />
-        </div>
-
-        <!-- Tab 区域 -->
-        <div :class="[
-              { 'scale-120 top-40': !isElectron() },
-              { 'tab-shift-up': isElectron() && activeTab === 'register' },
-              { 'tab-shift-down': isElectron() && activeTab === 'login' }
-            ]"
-            class="overflow-hidden w-50 max-w-md absolute top-24 z-10">
-            <div class="custom-tabs">
-                <div ref="tabListRef" class="tab-list">
-                    <div v-for="(tab, idx) in tabs" :key="tab.name"
-                        :ref="el => { if (el) tabRefs[idx] = el as HTMLElement }"
-                        :class="['tab-item', { active: activeTab === tab.name }]"
-                        @click="switchTab(tab.name, idx)">
-                        {{ tab.label }}
-                    </div>
-                    <div class="tab-slider" :style="sliderStyle" />
-                </div>
-            </div>
-        </div>
-
-        <!-- 表单内容区域 -->
-        <div :class="{ 'w-120': !isElectron() }"
-            class="w-70 max-w-sm absolute mt-3 px-4 py-4 overflow-hidden">
-            <div class="form-container relative">
-                <Transition :name="transitionName" mode="out-in">
-                    <!-- 登录表单 -->
-                    <div v-if="activeTab === 'login'" key="login" class="form-content mt-16">
-                        <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
-                            <el-form-item>
-                                <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large"
-                                    class="round-input">
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Server />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <div class="h-2" />
-                            <el-form-item prop="account">
-                                <el-input v-model="loginForm.account" clearable placeholder="请输入账号或邮箱"
-                                    size="large" class="round-input">
-                                    <template #prefix>
-                                        <el-icon>
-                                            <User />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <div class="h-2" />
-                            <el-form-item prop="password">
-                                <el-input v-model="loginForm.password" clearable type="password"
-                                    placeholder="请输入密码" size="large" show-password class="round-input">
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Lock />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                        </el-form>
-                    </div>
-
-                    <!-- 注册表单 -->
-                    <div v-else-if="activeTab === 'register'" key="register" :class="['form-content mt-18', { 'form-shift-up': isElectron() }]">
-                      <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" :class="[ { 'register-form': isElectron() }]">
-                        <el-form-item>
-                            <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large" class="round-input">
-                                <template #prefix>
-                                    <el-icon>
-                                      <Server />
-                                    </el-icon>
-                                </template>
-                              </el-input>
-                            </el-form-item>
-                            <el-form-item prop="username">
-                                <el-input v-model="registerForm.username" placeholder="请输入用户名" size="large"
-                                    class="round-input" clearable>
-                                    <template #prefix>
-                                        <el-icon>
-                                            <User />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item prop="email">
-                                <el-input v-model="registerForm.email" placeholder="请输入邮箱" size="large"
-                                    class="round-input" clearable>
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Message />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item prop="password">
-                                <el-input v-model="registerForm.password" type="password"
-                                    placeholder="请输入密码" size="large" show-password class="round-input" clearable>
-                                    <template #prefix>
-                                        <el-icon>
-                                            <Lock />
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </el-form-item>
-                            <el-form-item prop="captchaCode">
-                                <div class="flex gap-2">
-                                    <el-input v-model="registerForm.captchaCode" placeholder="输入验证码"
-                                        size="large" class="round-input flex-1">
-                                        <template #prefix>
-                                            <el-icon>
-                                                <Key />
-                                            </el-icon>
-                                        </template>
-                                    </el-input>
-
-                                    <div :class="{ 'w-35': !isElectron() }"
-                                        class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
-                                        v-loading="captchaLoading"
-                                        @click="refreshCaptcha">
-                                        <img v-if="captchaImage" :src="captchaImage"
-                                            alt="验证码" class="max-w-full max-h-full">
-                                        <span v-else class="flex items-center justify-center text-xs text-gray-500">
-                                            <el-icon :size="16" class="mr-1">
-                                                <Refresh />
-                                            </el-icon>
-                                            获取验证码
-                                        </span>
-                                    </div>
-                                </div>
-                            </el-form-item>
-                        </el-form>
-                    </div>
-                </Transition>
-            </div>
-        </div>
-
-        <!-- 底部按钮区域 -->
-        <div :class="{ 'bottom-25 scale-125': !isElectron() }"
-            class="px-4 pb-4 overflow-hidden absolute bottom-0 w-55">
-            <el-form-item v-if="activeTab === 'login'" class="mb-4">
-                <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loading"
-                    @click="handleLogin">
-                    登录
-                </el-button>
-            </el-form-item>
-            <el-form-item v-else-if="activeTab === 'register'" class="mb-0">
-                <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loading"
-                    @click="handleRegister">
-                    注册
-                </el-button>
-            </el-form-item>
-        </div>
+    <!-- 拖动区域和顶部操作按钮 -->
+    <div v-if="isElectron()" class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
+      <div ref="dragAreaRef" class="flex-1 h-full drag-area" />
+      <div class="flex">
+        <el-button size="small" class="window-btn minimize-btn" @click="handleTest">
+          <el-icon :size="16">
+            <Setting />
+          </el-icon>
+        </el-button>
+        <el-button size="small" class="window-btn minimize-btn" @click="handleMinimizeWindow">
+          <el-icon :size="16">
+            <Minus />
+          </el-icon>
+        </el-button>
+        <el-button size="small" class="window-btn close-btn" @click="handleCloseWindow">
+          <el-icon :size="16">
+            <Close />
+          </el-icon>
+        </el-button>
+      </div>
     </div>
+
+    <!-- 标题图标 -->
+    <div v-if="!(isElectron() && activeTab === 'register')"
+      class="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
+      <TitleLogo :size="isElectron() ? '1' : '1.5'" />
+    </div>
+
+    <!-- Tab 区域 -->
+    <div :class="[
+      { 'scale-120 top-40': !isElectron() },
+      { 'tab-shift-up': isElectron() && activeTab === 'register' },
+      { 'tab-shift-down': isElectron() && activeTab === 'login' }
+    ]" class="overflow-hidden w-50 max-w-md absolute top-24 z-10">
+      <div class="custom-tabs">
+        <div ref="tabListRef" class="tab-list">
+          <div v-for="(tab, idx) in tabs" :key="tab.name" :ref="el => { if (el) tabRefs[idx] = el as HTMLElement }"
+            :class="['tab-item', { active: activeTab === tab.name }]" @click="switchTab(tab.name, idx)">
+            {{ tab.label }}
+          </div>
+          <div class="tab-slider" :style="sliderStyle" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 表单内容区域 -->
+    <div :class="{ 'w-120': !isElectron() }" class="w-70 max-w-sm absolute mt-3 px-4 py-4 overflow-hidden">
+      <div class="form-container relative">
+        <Transition :name="transitionName" mode="out-in">
+          <!-- 登录表单 -->
+          <div v-if="activeTab === 'login'" key="login" class="form-content mt-16">
+            <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
+              <el-form-item>
+                <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large" class="round-input">
+                  <template #prefix>
+                    <el-icon>
+                      <Server />
+                    </el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+              <div class="h-2" />
+              <el-form-item prop="account">
+                <el-input v-model="loginForm.account" clearable placeholder="请输入账号或邮箱" size="large" class="round-input">
+                  <template #prefix>
+                    <el-icon>
+                      <User />
+                    </el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+              <div class="h-2" />
+              <el-form-item prop="password">
+                <el-input v-model="loginForm.password" clearable type="password" placeholder="请输入密码" size="large"
+                  show-password class="round-input">
+                  <template #prefix>
+                    <el-icon>
+                      <Lock />
+                    </el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <!-- 注册表单 -->
+          <div v-else-if="activeTab === 'register'" key="register"
+            :class="['form-content mt-18', { 'form-shift-up': isElectron() }]">
+            <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules"
+              :class="[{ 'register-form': isElectron() }]">
+              <el-form-item>
+                <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large" class="round-input">
+                  <template #prefix>
+                    <el-icon>
+                      <Server />
+                    </el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+              <el-form-item prop="username">
+                <el-input v-model="registerForm.username" placeholder="请输入用户名" size="large" class="round-input"
+                  clearable>
+                  <template #prefix>
+                    <el-icon>
+                      <User />
+                    </el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+              <el-form-item prop="email">
+                <el-input v-model="registerForm.email" placeholder="请输入邮箱" size="large" class="round-input" clearable>
+                  <template #prefix>
+                    <el-icon>
+                      <Message />
+                    </el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+              <el-form-item prop="password">
+                <el-input v-model="registerForm.password" type="password" placeholder="请输入密码" size="large" show-password
+                  class="round-input" clearable>
+                  <template #prefix>
+                    <el-icon>
+                      <Lock />
+                    </el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+              <el-form-item prop="captchaCode">
+                <div class="flex gap-2">
+                  <el-input v-model="registerForm.captchaCode" placeholder="输入验证码" size="large"
+                    class="round-input flex-1">
+                    <template #prefix>
+                      <el-icon>
+                        <Key />
+                      </el-icon>
+                    </template>
+                  </el-input>
+
+                  <div :class="{ 'w-35': !isElectron() }"
+                    class="w-28.5 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-colors"
+                    v-loading="captchaLoading" @click="refreshCaptcha">
+                    <img v-if="captchaImage" :src="captchaImage" alt="验证码" class="max-w-full max-h-full">
+                    <span v-else class="flex items-center justify-center text-xs text-gray-500">
+                      <el-icon :size="16" class="mr-1">
+                        <Refresh />
+                      </el-icon>
+                      获取验证码
+                    </span>
+                  </div>
+                </div>
+              </el-form-item>
+            </el-form>
+          </div>
+        </Transition>
+      </div>
+    </div>
+
+    <!-- 底部按钮区域 -->
+    <div :class="{ 'bottom-25 scale-125': !isElectron() }" class="px-4 pb-4 overflow-hidden absolute bottom-0 w-55">
+      <el-form-item v-if="activeTab === 'login'" class="mb-4">
+        <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loading" @click="handleLogin">
+          登录
+        </el-button>
+      </el-form-item>
+      <el-form-item v-else-if="activeTab === 'register'" class="mb-0">
+        <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loading" @click="handleRegister">
+          注册
+        </el-button>
+      </el-form-item>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -191,14 +181,15 @@
 import type { LoginRequest, RegisterRequest } from '@/models/auth';
 import authService from '@/services/authService';
 import { useAuthStore } from '@/stores/auth';
+import { useGlobalStore } from '@/stores/global';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
+import TitleLogo from '@/views/components/title-icon.vue';
 import { Close, Key, Lock, Message, Minus, Refresh, Setting, User } from '@element-plus/icons-vue';
 import { type FormInstance, type FormRules, ElMessage } from 'element-plus';
 import { nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Server from './components/server-icon.vue';
-import TitleLogo from './components/title-icon.vue';
 
 const router = useRouter();
 
@@ -295,6 +286,9 @@ async function performLogin(): Promise<boolean> {
   try {
     const res = await authStore.login(loginForm.value, serverUrl.value);
     if (res.code == 0) {
+      useGlobalStore().setEndpoint(serverUrl.value);
+      await authService.getRouters();
+
       return true;
     }
 
@@ -324,9 +318,9 @@ async function performRegister(): Promise<boolean> {
       registerForm.value.captchaId = captchaId.value;
     }
 
-    const res =  await authService.register(registerForm.value, serverUrl.value);
+    const res = await authService.register(registerForm.value, serverUrl.value);
     if (res.code == 0) {
-      switchTab('login',0);
+      switchTab('login', 0);
 
       return true;
     }
@@ -349,7 +343,7 @@ async function performRegister(): Promise<boolean> {
 // 清理函数
 function cleanup() {
   loginForm.value = { account: '', password: '' };
-  registerForm.value = { username: '',email: '', password: '', captchaCode: '', captchaId: '' };
+  registerForm.value = { username: '', email: '', password: '', captchaCode: '', captchaId: '' };
   error.value = '';
   captchaImage.value = '';
   captchaId.value = '';
@@ -433,7 +427,7 @@ function switchTab(tabName: string, idx: number): void {
 }
 
 const showError = (message: string) => {
-  ElMessage.error({ message, offset: 50 ,customClass: 'message' });
+  ElMessage.error({ message, offset: 50, customClass: 'message' });
 };
 
 // ========== 事件处理函数 ==========
@@ -445,7 +439,7 @@ async function handleLogin(): Promise<void> {
 
   const success = await performLogin();
   if (success) {
-    ElMessage.success({ message: '登录成功', offset: 50 ,customClass: 'message' });
+    ElMessage.success({ message: '登录成功', offset: 50, customClass: 'message' });
     await authService.switchToMainWindow();
     router.push('/main');
   }
@@ -500,194 +494,195 @@ onUnmounted(() => {
 // 表单切换动画 - 向左滑动（登录->注册）
 .slide-left-enter-active,
 .slide-left-leave-active {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 // 表单切换动画 - 向右滑动（注册->登录）
 .slide-right-enter-active,
 .slide-right-leave-active {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tab-shift-up {
-    transform: translateY(-50px);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 30;
+  transform: translateY(-50px);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 30;
 }
 
 /* 注册表单在 Electron 下上移并添加过渡动画 */
 .form-shift-up {
-    transform: translateY(-32px);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 25;
+  transform: translateY(-32px);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 25;
 }
 
 /* 切换到登录时的回落动画 */
 .tab-shift-down {
-    transform: translateY(0);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 20;
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 20;
 }
+
 ::v-deep .register-form .el-form-item {
   margin-bottom: 15px !important;
 }
 
 .slide-left-enter-from {
-    opacity: 0;
-    transform: translateX(20px);
+  opacity: 0;
+  transform: translateX(20px);
 }
 
 .slide-left-leave-to {
-    opacity: 0;
-    transform: translateX(-20px);
+  opacity: 0;
+  transform: translateX(-20px);
 }
 
 .slide-left-enter-to,
 .slide-left-leave-from {
-    opacity: 1;
-    transform: translateX(0);
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .slide-right-enter-from {
-    opacity: 0;
-    transform: translateX(-20px);
+  opacity: 0;
+  transform: translateX(-20px);
 }
 
 .slide-right-leave-to {
-    opacity: 0;
-    transform: translateX(20px);
+  opacity: 0;
+  transform: translateX(20px);
 }
 
 .slide-right-enter-to,
 .slide-right-leave-from {
-    opacity: 1;
-    transform: translateX(0);
+  opacity: 1;
+  transform: translateX(0);
 }
 
 // 表单容器
 .form-container {
-    position: relative;
-    min-height: 200px;
+  position: relative;
+  min-height: 200px;
 }
 
 .form-content {
-    width: 100%;
+  width: 100%;
 }
 
 // Tab 样式
 .custom-tabs {
-    .tab-list {
-        display: flex;
-        position: relative;
-        background-color: #f9fafb;
-        border-radius: 0.5rem;
-        padding: 0.25rem;
+  .tab-list {
+    display: flex;
+    position: relative;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 0.25rem;
 
-        .tab-item {
-            flex: 1;
-            text-align: center;
-            padding: 0.5rem 0;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #6b7280;
-            cursor: pointer;
-            border-radius: 0.375rem;
-            position: relative;
-            z-index: 10;
-            transition: color 0.2s ease;
-            user-select: none;
+    .tab-item {
+      flex: 1;
+      text-align: center;
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      border-radius: 0.375rem;
+      position: relative;
+      z-index: 10;
+      transition: color 0.2s ease;
+      user-select: none;
 
-            &.active {
-                color: #ffffff;
-            }
+      &.active {
+        color: #ffffff;
+      }
 
-            &:hover:not(.active) {
-                color: #374151;
-            }
-        }
-
-        .tab-slider {
-            position: absolute;
-            top: 0.25rem;
-            bottom: 0.25rem;
-            background: linear-gradient(to right, #3b82f6, #2563eb);
-            border-radius: 0.375rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 5;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
+      &:hover:not(.active) {
+        color: #374151;
+      }
     }
+
+    .tab-slider {
+      position: absolute;
+      top: 0.25rem;
+      bottom: 0.25rem;
+      background: linear-gradient(to right, #3b82f6, #2563eb);
+      border-radius: 0.375rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 5;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+  }
 }
 
 // 拖动区域样式
 .drag-area {
-    user-select: none;
-    transition: background-color 0.2s ease;
+  user-select: none;
+  transition: background-color 0.2s ease;
 
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
 
-    &:active {
-        cursor: move;
-    }
+  &:active {
+    cursor: move;
+  }
 }
 
 // 窗口控制按钮样式
 .window-btn {
-    background-color: transparent;
-    border: 1px solid transparent;
-    border-radius: 0.5rem;
-    width: 2rem;
-    height: 2rem;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    margin-left: 0.5vh;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-left: 0.5vh;
 
-    &:hover {
-        border-color: rgba(255, 255, 255, 0.5);
-    }
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
 
-    &.minimize-btn:hover {
-        background-color: rgba(59, 130, 246, 0.1);
-        border-color: transparent;
-    }
+  &.minimize-btn:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-color: transparent;
+  }
 
-    &.close-btn:hover {
-        background-color: #ef4444;
-        color: white;
-    }
+  &.close-btn:hover {
+    background-color: #ef4444;
+    color: white;
+  }
 }
 </style>
 
 <style lang="less">
 .round-input {
-    border-radius: 0.45rem !important;
+  border-radius: 0.45rem !important;
 
-    .el-input-group__prepend {
-        border-radius: 0.45rem;
-        border: 0;
-        box-shadow: 0 0 0 0px;
-    }
+  .el-input-group__prepend {
+    border-radius: 0.45rem;
+    border: 0;
+    box-shadow: 0 0 0 0px;
+  }
 
-    .el-input__wrapper {
-        border-radius: 0.45rem;
-        border: 0;
-        box-shadow: 0 0 0 0px;
-    }
+  .el-input__wrapper {
+    border-radius: 0.45rem;
+    border: 0;
+    box-shadow: 0 0 0 0px;
+  }
 
-    .el-input-group__append {
-        border-radius: 0.45rem;
-        border: 0;
-        box-shadow: 0 0 0 0px;
-    }
+  .el-input-group__append {
+    border-radius: 0.45rem;
+    border: 0;
+    box-shadow: 0 0 0 0px;
+  }
 }
 
 .message {
-   width: 70%;
-   max-width: 300px;
+  width: 70%;
+  max-width: 300px;
 }
 </style>

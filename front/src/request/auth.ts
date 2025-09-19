@@ -15,6 +15,12 @@ export function getCaptcha(serverUrl: string): Promise<Result> {
 export function login(data:any, endpoint: string): Promise<Result> {
   return post('/auth/login', data, endpoint);
 }
+/**
+ * 获取路由
+ */
+export function getRouters(): Promise<Result> {
+  return post('/service-registry/routes');
+}
 
 /**
  * 用户注册
@@ -51,4 +57,5 @@ export default {
   getUserInfo,
   refreshToken,
   logout,
+  getRouters,
 };

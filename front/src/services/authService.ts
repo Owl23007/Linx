@@ -1,5 +1,6 @@
 import type { LoginRequest, RegisterRequest } from '@/models/auth';
-import auth, { getCaptcha, register } from '@/request/auth';
+import auth from '@/request/auth';
+import { useGlobalStore } from '@/stores/global';
 import { isElectron, sendIpc } from '@/utils/electron';
 
 /**
@@ -15,7 +16,7 @@ class AuthService {
     * @return {Promise<void>}
    */
   async register(data:RegisterRequest, endpoint: string) {
-    const res =  await register(data, endpoint);
+    const res =  await auth.register(data, endpoint);
 
     return res;
   }
@@ -25,7 +26,7 @@ class AuthService {
    * @param {string} serverUrl - 服务器URL
    */
   async getCaptcha(serverUrl: string) {
-    const response = await getCaptcha(serverUrl);
+    const response = await auth.getCaptcha(serverUrl);
 
     return response;
   }
@@ -37,6 +38,19 @@ class AuthService {
    */
   async login(data: LoginRequest, endpoint: string) {
     const res = await auth.login(data, endpoint);
+
+    return res;
+  }
+
+  /**
+   * 获取路由
+   * @return {Promise<void>}
+   */
+  async getRouters() {
+    const res = await auth.getRouters();
+    if (res.code === 0) {
+      useGlobalStore().setRoutes(res.data);
+    }
 
     return res;
   }

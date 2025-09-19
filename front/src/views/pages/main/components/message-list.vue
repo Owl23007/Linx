@@ -2,39 +2,21 @@
   <div class="h-full bg-gray-50 flex flex-col">
     <!-- 搜索栏 -->
     <div class="flex items-center justify-between p-3 border-b border-gray-200 bg-white shadow-sm">
-      <el-input
-        v-model="search"
-        placeholder="搜索"
-        prefix-icon="Search"
-        clearable
-        size="small"
-        class="w-full max-w-xs"
-      />
-      <el-button
-        type="primary"
-        size="small"
-        @click="onAddClick"
-        class="ml-2"
-      >
-        <el-icon><Plus /></el-icon>
+      <el-input v-model="search" placeholder="搜索" prefix-icon="Search" clearable size="small" class="w-full max-w-xs" />
+      <el-button type="primary" size="small" @click="onAddClick" class="ml-2">
+        <el-icon>
+          <Plus />
+        </el-icon>
       </el-button>
     </div>
 
     <!-- 聊天列表 -->
     <div class="flex-1 overflow-y-auto px-2 py-2 space-y-2">
-      <div
-        v-for="(item, index) in filteredChats"
-        :key="index"
+      <div v-for="(item, index) in filteredChats" :key="index"
         class="flex items-center p-3 rounded-lg hover:bg-white cursor-pointer transition-colors duration-150 shadow-sm"
-        :class="{ 'bg-blue-50': item.selected }"
-        @click="onChatClick(item)"
-      >
+        :class="{ 'bg-blue-50': item.selected }" @click="onChatClick(item)">
         <!-- 头像 -->
-        <el-avatar
-          :src="item.avatar"
-          size="40"
-          class="mr-3"
-        />
+        <el-avatar :src="item.avatar" size="40" class="mr-3" />
 
         <!-- 内容区 -->
         <div class="flex-1 min-w-0">
@@ -46,10 +28,8 @@
         </div>
 
         <!-- 未读数 -->
-        <div
-          v-if="item.unread > 0"
-          class="flex-shrink-0 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center"
-        >
+        <div v-if="item.unread > 0"
+          class="flex-shrink-0 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
           {{ item.unread > 99 ? '99+' : item.unread }}
         </div>
       </div>
@@ -152,7 +132,7 @@ const filteredChats = computed(() => {
 });
 
 // 事件处理
-const onChatClick = (item) => {
+const onChatClick = (item: any) => {
   selectedChat.value = item;
   // 可以触发父组件事件，比如 @select="handleSelect"
 };

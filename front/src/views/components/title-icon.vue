@@ -1,9 +1,6 @@
 <template>
   <!-- 标题 -->
-  <div
-    class="text-center w-auto min-w-max select-none"
-    :style="{ zIndex: zIndex, scale: size }"
-  >
+  <div class="text-center w-auto min-w-max select-none" :style="{ zIndex: zIndex, scale: size }">
     <div class="relative px-6 py-2">
       <!-- 艺术字logo -->
       <h1 class="logo-art">
@@ -15,11 +12,11 @@
 
 <script setup lang="ts">
 const props = defineProps<{
-  size?: string
+  size?: number
   zIndex?: number
 }>();
 
-const size = props.size ?? '1';
+const size = props.size ?? 1;
 const zIndex = props.zIndex ?? 20;
 
 const appTitle = import.meta.env.APP_TITLE || 'LinX';
