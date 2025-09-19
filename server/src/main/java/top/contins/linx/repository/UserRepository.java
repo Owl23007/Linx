@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import top.contins.linx.model.entity.User;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -13,9 +14,4 @@ import java.util.Optional;
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    /**
-     * 根据用户id获取用户状态
-     */
-    @Query("SELECT u.status FROM User u WHERE u.id = :userId")
-    User getUserStatus(@Param("userId") Long userId);
 }

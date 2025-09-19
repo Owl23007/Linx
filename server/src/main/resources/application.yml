@@ -11,11 +11,6 @@ server:
 service:
   pathPrefix: /api/linx
 
-# JWT Configuration
-jwt:
-  secret: linx-secret-key-change-in-production
-  expiration: 86400000
-
 # Logging configuration
 logging:
   level:

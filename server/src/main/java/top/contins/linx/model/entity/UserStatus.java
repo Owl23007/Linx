@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
- * 用户在线状态枚举
- * 用于聊天系统中表示用户当前的可达性与通知偏好
- *
- * - value() 方法用于序列化为 JSON 字符串
+ * <h1>用户在线状态枚举</h1><br>
+ * <h2>用于聊天系统中表示用户当前的可达性与通知偏好</h2>
+ * <p>
+ * - value() 方法用于序列化为 JSON 字符串<br>
  * - 中文描述用于前端展示和日志
  */
 public enum UserStatus {

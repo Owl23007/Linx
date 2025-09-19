@@ -7,9 +7,9 @@ import top.contins.linx.model.entity.User;
 import top.contins.linx.model.entity.UserStatus;
 import top.contins.linx.model.vo.UserVO;
 import top.contins.linx.repository.UserRepository;
+import top.contins.linx.util.RedisUtil;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 /**
  * 用户服务类
@@ -21,25 +21,21 @@ import java.util.Optional;
 @Service
 @Transactional
 public class UserService {
-
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RedisUtil redisUtil;
 
     @Autowired
-    public void setUserRepository(UserRepository userRepository) {
+    public  UserService(UserRepository userRepository, RedisUtil redisUtil) {
         this.userRepository = userRepository;
+        this.redisUtil = redisUtil;
     }
 
     /**
-     * 根据 Auth 的 user_id 查找用户（用于聊天上下文）
-     */
-    public Optional<User> findById(Long id) {
-        return userRepository.findById(id);
-    }
-
-    /**
-     * 更新用户在线状态（由事件或客户端触发）
-     * - ONLINE / AWAY / DND：更新状态 + 记录 lastSeenAt
-     * - OFFLINE：主动下线，记录时间
+     * 更新用户在线状态（由 JwtAuthenticationFilter 触发）
+     * <p>
+     * - ONLINE / DND：更新状态 + 记录 lastSeenAt<br>
+     * - OFFLINE：主动下线，记录时间<br>
+     * - HIDDEN / AWAY ：隐身状态，不更新 lastSeenAt<br>
      */
     public User updateUserStatus(Long userId, UserStatus status) {
         User user = userRepository.findById(userId)
@@ -47,8 +43,14 @@ public class UserService {
 
         user.setStatus(status);
 
-        // 更新最后活跃时间
-        user.updateLastSeenAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+
+        if (status!=UserStatus.HIDDEN && status != UserStatus.AWAY) {
+            // 如果状态是 ONLINE 或 DND，更新最后活跃时间
+            user.updateLastSeenAt(now);
+        }
+
+        user.setUpdatedAt(now);
 
         return userRepository.save(user);
     }
@@ -58,9 +60,17 @@ public class UserService {
      */
     @Transactional(readOnly = true)
     public UserVO getUserVO(Long userId) {
+        String key = "linx:user_vo:" + userId;
+        UserVO userVO = redisUtil.get(key, UserVO.class);
+        if (userVO != null) {
+            return userVO;
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("用户不存在: " + userId));
-        return new UserVO(user);
+        userVO = new UserVO(user);
+
+        redisUtil.set(key, userVO);
+        return userVO;
     }
 
     /**
@@ -81,4 +91,16 @@ public class UserService {
         userRepository.save(user);
     }
 
+    /**
+     * 创建或更新用户
+     * - 如果用户不存在，创建新用户，状态为 OFFLINE
+     * - 如果用户已存在，不修改状态，仅确保记录存在
+     */
+    public void createOrUpdateUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElse(User.builder()
+                        .id(userId)
+                        .build());
+        userRepository.save(user);
+    }
 }

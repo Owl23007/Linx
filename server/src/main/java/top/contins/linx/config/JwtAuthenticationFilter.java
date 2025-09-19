@@ -30,7 +30,8 @@ public class JwtAuthenticationFilter implements Filter {
             "/chat/",
             "/ws/",     // 如果用 WebSocket 握手
             "/api/chat/",
-            "/presence/"
+            "/presence/",
+            "/user/"
     };
 
     @Override
@@ -59,6 +60,8 @@ public class JwtAuthenticationFilter implements Filter {
         try {
             // 从 JWT 中提取 user_id
             Long userId = jwtUtil.getUserIdFromToken(token);
+
+            userService.createOrUpdateUser(userId);
 
             // 核心：处理用户登录状态（初始化 + 更新在线状态）
             userService.updateLastSeenAt(userId, LocalDateTime.now());

@@ -15,7 +15,7 @@ public class FilterConfig {
     public FilterRegistrationBean<JwtAuthenticationFilter> chatAuthFilterRegistration() {
         FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(jwtAuthenticationFilter);
-        registration.addUrlPatterns("/chat/*", "/api/chat/*", "/ws/*", "/presence/*");
+        registration.addUrlPatterns("/user/*", "/api/chat/*", "/ws/*", "/presence/*");
         registration.setOrder(1);
         return registration;
     }

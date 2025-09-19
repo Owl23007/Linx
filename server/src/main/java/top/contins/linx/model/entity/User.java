@@ -24,31 +24,27 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
-    private UserStatus status = UserStatus.OFFLINE;
+    private UserStatus status = UserStatus.ONLINE;
 
     @Column(name = "last_seen_at")
     private LocalDateTime lastSeenAt;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = createdAt;
-    }
+    private LocalDateTime updatedAt; // 私密字段
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
     /**
      * 更新最后活跃时间，通常由消息接收、心跳包触发
      */
     public void updateLastSeenAt(LocalDateTime now) {
         lastSeenAt = now;
+    }
+
+    public void updateStatus(UserStatus status) {
+        this.status = status;
     }
 }

@@ -3,13 +3,15 @@ package top.contins.linx.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import top.contins.linx.model.entity.UserStatus;
 import top.contins.linx.model.vo.Result;
 import top.contins.linx.model.vo.UserVO;
 import top.contins.linx.service.UserService;
+
+import java.time.LocalDateTime;
 
 /**
  * 用户管理API控制器（LinX 聊天服务专用）
@@ -18,14 +20,19 @@ import top.contins.linx.service.UserService;
  * 所有资料修改请调用 Profile Service。
  */
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/user")
 @Tag(name = "用户管理", description = "聊天服务中的用户状态与信息查询")
 public class UserController {
+
+    public static final String CURRENT_USER_ID_ATTRIBUTE = "CURRENT_USER_ID";
+
     private final UserService userService;
+    private final HttpServletRequest request;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, HttpServletRequest request) {
         this.userService = userService;
+        this.request = request;
     }
 
     /**
@@ -47,11 +54,15 @@ public class UserController {
     /**
      * 获取当前登录用户的信息（通过JWT解析）
      */
-    @Operation(summary = "获取当前登录用户信息", description = "基于JWT令牌自动识别当前用户")
+    @Operation(summary = "获取当前登录用户信息", description = "基于 Authorization: Bearer <token> 自动识别当前用户")
     @GetMapping("/me")
-    public Result<UserVO> getCurrentUser(
-            @AuthenticationPrincipal Long currentUserId) { // ← Spring Security 自动注入
+    public Result<UserVO> getCurrentUser() {
         try {
+            Long currentUserId = (Long) request.getAttribute(CURRENT_USER_ID_ATTRIBUTE);
+            if (currentUserId == null) {
+                return Result.error("未提供有效身份令牌，请登录后重试");
+            }
+
             UserVO userVO = userService.getUserVO(currentUserId);
             return Result.success("获取当前用户信息成功", userVO);
         } catch (Exception e) {
@@ -64,32 +75,20 @@ public class UserController {
      */
     @Operation(summary = "更新用户在线状态", description = "用户主动切换状态，如 'online', 'away', 'dnd', 'offline'")
     @PostMapping("/status")
-    public Result<UserVO> updateUserStatus(
-            @AuthenticationPrincipal Long currentUserId,
-            @RequestBody String statusStr) {
+    public Result<UserVO> updateUserStatus(@RequestBody String statusStr) {
         try {
+            Long currentUserId = (Long) request.getAttribute(CURRENT_USER_ID_ATTRIBUTE);
+            if (currentUserId == null) {
+                return Result.error("未提供有效身份令牌，请登录后重试");
+            }
+
             UserStatus status = UserStatus.valueOf(statusStr.toUpperCase());
             UserVO userVO = new UserVO(userService.updateUserStatus(currentUserId, status));
             return Result.success("更新用户状态成功", userVO);
         } catch (IllegalArgumentException e) {
-            return Result.error("无效的状态值: " + statusStr + "。支持: online, offline, away, dnd");
+            return Result.error("无效的状态值: " + statusStr + "。支持: online, offline, away, dnd, hidden");
         } catch (Exception e) {
             return Result.error("更新用户状态失败: " + e.getMessage());
-        }
-    }
-
-    /**
-     * 心跳接口：用户每30秒发送一次，自动延长在线时间
-     */
-    @Operation(summary = "用户心跳", description = "维持用户在线状态")
-    @PostMapping("/heartbeat")
-    public Result<String> heartbeat(
-            @AuthenticationPrincipal Long currentUserId) {
-        try {
-            userService.updateLastSeenAt(currentUserId, java.time.LocalDateTime.now());
-            return Result.success("心跳更新成功", null);
-        } catch (Exception e) {
-            return Result.error("心跳更新失败: " + e.getMessage());
         }
     }
 }
