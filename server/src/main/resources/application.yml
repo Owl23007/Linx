@@ -6,10 +6,10 @@ spring:
 
 # Server configuration
 server:
-  port: 8080
+  port: 8082
 
 service:
-  pathPrefix: /api/linx
+
 
 # Logging configuration
 logging:

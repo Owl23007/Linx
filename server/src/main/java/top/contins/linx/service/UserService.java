@@ -74,14 +74,6 @@ public class UserService {
     }
 
     /**
-     * 检查用户是否存在
-     */
-    @Transactional(readOnly = true)
-    public boolean existsById(Long userId) {
-        return userRepository.existsById(userId);
-    }
-
-    /**
      * 更新最后活跃时间（心跳机制调用）
      */
     public void updateLastSeenAt(Long userId, LocalDateTime now) {

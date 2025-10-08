@@ -5,6 +5,13 @@ spring:
     username: root
     password: W123456
 
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        username: nacos
+        password: ${nacos_password}
+
   jpa:
     open-in-view: false
     hibernate:
@@ -28,21 +35,9 @@ spring:
           min-idle: 0
           max-wait: -1ms
 
-# Server Configuration
-server:
-  port: 8080
-
 # Logging configuration for development
 logging:
   level:
     root: INFO
     com.linx: DEBUG
 
-
-service:
-  serverLocate: http://localhost:${server.port}/
-
-upstream:
-  auth-service:
-    endpoint: http://localhost:8081
-    secret: linx-shared-secret-2025!
