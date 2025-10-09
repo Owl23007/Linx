@@ -90,9 +90,7 @@ public class UserService {
      */
     public void createOrUpdateUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElse(User.builder()
-                        .id(userId)
-                        .build());
+                .orElse(new User(userId, UserStatus.OFFLINE, null, null));
         userRepository.save(user);
     }
 }

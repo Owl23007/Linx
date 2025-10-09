@@ -5,6 +5,7 @@ spring:
     driverClassName: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
   cloud:
     nacos:
       discovery:
@@ -22,19 +23,8 @@ spring:
       hibernate:
         format_sql: false
 
-# Server Configuration for production
-server:
-  port: 8080
-
 # Logging configuration for production
 logging:
   level:
     root: WARN
     com.linx: INFO
-
-# Management endpoints for production monitoring
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics

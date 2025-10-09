@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
         @Index(name = "idx_last_seen", columnList = "last_seen_at")
 })
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -30,12 +29,7 @@ public class User {
     private LocalDateTime lastSeenAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt; // 私密字段
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    private LocalDateTime updatedAt = LocalDateTime.now(); // 私密字段
 
     /**
      * 更新最后活跃时间，通常由消息接收、心跳包触发
@@ -46,5 +40,15 @@ public class User {
 
     public void updateStatus(UserStatus status) {
         this.status = status;
+    }
+
+    // 每次更新
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+        // 当状态为 ONLINE 或 DND 时更新 lastSeenAt
+        if (this.status == UserStatus.ONLINE|| this.status == UserStatus.DND) {
+            this.lastSeenAt = LocalDateTime.now();
+        }
     }
 }

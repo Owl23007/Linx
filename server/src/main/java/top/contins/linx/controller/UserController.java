@@ -5,13 +5,16 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.*;
+import top.contins.linx.model.dto.UserSession;
 import top.contins.linx.model.entity.UserStatus;
 import top.contins.linx.model.vo.Result;
 import top.contins.linx.model.vo.UserVO;
 import top.contins.linx.service.UserService;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * 用户管理API控制器（LinX 聊天服务专用）
@@ -24,15 +27,13 @@ import java.time.LocalDateTime;
 @Tag(name = "用户管理", description = "聊天服务中的用户状态与信息查询")
 public class UserController {
 
-    public static final String CURRENT_USER_ID_ATTRIBUTE = "CURRENT_USER_ID";
-
     private final UserService userService;
-    private final HttpServletRequest request;
+    private final ApplicationContext applicationContext;
 
     @Autowired
-    public UserController(UserService userService, HttpServletRequest request) {
+    public UserController(UserService userService, ApplicationContext applicationContext) {
         this.userService = userService;
-        this.request = request;
+        this.applicationContext = applicationContext;
     }
 
     /**
@@ -58,7 +59,7 @@ public class UserController {
     @GetMapping("/me")
     public Result<UserVO> getCurrentUser() {
         try {
-            Long currentUserId = (Long) request.getAttribute(CURRENT_USER_ID_ATTRIBUTE);
+            Long currentUserId = applicationContext.getBean(UserSession.class).getUserLongId();
             if (currentUserId == null) {
                 return Result.error("未提供有效身份令牌，请登录后重试");
             }
@@ -75,9 +76,10 @@ public class UserController {
      */
     @Operation(summary = "更新用户在线状态", description = "用户主动切换状态，如 'online', 'away', 'dnd', 'offline'")
     @PostMapping("/status")
-    public Result<UserVO> updateUserStatus(@RequestBody String statusStr) {
+    public Result<UserVO> updateUserStatus(@RequestBody Map<String, String> body) {
+        String statusStr = body.get("status");
         try {
-            Long currentUserId = (Long) request.getAttribute(CURRENT_USER_ID_ATTRIBUTE);
+            Long currentUserId = applicationContext.getBean(UserSession.class).getUserLongId();
             if (currentUserId == null) {
                 return Result.error("未提供有效身份令牌，请登录后重试");
             }
