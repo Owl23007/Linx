@@ -4,101 +4,92 @@
 
 ### 后端任务
 
-- [ ] **Task 1.1**: 完善 WebSocket 握手拦截器
-  - [ ] 在 `WebSocketConfig.java` 中添加 `HandshakeInterceptor`
-  - [ ] 从请求参数/Header 提取 JWT token
-  - [ ] 验证 token 有效性并存储用户信息到 WebSocket 会话
+- [x] **Task 1.1**: 完善 WebSocket 握手拦截器
+  - [x] 在 `WebSocketConfig.java` 中添加 `HandshakeInterceptor`
+  - [x] 从请求参数提取 ticket 并验证
+  - [x] 验证 ticket 有效性并存储用户信息到 WebSocket 会话
 
-- [ ] **Task 1.2**: 配置 STOMP 消息代理
-  - [ ] 配置 `/app` 应用前缀
-  - [ ] 配置 `/topic` 广播前缀
-  - [ ] 配置 `/queue` 点对点前缀
-  - [ ] 配置 user 用户特定前缀
+- [x] **Task 1.2**: 配置 STOMP 消息代理
+  - [x] 配置 `/app` 应用前缀
+  - [x] 配置 `/topic` 广播前缀
+  - [x] 配置 `/queue` 点对点前缀
+  - [x] 配置 user 用户特定前缀
 
-- [ ] **Task 1.3**: 测试 WebSocket 连接
-  - [ ] 使用 Postman/WebSocket 客户端测试连接
-  - [ ] 验证认证流程
-  - [ ] 检查连接日志
+- [ ] **Task 1.3**: 修复 STOMP 安全配置
+  - [ ] 修改 `StompConfig.java` 中的跨域配置为具体域名
+  - [ ] 为不同环境配置不同的允许源
+  - [ ] 移除生产环境的通配符配置
+
+- [ ] **Task 1.4**: 修复群聊消息路由
+  - [ ] 修改 `WebSocketController.java` 中的群聊方法
+  - [ ] 改为动态路由发送而非 `@SendTo` 注解
+  - [ ] 测试群聊消息正确分发
+
+- [ ] **Task 1.5**: 完善异常处理
+  - [ ] 在所有 WebSocket 方法中添加统一异常处理
+  - [ ] 返回友好的错误消息给客户端
+  - [ ] 添加详细的日志记录
+
+- [ ] **Task 1.6**: 创建消息代理抽象层 (为 RabbitMQ 迁移准备)
+  - [ ] 定义统一的消息发送接口 (`MessageBrokerService.java`)
+  - [ ] 实现当前 STOMP 版本
+  - [ ] 添加配置驱动的实现切换
 
 ### 前端任务
 
-- [ ] **Task 1.5**: 安装 WebSocket 依赖
-  ```bash
-  npm install @stomp/stompjs sockjs-client
-  npm install --save-dev @types/sockjs-client
-  ```
+- [ ] **Task 1.7**: 优化 WebSocket 连接处理
+  - [ ] 适配当前的 ticket 认证机制
+  - [ ] 添加连接重试逻辑
+  - [ ] 实现心跳保活机制
 
-- [ ] **Task 1.6**: 创建 WebSocket 客户端封装
-  ```typescript
-  // filepath: front/src/utils/websocket.ts
-  ```
-  - [ ] 实现 `connect()` 方法
-  - [ ] 实现 `subscribe()` 方法
-  - [ ] 实现 `send()` 方法
-  - [ ] 实现 `disconnect()` 方法
-  - [ ] 集成现有的 Logger 系统
-
-- [ ] **Task 1.7**: 创建 WebSocket 状态管理
-  ```typescript
-  // filepath: front/src/stores/websocket.ts
-  ```
-  - [ ] 定义连接状态 (CONNECTING, CONNECTED, DISCONNECTED)
+- [ ] **Task 1.8**: 完善前端 WebSocket 状态管理
+  - [ ] 定义连接状态 (CONNECTING, CONNECTED, DISCONNECTED) (`websocket.ts`)
   - [ ] 存储当前用户信息
   - [ ] 管理订阅列表
 
-- [ ] **Task 1.8**: 在登录流程中集成 WebSocket
+- [ ] **Task 1.9**: 在登录流程中集成 WebSocket
   - [ ] 登录成功后自动连接 WebSocket
   - [ ] 连接失败时显示错误提示
   - [ ] 登出时断开 WebSocket 连接
 
 ---
 
-## 💬 Phase 2: 基础消息功能
+## 💬 Phase 2: 消息功能优化
 
 ### 后端任务
 
-- [ ] **Task 2.1**: 创建消息实体类
-  ```java
-  // filepath: server/src/main/java/top/contins/linx/model/entity/Message.java
-  ```
-  - [ ] 定义基本字段 (id, senderId, recipientId, content)
+- [x] **Task 2.1**: 创建消息 DTO
+  - [x] 定义消息类型、发送者、接收者等字段 (`ChatMessage.java`)
+  - [x] 添加时间戳和已读状态
+  - [x] 定义消息类型枚举
+
+- [x] **Task 2.2**: 创建 WebSocket 消息控制器
+  - [x] `@MessageMapping("/chat.private")` - 私聊消息 (`WebSocketController.java`)
+  - [x] `@MessageMapping("/chat.group")` - 群聊消息
+  - [x] `@MessageMapping("/chat.heartbeat")` - 心跳检测
+  - [x] `@MessageMapping("/chat.typing")` - 输入状态
+  - [x] `@MessageMapping("/chat.read")` - 已读回执
+
+- [x] **Task 2.3**: 创建 WebSocket 统一服务
+  - [x] 用户上线/下线管理 (`WebsocketService.java`)
+  - [x] 会话管理和心跳刷新
+  - [x] ticket 创建和验证
+  - [x] 统一的消息发送方法
+
+- [x] **Task 2.4**: 创建 WebSocket 事件监听器
+  - [x] 监听用户连接事件 (`WebSocketEventListener.java`)
+  - [x] 监听用户断开事件
+  - [x] 记录连接日志
+
+- [ ] **Task 2.5**: 创建消息实体类和持久化
+  - [ ] 定义基本字段 (id, senderId, recipientId, content) (`Message.java`)
   - [ ] 添加时间戳和已读状态
-  - [ ] 定义消息类型枚举 (TEXT, IMAGE, FILE)
+  - [ ] 创建对应的 Repository
 
-- [ ] **Task 2.2**: 创建消息 DTO
-  ```java
-  // filepath: server/src/main/java/top/contins/linx/model/dto/ChatMessage.java
-  ```
-  - [ ] 请求 DTO (发送消息)
-  - [ ] 响应 DTO (接收消息)
-  - [ ] 添加验证注解
-
-- [ ] **Task 2.3**: 创建消息 Repository
-  ```java
-  // filepath: server/src/main/java/top/contins/linx/repository/MessageRepository.java
-  ```
-  - [ ] 继承 JpaRepository
-  - [ ] 添加按用户查询消息方法
-  - [ ] 添加按时间范围查询方法
-
-- [ ] **Task 2.4**: 创建消息服务层
-  ```java
-  // filepath: server/src/main/java/top/contins/linx/service/MessageService.java
-  ```
-  - [ ] 实现保存消息方法
+- [ ] **Task 2.6**: 实现消息持久化服务
+  - [ ] 实现保存消息方法 (`MessageService.java`)
   - [ ] 实现查询历史消息方法
   - [ ] 实现消息已读标记方法
-
-- [ ] **Task 2.5**: 创建聊天控制器
-  ```java
-  // filepath: server/src/main/java/top/contins/linx/controller/ChatController.java
-  ```
-  - [ ] `@MessageMapping("/chat.send")` - 群发消息
-  - [ ] `@MessageMapping("/chat.private")` - 私聊消息
-  - [ ] 消息持久化到数据库
-  - [ ] 添加消息发送日志
-
-- [ ] **Task 2.6**: 创建 WebSocket 事件监听器
   ```java
   // filepath: server/src/main/java/top/contins/linx/listener/WebSocketEventListener.java
   ```
@@ -109,36 +100,24 @@
 ### 前端任务
 
 - [ ] **Task 2.7**: 创建消息类型定义
-  ```typescript
-  // filepath: front/src/types/message.ts
-  ```
-  - [ ] 定义 Message 接口
+  - [ ] 定义 Message 接口 (`message.ts`)
   - [ ] 定义 MessageType 枚举
   - [ ] 定义 ChatUser 接口
 
 - [ ] **Task 2.8**: 创建消息 Store
-  ```typescript
-  // filepath: front/src/stores/message.ts
-  ```
-  - [ ] 存储消息列表
+  - [ ] 存储消息列表 (`message.ts`)
   - [ ] 添加消息方法
   - [ ] 更新已读状态方法
   - [ ] 清空消息方法
 
 - [ ] **Task 2.9**: 创建聊天窗口组件
-  ```vue
-  // filepath: front/src/components/ChatWindow.vue
-  ```
-  - [ ] 消息列表展示区域
+  - [ ] 消息列表展示区域 (`ChatWindow.vue`)
   - [ ] 滚动到底部逻辑
   - [ ] 发送/接收消息样式区分
   - [ ] 时间戳格式化显示
 
 - [ ] **Task 2.10**: 创建消息输入组件
-  ```vue
-  // filepath: front/src/components/MessageInput.vue
-  ```
-  - [ ] 文本输入框
+  - [ ] 文本输入框 (`MessageInput.vue`)
   - [ ] 发送按钮
   - [ ] Enter 键发送
   - [ ] Shift+Enter 换行
@@ -167,10 +146,7 @@
   - [ ] 配置 RedisTemplate
 
 - [ ] **Task 3.2**: 创建在线状态服务
-  ```java
-  // filepath: server/src/main/java/top/contins/linx/service/PresenceService.java
-  ```
-  - [ ] `setOnline(userId)` - 设置用户在线
+  - [ ] `setOnline(userId)` - 设置用户在线 (`PresenceService.java`)
   - [ ] `setOffline(userId)` - 设置用户离线
   - [ ] `isOnline(userId)` - 检查用户是否在线
   - [ ] `getOnlineUsers()` - 获取在线用户列表
@@ -187,10 +163,7 @@
   - [ ] 超时自动离线
 
 - [ ] **Task 3.5**: 添加消息送达确认
-  ```java
-  // filepath: server/src/main/java/top/contins/linx/model/dto/MessageAck.java
-  ```
-  - [ ] 定义 ACK DTO
+  - [ ] 定义 ACK DTO (`MessageAck.java`)
   - [ ] 发送方接收 ACK
   - [ ] 更新消息状态
 
@@ -203,10 +176,7 @@
   - [ ] 显示重连状态
 
 - [ ] **Task 3.7**: 创建在线用户列表组件
-  ```vue
-  // filepath: front/src/components/OnlineUsers.vue
-  ```
-  - [ ] 显示在线用户列表
+  - [ ] 显示在线用户列表 (`OnlineUsers.vue`)
   - [ ] 在线状态指示器(绿点)
   - [ ] 点击用户打开聊天窗口
 
