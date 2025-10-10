@@ -1,4 +1,3 @@
-// top/contins/linx/config/WsHandshakeInterceptor.java
 package top.contins.linx.config;
 
 import org.springframework.lang.NonNull;
@@ -28,7 +27,7 @@ public class WsHandshakeInterceptor implements HandshakeInterceptor {
             @NonNull ServerHttpRequest request,
             @NonNull ServerHttpResponse response,
             @NonNull WebSocketHandler wsHandler,
-            @NonNull Map<String, Object> attributes) throws Exception {
+            @NonNull Map<String, Object> attributes) {
 
         String ticket = null;
         if (request instanceof ServletServerHttpRequest servletRequest) {
