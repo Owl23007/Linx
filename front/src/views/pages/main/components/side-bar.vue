@@ -17,7 +17,7 @@
             <el-icon>
               <Message />
             </el-icon>
-            <el-badge :value="1" class="ml-auto" type="danger" :hidden="false" />
+            <el-badge :value="0" class="ml-auto" type="danger" :hidden="true" />
           </div>
         </template>
       </el-menu-item>
@@ -48,7 +48,7 @@
             <el-icon>
               <Message />
             </el-icon>
-            <el-badge :value="3" class="ml-auto" type="danger" />
+            <el-badge :value="3" class="ml-auto" type="danger" :hidden="true" />
           </div>
         </template>
       </el-menu-item>

@@ -26,6 +26,7 @@ public class ChatController {
         Long currentUserId = userSession.getUserLongId();
         String jti = userSession.getTokenJti();
         String ticket = websocketService.createTicket(currentUserId, jti);
-        return Result.success("ticket", jti + ":" + currentUserId);
+        // 返回生成的 ticket，而不是 jti:userId
+        return Result.success("获取 WebSocket Ticket 成功", ticket);
     }
 }

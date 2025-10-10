@@ -13,10 +13,10 @@ export function getHeartBeat(): Promise<Result> {
 }
 
 /**
- * 建立 WebSocket 会话
- * 通过 HTTP 接口先建立会话,服务器会将用户信息存储在 session 中
- * 之后的 WebSocket 连接会复用这个 session
+ * 获取 WebSocket Ticket
+ * 用于建立 WebSocket 连接前的身份验证
+ * 返回的 ticket 有效期 5 分钟，需要在连接 WebSocket 时作为 URL 参数传递
  */
 export function getTicket(): Promise<Result> {
-  return post('/linx/ws/ticket');
+  return post('/api/linx/chat/ticket');
 }
