@@ -15,12 +15,6 @@ export function getCaptcha(serverUrl: string): Promise<Result> {
 export function login(data:any, endpoint: string): Promise<Result> {
   return post('/auth/login', data, endpoint);
 }
-/**
- * 获取路由
- */
-export function getRouters(): Promise<Result> {
-  return post('/service-registry/routes');
-}
 
 /**
  * 用户注册
@@ -50,12 +44,20 @@ export function logout(): Promise<void> {
   return post('/auth/logout');
 }
 
+/**
+ * 建立 WebSocket 会话
+ * 通过 HTTP 接口先建立会话,服务器会将用户信息存储在 session 中
+ * 之后的 WebSocket 连接会复用这个 session
+ */
+export function establishWebSocketSession(): Promise<Result> {
+  return post('/auth/ws-session');
+}
+
 export default {
   getCaptcha,
   login,
   register,
   getUserInfo,
   refreshToken,
-  logout,
-  getRouters,
+  logout
 };

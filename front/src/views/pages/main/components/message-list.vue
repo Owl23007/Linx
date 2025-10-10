@@ -138,7 +138,6 @@ const onChatClick = (item: any) => {
 };
 
 const onAddClick = () => {
-  console.log('点击了添加按钮');
   // 可以弹出创建群聊对话框
 };
 </script>

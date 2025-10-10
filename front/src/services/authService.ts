@@ -1,6 +1,5 @@
 import type { LoginRequest, RegisterRequest } from '@/models/auth';
 import auth from '@/request/auth';
-import { useGlobalStore } from '@/stores/global';
 import { isElectron, sendIpc } from '@/utils/electron';
 
 /**
@@ -38,19 +37,6 @@ class AuthService {
    */
   async login(data: LoginRequest, endpoint: string) {
     const res = await auth.login(data, endpoint);
-
-    return res;
-  }
-
-  /**
-   * 获取路由
-   * @return {Promise<void>}
-   */
-  async getRouters() {
-    const res = await auth.getRouters();
-    if (res.code === 0) {
-      useGlobalStore().setRoutes(res.data);
-    }
 
     return res;
   }

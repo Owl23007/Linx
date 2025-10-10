@@ -10,3 +10,20 @@ export interface RegisterRequest{
   captchaCode: string;
   captchaId: string;
 }
+
+/**
+ * 登录响应数据
+ */
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+/**
+ * 用户信息
+ */
+export interface UserInfo extends LoginResponse {
+  username?: string;
+  email?: string;
+  role?: string;
+}

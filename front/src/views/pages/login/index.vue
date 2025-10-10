@@ -207,7 +207,7 @@ const activeTab = ref<'login' | 'register'>('login');
 const loading = ref(false);
 const captchaLoading = ref(false);
 const error = ref<string>('');
-const serverUrl = ref('');
+const serverUrl = ref('http://localhost:9080/api/linx'); // 默认服务器地址
 const captchaImage = ref<string>('');
 const captchaId = ref<string>('');
 

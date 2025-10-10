@@ -9,6 +9,7 @@ const http = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // 启用携带 cookie,用于会话管理
 });
 
 const tempEndpoint = ref<string>('');

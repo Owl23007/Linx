@@ -7,6 +7,9 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
   base: './',
+  define: {
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

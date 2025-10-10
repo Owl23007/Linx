@@ -40,6 +40,7 @@
     "rebuild": "electron-rebuild"
   },
   "dependencies": {
+    "@stomp/stompjs": "^7.2.0",
     "axios": "^1.11.0",
     "better-sqlite3": "^12.2.0",
     "better-sqlite3-multiple-ciphers": "^12.2.0",
@@ -47,6 +48,7 @@
     "element-plus": "^2.10.7",
     "keytar": "^7.9.0",
     "pinia": "^3.0.3",
+    "sockjs-client": "^1.6.1",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1"
   },
@@ -55,6 +57,7 @@
     "@eslint/js": "^9.34.0",
     "@stylistic/eslint-plugin": "^5.2.3",
     "@tailwindcss/vite": "^4.1.12",
+    "@types/sockjs-client": "^1.5.4",
     "@typescript-eslint/eslint-plugin": "^8.40.0",
     "@typescript-eslint/parser": "^8.40.0",
     "@vitejs/plugin-vue": "^6.0.1",
