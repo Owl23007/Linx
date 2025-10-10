@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 群组实体
  */
 @Entity
-@Table(name = "groups", indexes = {
+@Table(name = "`groups`", indexes = {
         @Index(name = "idx_group_name", columnList = "name"),
         @Index(name = "idx_group_owner", columnList = "owner_id"),
         @Index(name = "idx_group_created", columnList = "created_at")

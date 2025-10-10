@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 import top.contins.linx.model.common.UserSession;
-import top.contins.linx.service.WebsocketService;
+import top.contins.linx.util.TicketUtil;
 
 import java.util.Map;
 
@@ -16,10 +16,10 @@ import org.springframework.http.server.ServletServerHttpRequest;
 @Component
 public class WsHandshakeInterceptor implements HandshakeInterceptor {
 
-    private final WebsocketService websocketService;
+    private final TicketUtil ticketUtil;
 
-    public WsHandshakeInterceptor(WebsocketService websocketService) {
-        this.websocketService = websocketService;
+    public WsHandshakeInterceptor(TicketUtil ticketUtil) {
+        this.ticketUtil = ticketUtil;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class WsHandshakeInterceptor implements HandshakeInterceptor {
             ticket = servletRequest.getServletRequest().getParameter("ticket");
         }
 
-        UserSession userSession = websocketService.consumeTicket(ticket);
+        UserSession userSession = ticketUtil.consumeTicket(ticket);
         if (userSession == null) {
             throw new SecurityException("Invalid or expired ticket");
         }

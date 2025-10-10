@@ -6,12 +6,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import top.contins.linx.model.common.ChatMessage;
-import top.contins.linx.model.common.UserSession;
+import top.contins.linx.util.TicketUtil;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -22,20 +21,22 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class WebsocketService {
 
-    private static final String TICKET_PREFIX = "ws:ticket:";
     private static final String ONLINE_USER_PREFIX = "ws:online:";
     private static final String USER_SESSION_PREFIX = "ws:session:";
     private static final long SESSION_TIMEOUT = 30; // 会话超时时间（分钟）
 
     private final StringRedisTemplate stringRedisTemplate;
     private final SimpMessagingTemplate messagingTemplate;
+    private final TicketUtil ticketUtil;
 
     @Autowired
     public WebsocketService(
             StringRedisTemplate stringRedisTemplate,
-            SimpMessagingTemplate messagingTemplate) {
+            SimpMessagingTemplate messagingTemplate,
+            TicketUtil ticketUtil) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.messagingTemplate = messagingTemplate;
+        this.ticketUtil = ticketUtil;
     }
 
     // ================================
@@ -255,56 +256,7 @@ public class WebsocketService {
      * @return 临时 ticket
      */
     public String createTicket(Long userId, String jti) {
-
-        if (userId == null || jti == null) {
-            throw new SecurityException("Invalid userId or jti");
-        }
-
-        // 2. 拼接存储值：userId:jti
-        String value = userId + ":" + jti;
-
-        // 3. 存入 Redis
-        String ticket = UUID.randomUUID().toString();
-        stringRedisTemplate.opsForValue().set(
-                TICKET_PREFIX + ticket,
-                value,
-                5,
-                TimeUnit.MINUTES
-        );
-        return ticket;
-    }
-
-    /**
-     * 验证并消费 ticket，返回重建的 UserSession
-     *
-     * @param ticket 临时凭证
-     * @return UserSession 对象，无效则返回 null
-     */
-    public UserSession consumeTicket(String ticket) {
-        if (ticket == null || ticket.trim().isEmpty()) {
-            return null;
-        }
-
-        String key = TICKET_PREFIX + ticket;
-        String value = stringRedisTemplate.opsForValue().get(key);
-        if (value == null) {
-            return null;
-        }
-
-        // 删除 ticket（一次性使用）
-        stringRedisTemplate.delete(key);
-
-        // 解析 userId 和 jti
-        String[] parts = value.split(":", 2);
-        if (parts.length != 2) {
-            throw new SecurityException("Invalid ticket format");
-        }
-
-        Long userId = Long.parseLong(parts[0]);
-        String jti = parts[1];
-
-        // 重建 UserSession
-        return new UserSession(userId, jti);
+        return ticketUtil.createTicket(userId, jti);
     }
 
     // ================================
