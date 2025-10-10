@@ -10,11 +10,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import org.springframework.web.servlet.HandlerInterceptor;
-import top.contins.linx.model.dto.UserSession;
+import top.contins.linx.model.common.UserSession;
 import top.contins.linx.service.UserService;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 @Slf4j
 @Component

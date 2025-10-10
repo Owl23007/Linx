@@ -1,4 +1,4 @@
-package top.contins.linx.model.entity;
+package top.contins.linx.model.enums;
 
 /**
  * 群组状态枚举

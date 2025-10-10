@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.contins.linx.model.dto.FriendRequestDto;
 import top.contins.linx.model.entity.Friendship;
-import top.contins.linx.model.entity.FriendshipStatus;
+import top.contins.linx.model.enums.FriendshipStatus;
 import top.contins.linx.model.entity.User;
 import top.contins.linx.model.vo.FriendVO;
 import top.contins.linx.repository.FriendshipRepository;

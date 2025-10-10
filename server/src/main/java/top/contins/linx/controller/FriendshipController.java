@@ -7,9 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.*;
 import top.contins.linx.model.dto.FriendRequestDto;
-import top.contins.linx.model.dto.UserSession;
+import top.contins.linx.model.common.UserSession;
 import top.contins.linx.model.vo.FriendVO;
-import top.contins.linx.model.vo.Result;
+import top.contins.linx.model.common.Result;
 import top.contins.linx.service.FriendshipService;
 
 import java.util.List;

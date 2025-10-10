@@ -1,4 +1,4 @@
-package top.contins.linx.model.entity;
+package top.contins.linx.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;

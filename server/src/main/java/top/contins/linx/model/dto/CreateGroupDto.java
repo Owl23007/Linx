@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import top.contins.linx.model.entity.GroupType;
+import top.contins.linx.model.enums.GroupType;
 
 import java.util.List;
 

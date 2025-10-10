@@ -4,9 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import top.contins.linx.model.entity.FriendshipStatus;
-
-import java.time.LocalDateTime;
 
 /**
  * 好友请求DTO

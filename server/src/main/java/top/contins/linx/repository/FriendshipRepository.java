@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import top.contins.linx.model.entity.Friendship;
-import top.contins.linx.model.entity.FriendshipStatus;
+import top.contins.linx.model.enums.FriendshipStatus;
 
 import java.util.List;
 import java.util.Optional;

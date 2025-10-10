@@ -1,4 +1,4 @@
-package top.contins.linx.model.entity;
+package top.contins.linx.model.enums;
 
 /**
  * 群组成员角色枚举

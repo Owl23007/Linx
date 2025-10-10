@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import top.contins.linx.model.dto.ChatMessage;
-import top.contins.linx.model.dto.UserSession;
+import top.contins.linx.model.common.ChatMessage;
+import top.contins.linx.model.common.UserSession;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

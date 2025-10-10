@@ -1,4 +1,4 @@
-package top.contins.linx.model.vo;
+package top.contins.linx.model.common;
 
 import lombok.Data;
 

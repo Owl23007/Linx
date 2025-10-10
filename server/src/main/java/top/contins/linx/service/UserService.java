@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.contins.linx.model.entity.User;
-import top.contins.linx.model.entity.UserStatus;
+import top.contins.linx.model.enums.UserStatus;
 import top.contins.linx.model.vo.UserVO;
 import top.contins.linx.repository.UserRepository;
 import top.contins.linx.util.RedisUtil;

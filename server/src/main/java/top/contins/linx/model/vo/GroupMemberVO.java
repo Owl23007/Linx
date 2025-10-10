@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import top.contins.linx.model.entity.GroupMemberRole;
-import top.contins.linx.model.entity.UserStatus;
+import top.contins.linx.model.enums.GroupMemberRole;
+import top.contins.linx.model.enums.UserStatus;
 
 import java.time.LocalDateTime;
 

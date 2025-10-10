@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import top.contins.linx.model.entity.FriendshipStatus;
-import top.contins.linx.model.entity.UserStatus;
+import top.contins.linx.model.enums.FriendshipStatus;
+import top.contins.linx.model.enums.UserStatus;
 
 import java.time.LocalDateTime;
 

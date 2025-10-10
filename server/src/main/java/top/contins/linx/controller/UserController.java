@@ -8,13 +8,12 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.*;
-import top.contins.linx.model.dto.UserSession;
-import top.contins.linx.model.entity.UserStatus;
-import top.contins.linx.model.vo.Result;
+import top.contins.linx.model.common.UserSession;
+import top.contins.linx.model.enums.UserStatus;
+import top.contins.linx.model.common.Result;
 import top.contins.linx.model.vo.UserVO;
 import top.contins.linx.service.UserService;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 /**

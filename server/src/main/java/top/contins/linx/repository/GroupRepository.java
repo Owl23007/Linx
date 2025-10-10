@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import top.contins.linx.model.entity.Group;
-import top.contins.linx.model.entity.GroupStatus;
+import top.contins.linx.model.enums.GroupStatus;
 
 import java.util.List;
 

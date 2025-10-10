@@ -1,4 +1,4 @@
-package top.contins.linx.model.dto;
+package top.contins.linx.model.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

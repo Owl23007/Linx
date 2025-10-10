@@ -1,8 +1,9 @@
-package top.contins.linx.model.dto;
+package top.contins.linx.model.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import top.contins.linx.model.enums.MessageType;
 
 import java.time.LocalDateTime;
 

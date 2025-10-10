@@ -1,4 +1,4 @@
-package top.contins.linx.model.dto;
+package top.contins.linx.model.enums;
 
 /**
  * 消息类型枚举

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import top.contins.linx.model.enums.GroupMemberRole;
 
 import java.time.LocalDateTime;
 

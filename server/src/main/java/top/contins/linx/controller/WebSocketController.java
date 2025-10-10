@@ -9,9 +9,9 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
-import top.contins.linx.model.dto.ChatMessage;
-import top.contins.linx.model.dto.MessageType;
-import top.contins.linx.model.dto.UserSession;
+import top.contins.linx.model.common.ChatMessage;
+import top.contins.linx.model.enums.MessageType;
+import top.contins.linx.model.common.UserSession;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

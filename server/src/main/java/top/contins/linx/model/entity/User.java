@@ -2,9 +2,9 @@ package top.contins.linx.model.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import top.contins.linx.model.enums.UserStatus;
 
 import java.time.LocalDateTime;
 

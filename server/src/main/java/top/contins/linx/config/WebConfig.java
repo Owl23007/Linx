@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import top.contins.linx.model.dto.UserSession;
+import top.contins.linx.model.common.UserSession;
 
 /**
  * WebSocket配置类

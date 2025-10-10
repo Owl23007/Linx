@@ -1,4 +1,4 @@
-package top.contins.linx.model.entity;
+package top.contins.linx.model.enums;
 
 /**
  * 好友关系状态枚举

@@ -1,7 +1,7 @@
 package top.contins.linx.model.dto;
 
 import lombok.Data;
-import top.contins.linx.model.entity.UserStatus;
+import top.contins.linx.model.enums.UserStatus;
 
 import java.time.LocalDateTime;
 

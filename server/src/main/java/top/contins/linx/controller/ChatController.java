@@ -5,8 +5,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import top.contins.linx.model.dto.UserSession;
-import top.contins.linx.model.vo.Result;
+import top.contins.linx.model.common.UserSession;
+import top.contins.linx.model.common.Result;
 import top.contins.linx.service.WebsocketService;
 
 @RestController

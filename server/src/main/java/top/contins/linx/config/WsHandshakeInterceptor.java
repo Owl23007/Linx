@@ -4,7 +4,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
-import top.contins.linx.model.dto.UserSession;
+import top.contins.linx.model.common.UserSession;
 import top.contins.linx.service.WebsocketService;
 
 import java.util.Map;
