@@ -27,7 +27,7 @@
     <!-- 标题图标 -->
     <div v-if="!(isElectron() && activeTab === 'register')"
       class="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
-      <TitleLogo :size="isElectron() ? '1' : '1.5'" />
+      <TitleLogo :size="isElectron() ? 1 : 1.5" />
     </div>
 
     <!-- Tab 区域 -->
@@ -284,7 +284,7 @@ async function performLogin(): Promise<boolean> {
   error.value = '';
 
   try {
-    const res = await authStore.login(loginForm.value, serverUrl.value);
+    const res: any = await authStore.login(loginForm.value, serverUrl.value);
     if (res.code == 0) {
       useGlobalStore().setEndpoint(serverUrl.value);
 
