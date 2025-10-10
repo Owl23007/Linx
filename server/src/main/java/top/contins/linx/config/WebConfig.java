@@ -26,7 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/user/**", "/api/chat/**", "/ws/**", "/presence/**")
-                .order(1); // Spring Boot 2.4+
+                .addPathPatterns("/user/**", "/chat/**")// 拦截的路径
+                .order(1);
     }
 }
