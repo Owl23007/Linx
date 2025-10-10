@@ -287,7 +287,6 @@ async function performLogin(): Promise<boolean> {
     const res = await authStore.login(loginForm.value, serverUrl.value);
     if (res.code == 0) {
       useGlobalStore().setEndpoint(serverUrl.value);
-      await authService.getRouters();
 
       return true;
     }
