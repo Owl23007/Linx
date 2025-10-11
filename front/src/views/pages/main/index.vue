@@ -34,88 +34,138 @@
       height: isElectron() ? 'calc(100vh - 48px)' : '100vh'
     }">
       <!-- 左侧侧边栏 + 聊天区域 -->
-      <div class="flex h-full ">
+      <div class="flex h-full">
         <!-- 侧边栏 -->
         <aside class="w-84 bg-white border-r border-gray-200 overflow-y-auto flex flex-row overflow-hidden">
           <div class="w-16">
             <SideBar />
           </div>
           <div class="w-68">
-            <MessageList />
+            <MessageList @select-chat="handleSelectChat" />
           </div>
         </aside>
 
         <!-- 聊天区域：垂直布局，撑满剩余高度 -->
-        <div class="flex-1 flex flex-col bg-white ">
-          <!-- 聊天标题栏 -->
-          <div class="border-b border-gray-200 px-4 py-3 bg-gray-50 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-              <el-avatar :size="32" src="https://via.placeholder.com/32/3b82f6/ffffff?text=李" />
-              <h2 class="font-medium text-gray-800">李四</h2>
-            </div>
-            <el-button-group>
-              <el-button :icon="VideoCamera" circle text />
-              <el-button :icon="Phone" circle text />
-              <el-button :icon="MoreFilled" circle text />
-            </el-button-group>
+        <div class="flex-1 flex flex-col bg-white">
+          <!-- 未选择会话时的空状态 -->
+          <div v-if="!currentChat" class="flex-1 flex items-center justify-center">
+            <el-empty description="选择一个会话开始聊天" />
           </div>
 
-          <!-- 消息列表  -->
-          <div ref="messageContainer" class="flex-1 p-4 overflow-y-auto space-y-4 ">
-            <div v-for="msg in mockMessages" :key="msg.id" class="flex"
-              :class="msg.sender === 'me' ? 'justify-end' : 'justify-start'">
-              <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg" :class="msg.sender === 'me'
-                ? 'bg-blue-500 text-white rounded-br-none'
-                : 'bg-gray-200 text-gray-800 rounded-bl-none'">
-                <p class="text-sm">{{ msg.text }}</p>
-                <p class="text-xs mt-1 opacity-80 text-right"
-                  :class="msg.sender === 'me' ? 'text-blue-100' : 'text-gray-500'">
-                  {{ formatTime(msg.timestamp) }}
-                </p>
+          <!-- 已选择会话 -->
+          <template v-else>
+            <!-- 聊天标题栏 -->
+            <div class="border-b border-gray-200 px-4 py-3 bg-gray-50 flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <el-avatar :size="32">
+                  {{ currentChat.name[0] }}
+                </el-avatar>
+                <div>
+                  <h2 class="font-medium text-gray-800">{{ currentChat.name }}</h2>
+                  <p class="text-xs text-gray-500">{{ statusText }}</p>
+                </div>
+              </div>
+              <el-button-group>
+                <el-button :icon="VideoCamera" circle text @click="handleVideoCall" />
+                <el-button :icon="Phone" circle text @click="handleVoiceCall" />
+                <el-button :icon="MoreFilled" circle text @click="handleMoreOptions" />
+              </el-button-group>
+            </div>
+
+            <!-- 消息列表 -->
+            <div ref="messageContainer" class="flex-1 p-4 overflow-y-auto space-y-4" @scroll="handleScroll">
+              <!-- 加载更多指示器 -->
+              <div v-if="loading" class="flex justify-center py-2">
+                <el-icon class="is-loading text-blue-500">
+                  <Loading />
+                </el-icon>
+                <span class="ml-2 text-sm text-gray-500">加载中...</span>
+              </div>
+
+              <!-- 消息列表 -->
+              <message-item v-for="msg in currentMessages" :key="msg.messageId" :message="msg"
+                :current-user-id="currentUserId" @resend="handleResendMessage" @avatar-click="handleAvatarClick" />
+
+              <!-- 空消息提示 -->
+              <div v-if="currentMessages.length === 0 && !loading" class="flex justify-center py-8">
+                <el-empty description="暂无消息" />
               </div>
             </div>
-          </div>
 
-          <!-- 输入框：固定在底部，不随内容伸缩 -->
-          <div class="border-t border-gray-200 p-4 bg-white flex-shrink-0">
-            <div class="flex items-end space-x-2">
-              <el-button circle text />
-              <el-input v-model="inputMessage" type="textarea" placeholder="输入消息..."
-                :autosize="{ minRows: 1, maxRows: 4 }" @keydown.enter="handleSend" class="!rounded-full flex-1" />
-              <el-button type="primary" circle @click="handleSend" :disabled="!inputMessage.trim()" />
-            </div>
-          </div>
+            <!-- 输入框：固定在底部 -->
+            <message-input :typing-users="typingUsers" @send="handleSendMessage" @typing="handleTyping" />
+          </template>
         </div>
       </div>
     </div>
+
+    <!-- 添加好友对话框 -->
+    <add-friend-dialog v-model:visible="showAddFriendDialog" @success="handleAddFriendSuccess" />
+
+    <!-- 创建群组对话框 -->
+    <create-group-dialog v-model:visible="showCreateGroupDialog" @success="handleCreateGroupSuccess" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { useWebSocket } from '@/composables/useWebSocket';
+import { useChatStore } from '@/stores/chat';
+import { useFriendsStore } from '@/stores/friends';
+import { useUserStore } from '@/stores/user';
+import type { ChatMessage, Conversation } from '@/types/chat';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
+import AddFriendDialog from '@/views/components/add-friend-dialog.vue';
+import CreateGroupDialog from '@/views/components/create-group-dialog.vue';
+import MessageInput from '@/views/components/message-input.vue';
+import MessageItem from '@/views/components/message-item.vue';
 import Title from '@/views/components/title-icon.vue';
 import {
   Close,
+  Loading,
   Minus,
   MoreFilled,
   Phone,
   Setting,
   VideoCamera
 } from '@element-plus/icons-vue';
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { ElMessage } from 'element-plus';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import MessageList from './components/message-list.vue';
 import SideBar from './components/side-bar.vue';
 
-const mockMessages = ref([
-  { id: '1', text: '你好啊！', sender: 'other', timestamp: new Date(Date.now() - 60000) },
-  { id: '2', text: '在写 Vue 3 + Tailwind 的聊天界面~', sender: 'me', timestamp: new Date(Date.now() - 30000) },
-  { id: '3', text: '太棒了！求分享代码', sender: 'other', timestamp: new Date(Date.now() - 10000) },
-  { id: '4', text: '没问题，稍后发你 GitHub', sender: 'me', timestamp: new Date() }
-]);
+// Stores
+const chatStore = useChatStore();
+const userStore = useUserStore();
+const friendsStore = useFriendsStore();
 
-const inputMessage = ref('');
+// WebSocket
+const { connect, sendPrivateMessage, sendGroupMessage } = useWebSocket();
 
+// Refs
+const dragAreaRef = ref<HTMLElement | null>(null);
+const messageContainer = ref<HTMLElement | null>(null);
+const showAddFriendDialog = ref(false);
+const showCreateGroupDialog = ref(false);
+const loading = ref(false);
+const typingUsers = ref<string[]>([]);
+const currentChat = ref<Conversation | null>(null);
+const page = ref(0);
+
+// Computed
+const currentUserId = computed(() => userStore.userId);
+const currentMessages = computed(() => chatStore.currentMessages);
+const statusText = computed(() => {
+  if (!currentChat.value) return '';
+
+  if (currentChat.value.type === 'group') {
+    return `群聊 • ${currentChat.value.group?.memberCount || 0} 人`;
+  }
+
+  return currentChat.value.friend?.onlineStatus === 'ONLINE' ? '在线' : '离线';
+});
+
+// Methods
 function handleCloseWindow() {
   closeWindow();
 }
@@ -124,47 +174,187 @@ function handleMinimizeWindow() {
   minimizeWindow();
 }
 
-const messageContainer = ref<HTMLElement | null>(null);
+async function handleSelectChat(chat: any) {
+  // 重置状态
+  page.value = 0;
+  loading.value = true;
 
-const scrollToBottom = () => {
+  try {
+    // 根据聊天类型创建会话
+    if (chat.type === 'private') {
+      // 私聊
+      const conversation: Conversation = {
+        id: `private_${chat.friendId}`,
+        type: 'private',
+        name: chat.remark || chat.friendUsername,
+        avatar: chat.friendAvatar,
+        unreadCount: 0,
+        lastActiveAt: new Date().toISOString(),
+        friend: chat,
+      };
+
+      currentChat.value = conversation;
+      chatStore.setCurrentConversation(conversation);
+
+      // 加载聊天历史
+      await chatStore.loadPrivateHistory(chat.friendId, page.value, 20);
+    } else if (chat.type === 'group') {
+      // 群聊
+      const conversation: Conversation = {
+        id: `group_${chat.id}`,
+        type: 'group',
+        name: chat.name,
+        avatar: chat.avatarUrl,
+        unreadCount: 0,
+        lastActiveAt: new Date().toISOString(),
+        group: chat,
+      };
+
+      currentChat.value = conversation;
+      chatStore.setCurrentConversation(conversation);
+
+      // 加载群聊历史
+      await chatStore.loadGroupHistory(chat.id, page.value, 20);
+    }
+
+    // 滚动到底部
+    await nextTick();
+    scrollToBottom();
+  } catch {
+    ElMessage.error('加载聊天记录失败');
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function handleSendMessage(content: string, type: 'CHAT' | 'IMAGE' | 'FILE' | 'VOICE' = 'CHAT') {
+  if (!currentChat.value) return;
+
+  try {
+    const message: ChatMessage = {
+      messageId: `temp_${Date.now()}`,
+      type,
+      senderId: currentUserId.value || 0,
+      senderName: userStore.username || '我',
+      content,
+      timestamp: new Date().toISOString(),
+    };
+
+    // 添加到消息列表（临时）
+    chatStore.addMessage(currentChat.value.id, message);
+
+    // 发送消息
+    if (currentChat.value.type === 'private' && currentChat.value.friend) {
+      await sendPrivateMessage(currentChat.value.friend.friendId, content, type);
+    } else if (currentChat.value.type === 'group' && currentChat.value.group) {
+      await sendGroupMessage(currentChat.value.group.id.toString(), content, type);
+    }
+
+    // 滚动到底部
+    await nextTick();
+    scrollToBottom();
+  } catch {
+    ElMessage.error('发送消息失败');
+  }
+}
+
+function handleTyping() {
+  // TODO: 发送正在输入的状态
+  // 暂时不输出日志
+}
+
+function handleScroll() {
+  if (!messageContainer.value || loading.value) return;
+
+  const { scrollTop } = messageContainer.value;
+
+  // 滚动到顶部时加载更多
+  if (scrollTop < 100) {
+    loadMoreMessages();
+  }
+}
+
+async function loadMoreMessages() {
+  if (!currentChat.value || loading.value) return;
+
+  loading.value = true;
+  page.value++;
+
+  try {
+    if (currentChat.value.type === 'private' && currentChat.value.friend) {
+      await chatStore.loadPrivateHistory(currentChat.value.friend.friendId, page.value, 20);
+    } else if (currentChat.value.type === 'group' && currentChat.value.group) {
+      await chatStore.loadGroupHistory(currentChat.value.group.id.toString(), page.value, 20);
+    }
+  } catch {
+    ElMessage.error('加载历史消息失败');
+  } finally {
+    loading.value = false;
+  }
+}
+
+function handleResendMessage() {
+  ElMessage.info('重新发送功能开发中...');
+  // TODO: 实现重新发送消息
+}
+
+function handleAvatarClick(userId: number) {
+  ElMessage.info(`查看用户 ${userId} 的资料`);
+  // TODO: 跳转到用户资料页
+}
+
+function handleVideoCall() {
+  ElMessage.info('视频通话功能开发中...');
+}
+
+function handleVoiceCall() {
+  ElMessage.info('语音通话功能开发中...');
+}
+
+function handleMoreOptions() {
+  ElMessage.info('更多选项功能开发中...');
+}
+
+function handleAddFriendSuccess() {
+  ElMessage.success('好友请求已发送');
+  friendsStore.loadFriends();
+}
+
+function handleCreateGroupSuccess() {
+  ElMessage.success('群组创建成功');
+  // TODO: 跳转到新创建的群组
+}
+
+function scrollToBottom() {
   if (messageContainer.value) {
     messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
   }
-};
+}
 
-watch(mockMessages, () => {
-  scrollToBottom();
-}, { immediate: true });
-
-onMounted(() => {
-  scrollToBottom();
-
+// Lifecycle
+onMounted(async () => {
+  // 设置拖动区域
   if (dragAreaRef.value) {
     const cleanup = dragSetup(dragAreaRef.value);
     if (cleanup) {
       onUnmounted(cleanup);
     }
   }
-});
 
-const dragAreaRef = ref<HTMLElement | null>(null);
+  // 加载好友列表
+  await friendsStore.loadFriends();
 
-const handleSend = () => {
-  if (!inputMessage.value.trim()) return;
-
-  mockMessages.value.push({
-    id: Date.now().toString(),
-    text: inputMessage.value,
-    sender: 'me',
-    timestamp: new Date()
-  });
-
-  inputMessage.value = '';
-};
-
-const formatTime = (date: Date) => {
-  return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-};
+  // 连接 WebSocket
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9080';
+  await connect(baseUrl);
+});// Watch messages to auto-scroll
+watch(
+  () => currentMessages.value.length,
+  async () => {
+    await nextTick();
+    scrollToBottom();
+  }
+);
 </script>
 
 <style lang="less" scoped>

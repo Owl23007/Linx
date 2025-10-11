@@ -3,7 +3,7 @@
     <!-- 搜索栏 -->
     <div class="flex items-center justify-between p-3 border-b border-gray-200 bg-white shadow-sm">
       <el-input v-model="search" placeholder="搜索" prefix-icon="Search" clearable size="small" class="w-full max-w-xs" />
-      <el-button type="primary" size="small" @click="onAddClick" class="ml-2">
+      <el-button type="primary" size="small" @click="handleAddClick" class="ml-2">
         <el-icon>
           <Plus />
         </el-icon>
@@ -14,9 +14,11 @@
     <div class="flex-1 overflow-y-auto px-2 py-2 space-y-2">
       <div v-for="(item, index) in filteredChats" :key="index"
         class="flex items-center p-3 rounded-lg hover:bg-white cursor-pointer transition-colors duration-150 shadow-sm"
-        :class="{ 'bg-blue-50': item.selected }" @click="onChatClick(item)">
+        :class="{ 'bg-blue-50': item.selected }" @click="handleChatClick(item)">
         <!-- 头像 -->
-        <el-avatar :src="item.avatar" size="40" class="mr-3" />
+        <el-avatar :src="item.avatar" :size="40" class="mr-3">
+          {{ item.name[0] }}
+        </el-avatar>
 
         <!-- 内容区 -->
         <div class="flex-1 min-w-0">
@@ -38,108 +40,89 @@
 </template>
 
 <script setup lang="ts">
+import { useFriendsStore } from '@/stores/friends';
+import { useGroupsStore } from '@/stores/groups';
 import { Plus } from '@element-plus/icons-vue';
-import { ElAvatar, ElButton, ElIcon, ElInput } from 'element-plus';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
-// 数据示例
-const chats = [
-  {
-    id: 1,
-    name: '曙光黎明对策组',
-    avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
-    lastMessage: '混凝土萨满：[图片]',
-    time: '昨天 21:43',
-    unread: 0,
-    selected: false
-  },
-  {
-    id: 2,
-    name: '计算机23级...',
-    avatar: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-    lastMessage: '方老师邀请请北陌加入了群聊，...',
-    time: '昨天 10:27',
-    unread: 0,
-    selected: false
-  },
-  {
-    id: 3,
-    name: '软件2班水群',
-    avatar: 'https://cube.elemecdn.com/3/74/d875d4137884e8e157810c25d870apng.png',
-    lastMessage: '赵亚多：@全体成员 已经到...',
-    time: '08/31',
-    unread: 0,
-    selected: false
-  },
-  {
-    id: 4,
-    name: '晓丽',
-    avatar: 'https://cube.elemecdn.com/6/78/4656787900181587726664100520cpng.png',
-    lastMessage: '[动画表情]',
-    time: '08/11',
-    unread: 0,
-    selected: false
-  },
-  {
-    id: 5,
-    name: '2025年WUST计...',
-    avatar: 'https://cube.elemecdn.com/3/66/7564671991394967457294321763bpng.png',
-    lastMessage: '林晓丽：中南赛区的获奖证书...',
-    time: '07/12',
-    unread: 0,
-    selected: false
-  },
-  {
-    id: 6,
-    name: '2025计算机设计...',
-    avatar: 'https://cube.elemecdn.com/8/28/7a7834689531183449114c13e312fpng.png',
-    lastMessage: '晓丽：大家再确认一下 报名...',
-    time: '04/23',
-    unread: 0,
-    selected: false
-  },
-  {
-    id: 7,
-    name: '神隐之里·喵喵喵喵~',
-    avatar: 'https://cube.elemecdn.com/2/28/7a7834689531183449114c13e312fpng.png',
-    lastMessage: '[有新文件]猫猫挂件，...',
-    time: '17:15',
-    unread: 99,
-    selected: false
-  },
-  {
-    id: 8,
-    name: '麦麦大脑磁共振（...)',
-    avatar: 'https://cube.elemecdn.com/0/72/3c71624761115153470159031082apng.png',
-    lastMessage: '[有新文件]石翁紫葳：...',
-    time: '17:13',
-    unread: 99,
-    selected: false
-  }
-];
+// Emits
+const emit = defineEmits<{
+  (e: 'select-chat', chat: any): void;
+}>();
 
+// Stores
+const friendsStore = useFriendsStore();
+const groupsStore = useGroupsStore();
+
+// State
 const search = ref('');
-const selectedChat = ref(null);
+const selectedChatId = ref<string | null>(null);
 
-// 过滤聊天项
+// Computed
+const chats = computed(() => {
+  const result: any[] = [];
+
+  // 添加好友会话
+  friendsStore.acceptedFriends.forEach(friend => {
+    result.push({
+      id: `private_${friend.friendId}`,
+      type: 'private',
+      friendId: friend.friendId,
+      friendUsername: friend.friendUsername,
+      remark: friend.remark,
+      friendAvatar: friend.friendAvatar,
+      name: friend.remark || friend.friendUsername,
+      avatar: friend.friendAvatar,
+      lastMessage: '点击开始聊天...',
+      time: '',
+      unread: 0,
+      selected: selectedChatId.value === `private_${friend.friendId}`,
+    });
+  });
+
+  // 添加群组会话
+  groupsStore.activeGroups.forEach(group => {
+    result.push({
+      ...group,
+      id: `group_${group.id}`,
+      type: 'group',
+      name: group.name,
+      avatar: group.avatarUrl,
+      lastMessage: '点击开始聊天...',
+      time: '',
+      unread: 0,
+      selected: selectedChatId.value === `group_${group.id}`,
+    });
+  });
+
+  return result;
+});
+
 const filteredChats = computed(() => {
-  if (!search.value) return chats;
+  const searchLower = search.value.toLowerCase();
+  if (!searchLower) return chats.value;
 
-  return chats.filter(item =>
-    item.name.includes(search.value) ||
-    item.lastMessage.includes(search.value)
+  return chats.value.filter(chat =>
+    chat.name.toLowerCase().includes(searchLower) ||
+    chat.lastMessage.toLowerCase().includes(searchLower)
   );
 });
 
-// 事件处理
-const onChatClick = (item: any) => {
-  selectedChat.value = item;
-  // 可以触发父组件事件，比如 @select="handleSelect"
-};
+// Methods
+function handleChatClick(chat: any) {
+  selectedChatId.value = chat.id;
+  emit('select-chat', chat);
+}
 
-const onAddClick = () => {
-  // 可以弹出创建群聊对话框
-};
+function handleAddClick() {
+  // TODO: 显示添加好友或创建群组的菜单
+}
+
+// Lifecycle
+onMounted(() => {
+  friendsStore.loadFriends();
+  groupsStore.loadGroups();
+});
 </script>
 
 <style scoped>
