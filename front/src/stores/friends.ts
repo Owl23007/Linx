@@ -55,7 +55,7 @@ export const useFriendsStore = defineStore('friends', () => {
       if (res.code === 0) {
         receivedRequests.value = res.data || [];
       }
-    } catch (error) {
+    } catch {
       // 静默失败
     }
   }
@@ -69,7 +69,7 @@ export const useFriendsStore = defineStore('friends', () => {
       if (res.code === 0) {
         sentRequests.value = res.data || [];
       }
-    } catch (error) {
+    } catch {
       // 静默失败
     }
   }
@@ -93,7 +93,7 @@ export const useFriendsStore = defineStore('friends', () => {
       ElMessage.error(res.message);
 
       return false;
-    } catch (error) {
+    } catch {
       ElMessage.error('发送好友请求失败');
 
       return false;
@@ -124,7 +124,7 @@ export const useFriendsStore = defineStore('friends', () => {
       ElMessage.error(res.message);
 
       return false;
-    } catch (error) {
+    } catch {
       ElMessage.error('处理好友请求失败');
 
       return false;
@@ -146,7 +146,7 @@ export const useFriendsStore = defineStore('friends', () => {
       ElMessage.error(res.message);
 
       return false;
-    } catch (error) {
+    } catch {
       ElMessage.error('删除好友失败');
 
       return false;
@@ -173,7 +173,7 @@ export const useFriendsStore = defineStore('friends', () => {
       ElMessage.error(res.message);
 
       return false;
-    } catch (error) {
+    } catch {
       ElMessage.error('更新备注失败');
 
       return false;

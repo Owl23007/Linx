@@ -4,3 +4,11 @@ import { createPinia } from 'pinia';
 export const pinia = createPinia();
 
 export default pinia;
+
+// 导出所有 store
+export { useAuthStore } from './auth';
+export { useChatStore } from './chat';
+export { useFriendsStore } from './friends';
+export { useGlobalStore } from './global';
+export { useGroupsStore } from './groups';
+export { useUserStore } from './user';
