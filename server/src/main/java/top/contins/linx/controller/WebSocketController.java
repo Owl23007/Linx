@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import top.contins.linx.model.common.ChatMessage;
 import top.contins.linx.model.enums.MessageType;
 import top.contins.linx.model.common.UserSession;
+import top.contins.linx.service.ChatMessageService;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,10 +26,12 @@ import java.util.UUID;
 public class WebSocketController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatMessageService chatMessageService;
 
     @Autowired
-    public WebSocketController(SimpMessagingTemplate messagingTemplate) {
+    public WebSocketController(SimpMessagingTemplate messagingTemplate, ChatMessageService chatMessageService) {
         this.messagingTemplate = messagingTemplate;
+        this.chatMessageService = chatMessageService;
     }
 
     /**
@@ -66,14 +69,21 @@ public class WebSocketController {
             log.info("私聊消息：从用户 {} 发送到用户 {}",
                     userSession.getUserId(), message.getReceiverId());
 
-            // 4. 发送给接收者（点对点）
+            // 4. 保存消息到数据库
+            try {
+                chatMessageService.saveMessage(message);
+            } catch (Exception e) {
+                log.error("保存私聊消息到数据库失败", e);
+            }
+
+            // 5. 发送给接收者（点对点）
             messagingTemplate.convertAndSendToUser(
                     String.valueOf(message.getReceiverId()),
                     "/queue/messages",
                     message
             );
 
-            // 5. 发送给发送者自己（消息回执）
+            // 6. 发送给发送者自己（消息回执）
             messagingTemplate.convertAndSendToUser(
                     userSession.getUserId(),
                     "/queue/messages",
@@ -120,7 +130,14 @@ public class WebSocketController {
             log.info("群聊消息：用户 {} 发送到群组 {}",
                     userSession.getUserId(), message.getGroupId());
 
-            // 4. 广播到群组（这里使用 @SendTo 自动广播）
+            // 4. 保存消息到数据库
+            try {
+                chatMessageService.saveMessage(message);
+            } catch (Exception e) {
+                log.error("保存群聊消息到数据库失败", e);
+            }
+
+            // 5. 广播到群组（这里使用 @SendTo 自动广播）
             return message;
 
         } catch (Exception e) {
