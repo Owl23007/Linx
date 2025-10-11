@@ -477,7 +477,7 @@ onMounted(async () => {
   updateSlider(tabs.findIndex(t => t.name === activeTab.value));
 
   // 设置默认服务器地址
-  serverUrl.value = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+  serverUrl.value = import.meta.env.VITE_DEFAULT_BASE_URL || 'http://localhost:8081';
 
   // 获取用户列表
   // await getUserList();

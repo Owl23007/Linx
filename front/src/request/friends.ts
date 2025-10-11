@@ -11,47 +11,47 @@ export function sendFriendRequest(data: {
   message?: string;
   remark?: string;
 }): Promise<Result> {
-  return post('/api/linx/friends/request', data);
+  return post('/linx/friends/request', data);
 }
 
 /**
  * 处理好友请求（接受/拒绝）
  */
 export function handleFriendRequest(friendshipId: number, accept: boolean): Promise<Result> {
-  return post(`/api/linx/friends/request/${friendshipId}/handle`, { accept });
+  return post(`/linx/friends/request/${friendshipId}/handle`, { accept });
 }
 
 /**
  * 获取好友列表
  */
 export function getFriends(): Promise<Result> {
-  return get('/api/linx/friends');
+  return get('/linx/friends');
 }
 
 /**
  * 获取收到的好友请求
  */
 export function getReceivedFriendRequests(): Promise<Result> {
-  return get('/api/linx/friends/requests/received');
+  return get('/linx/friends/requests/received');
 }
 
 /**
  * 获取发送的好友请求
  */
 export function getSentFriendRequests(): Promise<Result> {
-  return get('/api/linx/friends/requests/sent');
+  return get('/linx/friends/requests/sent');
 }
 
 /**
  * 删除好友
  */
 export function removeFriend(friendId: number): Promise<Result> {
-  return del(`/api/linx/friends/${friendId}`);
+  return del(`/linx/friends/${friendId}`);
 }
 
 /**
  * 更新好友备注
  */
 export function updateFriendRemark(friendId: number, remark: string): Promise<Result> {
-  return put(`/api/linx/friends/${friendId}/remark`, { remark });
+  return put(`/linx/friends/${friendId}/remark`, { remark });
 }

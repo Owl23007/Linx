@@ -26,9 +26,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('获取用户信息失败');
-      console.error(error);
     }
   };
 
@@ -43,9 +42,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('更新状态失败');
-      console.error(error);
     }
   };
 
@@ -62,9 +60,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('获取好友列表失败');
-      console.error(error);
     }
   };
 
@@ -87,9 +84,8 @@ export function useLinxApi() {
 
         return false;
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('发送好友请求失败');
-      console.error(error);
 
       return false;
     }
@@ -110,9 +106,8 @@ export function useLinxApi() {
 
         return false;
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('处理好友请求失败');
-      console.error(error);
 
       return false;
     }
@@ -133,9 +128,8 @@ export function useLinxApi() {
 
         return false;
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('更新备注失败');
-      console.error(error);
 
       return false;
     }
@@ -154,9 +148,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('获取群组列表失败');
-      console.error(error);
     }
   };
 
@@ -177,9 +170,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('创建群组失败');
-      console.error(error);
     }
   };
 
@@ -198,9 +190,8 @@ export function useLinxApi() {
 
         return false;
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('加入群组失败');
-      console.error(error);
 
       return false;
     }
@@ -217,9 +208,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('搜索群组失败');
-      console.error(error);
     }
   };
 
@@ -236,9 +226,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('获取聊天记录失败');
-      console.error(error);
     }
   };
 
@@ -253,8 +242,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
-      console.error('获取未读消息数失败', error);
+    } catch {
+      // 静默处理错误
     }
   };
 
@@ -269,8 +258,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
-      console.error('标记已读失败', error);
+    } catch {
+      // 静默处理错误
     }
   };
 
@@ -285,9 +274,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('获取会话列表失败');
-      console.error(error);
     }
   };
 
@@ -302,9 +290,8 @@ export function useLinxApi() {
       } else {
         ElMessage.error(res.message);
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('搜索消息失败');
-      console.error(error);
     }
   };
 
@@ -330,9 +317,8 @@ export function useLinxApi() {
 
         return null;
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('准备WebSocket连接失败');
-      console.error(error);
 
       return null;
     }

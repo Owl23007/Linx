@@ -84,7 +84,7 @@
 
               <!-- 消息列表 -->
               <message-item v-for="msg in currentMessages" :key="msg.messageId" :message="msg"
-                :current-user-id="currentUserId" @resend="handleResendMessage" @avatar-click="handleAvatarClick" />
+                :current-user-id="currentUserId ?? 0" @resend="handleResendMessage" @avatar-click="handleAvatarClick" />
 
               <!-- 空消息提示 -->
               <div v-if="currentMessages.length === 0 && !loading" class="flex justify-center py-8">
@@ -347,7 +347,9 @@ onMounted(async () => {
   // 连接 WebSocket
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9080';
   await connect(baseUrl);
-});// Watch messages to auto-scroll
+});
+
+// 监听消息变化，自动滚动到底部
 watch(
   () => currentMessages.value.length,
   async () => {
