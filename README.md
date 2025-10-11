@@ -10,6 +10,9 @@
 └── client/   # ⚠️  JavaFX 桌面客户端 (已弃用，仅存档)
 ```
 
+> 网关服务另见:https://github.com/Owl23007/infra-local
+> auth 服务另见: https://github.com/Owl23007/auth-service/tree/develop
+
 ## ✨ 推荐使用
 
 ### 🎯 前端客户端
