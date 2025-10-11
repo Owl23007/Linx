@@ -83,16 +83,75 @@
         </template>
       </el-menu-item>
     </el-menu>
+
+    <!-- 底部操作按钮 -->
+    <div class="mt-auto p-3 border-t border-gray-100 flex flex-col gap-2">
+      <el-tooltip content="好友请求" placement="right">
+        <el-badge :value="pendingRequestsCount" :hidden="pendingRequestsCount === 0" type="danger">
+          <el-button class="w-full" @click="handleFriendRequests">
+            <el-icon>
+              <Message />
+            </el-icon>
+          </el-button>
+        </el-badge>
+      </el-tooltip>
+      <el-tooltip content="添加好友" placement="right">
+        <el-button class="w-full" @click="handleAddFriend">
+          <el-icon>
+            <User />
+          </el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="创建群组" placement="right">
+        <el-button class="w-full" @click="handleCreateGroup">
+          <el-icon>
+            <Folder />
+          </el-icon>
+        </el-button>
+      </el-tooltip>
+    </div>
   </aside>
 </template>
 
 <script lang="ts" setup>
+import { useFriendsStore } from '@/stores/friends';
 import { Folder, Message, More, Star, User } from '@element-plus/icons-vue';
+import { computed, onMounted } from 'vue';
 
 const user = {
   name: '张三',
   avatar: 'https://via.placeholder.com/40?text=ZS'
 };
+
+// Store
+const friendsStore = useFriendsStore();
+
+// Computed
+const pendingRequestsCount = computed(() => friendsStore.pendingRequestsCount);
+
+// Emits
+const emit = defineEmits<{
+  (e: 'add-friend'): void;
+  (e: 'create-group'): void;
+  (e: 'show-friend-requests'): void;
+}>();
+
+function handleAddFriend() {
+  emit('add-friend');
+}
+
+function handleCreateGroup() {
+  emit('create-group');
+}
+
+function handleFriendRequests() {
+  emit('show-friend-requests');
+}
+
+// 初始化时加载好友请求数量
+onMounted(() => {
+  friendsStore.loadReceivedRequests();
+});
 </script>
 
 <style lang="less" scoped>

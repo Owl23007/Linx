@@ -21,7 +21,7 @@ import java.util.Map;
  * 群组管理API控制器
  */
 @RestController
-@RequestMapping("/api/linx/groups")
+@RequestMapping("/groups")
 @Tag(name = "群组管理", description = "群组创建、加入、退出、成员管理等功能")
 public class GroupController {
 

@@ -38,7 +38,8 @@
         <!-- 侧边栏 -->
         <aside class="w-84 bg-white border-r border-gray-200 overflow-y-auto flex flex-row overflow-hidden">
           <div class="w-16">
-            <SideBar />
+            <SideBar @add-friend="showAddFriendDialog = true" @create-group="showCreateGroupDialog = true"
+              @show-friend-requests="showFriendRequestsDialog = true" />
           </div>
           <div class="w-68">
             <MessageList @select-chat="handleSelectChat" />
@@ -104,6 +105,9 @@
 
     <!-- 创建群组对话框 -->
     <create-group-dialog v-model:visible="showCreateGroupDialog" @success="handleCreateGroupSuccess" />
+
+    <!-- 好友请求对话框 -->
+    <friend-requests-dialog v-model:visible="showFriendRequestsDialog" />
   </div>
 </template>
 
@@ -111,12 +115,14 @@
 import { useWebSocket } from '@/composables/useWebSocket';
 import { useChatStore } from '@/stores/chat';
 import { useFriendsStore } from '@/stores/friends';
+import { useGroupsStore } from '@/stores/groups';
 import { useUserStore } from '@/stores/user';
 import type { ChatMessage, Conversation } from '@/types/chat';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
 import AddFriendDialog from '@/views/components/add-friend-dialog.vue';
 import CreateGroupDialog from '@/views/components/create-group-dialog.vue';
+import FriendRequestsDialog from '@/views/components/friend-requests-dialog.vue';
 import MessageInput from '@/views/components/message-input.vue';
 import MessageItem from '@/views/components/message-item.vue';
 import Title from '@/views/components/title-icon.vue';
@@ -138,6 +144,7 @@ import SideBar from './components/side-bar.vue';
 const chatStore = useChatStore();
 const userStore = useUserStore();
 const friendsStore = useFriendsStore();
+const groupsStore = useGroupsStore();
 
 // WebSocket
 const { connect, sendPrivateMessage, sendGroupMessage } = useWebSocket();
@@ -147,6 +154,7 @@ const dragAreaRef = ref<HTMLElement | null>(null);
 const messageContainer = ref<HTMLElement | null>(null);
 const showAddFriendDialog = ref(false);
 const showCreateGroupDialog = ref(false);
+const showFriendRequestsDialog = ref(false);
 const loading = ref(false);
 const typingUsers = ref<string[]>([]);
 const currentChat = ref<Conversation | null>(null);
@@ -335,18 +343,39 @@ function scrollToBottom() {
 onMounted(async () => {
   // 设置拖动区域
   if (dragAreaRef.value) {
+
     const cleanup = dragSetup(dragAreaRef.value);
     if (cleanup) {
       onUnmounted(cleanup);
     }
   }
 
-  // 加载好友列表
-  await friendsStore.loadFriends();
+  // 初始化用户信息
+  try {
+    await userStore.loadCurrentUser();
+  } catch {
+    ElMessage.error('获取用户信息失败');
+
+    return;
+  }
+
+  // 并行加载好友列表和群组列表
+  try {
+    await Promise.all([
+      friendsStore.loadFriends(),
+      groupsStore.loadGroups(),
+    ]);
+  } catch {
+    ElMessage.warning('加载联系人列表时出现问题');
+  }
 
   // 连接 WebSocket
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9080';
-  await connect(baseUrl);
+  try {
+    const baseUrl = import.meta.env.VITE_DEFAULT_BASE_URL || 'http://localhost:9080';
+    await connect(baseUrl);
+  } catch {
+    ElMessage.error('连接服务器失败');
+  }
 });
 
 // 监听消息变化，自动滚动到底部

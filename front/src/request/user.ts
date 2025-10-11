@@ -9,7 +9,7 @@ import { get, post } from '../utils/http';
  * @param userId 用户ID
  */
 export function getUserById(userId: number): Promise<Result> {
-  return get(`/api/linx/user/${userId}`);
+  return get(`/profile/${userId}`);
 }
 
 /**
@@ -17,7 +17,7 @@ export function getUserById(userId: number): Promise<Result> {
  * 基于 Authorization: Bearer <token> 自动识别当前用户
  */
 export function getCurrentUser(): Promise<Result> {
-  return get('/api/linx/user/me');
+  return get('/profile/me');
 }
 
 // ==================== 用户状态管理 ====================
@@ -27,7 +27,7 @@ export function getCurrentUser(): Promise<Result> {
  * @param status 状态：online（在线）、offline（离线）、away（离开）、dnd（勿扰）、hidden（隐身）
  */
 export function updateUserStatus(status: 'online' | 'offline' | 'away' | 'dnd' | 'hidden'): Promise<Result> {
-  return post('/api/linx/user/status', { status });
+  return post('/profile/user/status', { status });
 }
 
 // ==================== 用户搜索（待后端实现） ====================
@@ -38,7 +38,7 @@ export function updateUserStatus(status: 'online' | 'offline' | 'away' | 'dnd' |
  */
 export function searchUsers(keyword: string): Promise<Result> {
   // TODO: 等待后端实现此接口
-  return get('/api/linx/user/search', { keyword });
+  return get('/profile/search', { keyword });
 }
 
 /**
@@ -47,5 +47,5 @@ export function searchUsers(keyword: string): Promise<Result> {
  */
 export function getUsersByIds(userIds: number[]): Promise<Result> {
   // TODO: 等待后端实现此接口
-  return post('/api/linx/user/batch', { userIds });
+  return post('/profile/batch', { userIds });
 }

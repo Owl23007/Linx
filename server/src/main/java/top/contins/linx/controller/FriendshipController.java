@@ -3,6 +3,7 @@ package top.contins.linx.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +19,9 @@ import java.util.Map;
 /**
  * 好友管理API控制器
  */
+@Slf4j
 @RestController
-@RequestMapping("/api/linx/friends")
+@RequestMapping("/friends")
 @Tag(name = "好友管理", description = "好友添加、删除、列表查询等功能")
 public class FriendshipController {
 
@@ -75,6 +77,7 @@ public class FriendshipController {
     public Result<List<FriendVO>> getFriends() {
         try {
             Long currentUserId = getCurrentUserId();
+            log.info("获取好友列表: {}", currentUserId);
             List<FriendVO> friends = friendshipService.getFriends(currentUserId);
             return Result.success("获取好友列表成功", friends);
         } catch (Exception e) {

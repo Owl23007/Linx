@@ -26,7 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/user/**", "/chat/**")// 拦截的路径
+                .addPathPatterns("/user/**", "/chat/**", "/profile/**","/groups/**","/friends/**")// 拦截的路径
                 .order(1);
     }
 }

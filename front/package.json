@@ -19,7 +19,7 @@
     "url": "https://github.com/Owl23007/Let-s-Talk.git"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "electron": "cross-env NODE_ENV=development electron .",
     "electron:prod": "cross-env NODE_ENV=production electron .",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",

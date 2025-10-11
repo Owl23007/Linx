@@ -14,68 +14,68 @@ export function createGroup(data: {
   maxMembers?: number;
   initialMembers?: number[];
 }): Promise<Result> {
-  return post('/api/linx/groups', data);
+  return post('/linx/groups', data);
 }
 
 /**
  * 获取用户加入的群组列表
  */
 export function getUserGroups(): Promise<Result> {
-  return get('/api/linx/groups');
+  return get('/linx/groups');
 }
 
 /**
  * 获取群组详情
  */
 export function getGroupDetails(groupId: number): Promise<Result> {
-  return get(`/api/linx/groups/${groupId}`);
+  return get(`/linx/groups/${groupId}`);
 }
 
 /**
  * 加入群组
  */
 export function joinGroup(groupId: number): Promise<Result> {
-  return post(`/api/linx/groups/${groupId}/join`);
+  return post(`/linx/groups/${groupId}/join`);
 }
 
 /**
  * 退出群组
  */
 export function leaveGroup(groupId: number): Promise<Result> {
-  return post(`/api/linx/groups/${groupId}/leave`);
+  return post(`/linx/groups/${groupId}/leave`);
 }
 
 /**
  * 解散群组
  */
 export function disbandGroup(groupId: number): Promise<Result> {
-  return del(`/api/linx/groups/${groupId}`);
+  return del(`/linx/groups/${groupId}`);
 }
 
 /**
  * 获取群组成员列表
  */
 export function getGroupMembers(groupId: number): Promise<Result> {
-  return get(`/api/linx/groups/${groupId}/members`);
+  return get(`/linx/groups/${groupId}/members`);
 }
 
 /**
  * 移除群组成员
  */
 export function removeMember(groupId: number, userId: number): Promise<Result> {
-  return del(`/api/linx/groups/${groupId}/members/${userId}`);
+  return del(`/linx/groups/${groupId}/members/${userId}`);
 }
 
 /**
  * 设置成员角色
  */
 export function setMemberRole(groupId: number, userId: number, role: string): Promise<Result> {
-  return put(`/api/linx/groups/${groupId}/members/${userId}/role`, { role });
+  return put(`/linx/groups/${groupId}/members/${userId}/role`, { role });
 }
 
 /**
  * 搜索群组
  */
 export function searchGroups(keyword: string): Promise<Result> {
-  return get(`/api/linx/groups/search?keyword=${encodeURIComponent(keyword)}`);
+  return get(`/linx/groups/search?keyword=${encodeURIComponent(keyword)}`);
 }

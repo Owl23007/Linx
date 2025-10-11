@@ -9,7 +9,7 @@ import { del, get, post, put } from '../utils/http';
  * 返回的 ticket 有效期 5 分钟，需要在连接 WebSocket 时作为 URL 参数传递
  */
 export function getTicket(): Promise<Result<string>> {
-  return post('/api/linx/chat/ticket');
+  return get('/linx/chat/ticket');
 }
 
 /**
@@ -17,7 +17,7 @@ export function getTicket(): Promise<Result<string>> {
  * 在建立 WebSocket 连接前调用，将用户身份信息存储到 HTTP Session
  */
 export function establishWebSocketSession(): Promise<Result> {
-  return post('/api/linx/chat/link');
+  return post('/linx/chat/link');
 }
 
 // ==================== 聊天历史记录 ====================
@@ -33,7 +33,7 @@ export function getPrivateChatHistory(
   page = 0,
   size = 20
 ): Promise<Result> {
-  return get(`/api/linx/chat/history/private/${otherUserId}`, { page, size });
+  return get(`/linx/chat/history/private/${otherUserId}`, { page, size });
 }
 
 /**
@@ -47,7 +47,7 @@ export function getGroupChatHistory(
   page = 0,
   size = 20
 ): Promise<Result> {
-  return get(`/api/linx/chat/history/group/${groupId}`, { page, size });
+  return get(`/linx/chat/history/group/${groupId}`, { page, size });
 }
 
 /**
@@ -59,7 +59,7 @@ export function getPrivateMessagesAfter(
   otherUserId: number,
   afterTime: string
 ): Promise<Result> {
-  return get(`/api/linx/chat/history/private/${otherUserId}/after`, { afterTime });
+  return get(`/linx/chat/history/private/${otherUserId}/after`, { afterTime });
 }
 
 /**
@@ -71,7 +71,7 @@ export function getGroupMessagesAfter(
   groupId: string,
   afterTime: string
 ): Promise<Result> {
-  return get(`/api/linx/chat/history/group/${groupId}/after`, { afterTime });
+  return get(`/linx/chat/history/group/${groupId}/after`, { afterTime });
 }
 
 // ==================== 未读消息管理 ====================
@@ -81,14 +81,14 @@ export function getGroupMessagesAfter(
  * @param otherUserId 对方用户ID
  */
 export function getUnreadCount(otherUserId: number): Promise<Result<{ otherUserId: number; unreadCount: number }>> {
-  return get(`/api/linx/chat/history/unread/${otherUserId}`);
+  return get(`/linx/chat/history/unread/${otherUserId}`);
 }
 
 /**
  * 获取所有未读消息总数
  */
 export function getTotalUnreadCount(): Promise<Result<{ totalUnreadCount: number }>> {
-  return get('/api/linx/chat/history/unread/total');
+  return get('/linx/chat/history/unread/total');
 }
 
 /**
@@ -96,7 +96,7 @@ export function getTotalUnreadCount(): Promise<Result<{ totalUnreadCount: number
  * @param messageId 消息ID
  */
 export function markMessageAsRead(messageId: string): Promise<Result> {
-  return put(`/api/linx/chat/history/read/${messageId}`);
+  return put(`/linx/chat/history/read/${messageId}`);
 }
 
 /**
@@ -105,7 +105,7 @@ export function markMessageAsRead(messageId: string): Promise<Result> {
  * @param otherUserId 对方用户ID
  */
 export function markPrivateMessagesAsRead(otherUserId: number): Promise<Result<{ otherUserId: number; updatedCount: number }>> {
-  return put(`/api/linx/chat/history/read/batch/${otherUserId}`);
+  return put(`/linx/chat/history/read/batch/${otherUserId}`);
 }
 
 // ==================== 消息操作 ====================
@@ -115,7 +115,7 @@ export function markPrivateMessagesAsRead(otherUserId: number): Promise<Result<{
  * @param messageId 消息ID
  */
 export function deleteMessage(messageId: string): Promise<Result> {
-  return del(`/api/linx/chat/history/${messageId}`);
+  return del(`/linx/chat/history/${messageId}`);
 }
 
 // ==================== 会话管理 ====================
@@ -126,7 +126,7 @@ export function deleteMessage(messageId: string): Promise<Result> {
  * @param limit 返回的会话数量
  */
 export function getRecentConversations(limit = 20): Promise<Result> {
-  return get('/api/linx/chat/history/conversations', { limit });
+  return get('/linx/chat/history/conversations', { limit });
 }
 
 // ==================== 消息搜索 ====================
@@ -144,7 +144,7 @@ export function searchPrivateMessages(
   page = 0,
   size = 20
 ): Promise<Result> {
-  return get(`/api/linx/chat/history/search/private/${otherUserId}`, { keyword, page, size });
+  return get(`/linx/chat/history/search/private/${otherUserId}`, { keyword, page, size });
 }
 
 /**
@@ -160,5 +160,5 @@ export function getPrivateMessagesByType(
   page = 0,
   size = 20
 ): Promise<Result> {
-  return get(`/api/linx/chat/history/type/private/${otherUserId}`, { type, page, size });
+  return get(`/linx/chat/history/type/private/${otherUserId}`, { type, page, size });
 }

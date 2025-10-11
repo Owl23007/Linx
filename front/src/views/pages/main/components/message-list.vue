@@ -3,15 +3,33 @@
     <!-- 搜索栏 -->
     <div class="flex items-center justify-between p-3 border-b border-gray-200 bg-white shadow-sm">
       <el-input v-model="search" placeholder="搜索" prefix-icon="Search" clearable size="small" class="w-full max-w-xs" />
-      <el-button type="primary" size="small" @click="handleAddClick" class="ml-2">
-        <el-icon>
-          <Plus />
-        </el-icon>
-      </el-button>
+      <div class="ml-2 flex gap-2">
+        <el-button size="small" :icon="Refresh" circle @click="handleRefresh" :loading="isRefreshing" />
+        <el-button type="primary" size="small" @click="handleAddClick">
+          <el-icon>
+            <Plus />
+          </el-icon>
+        </el-button>
+      </div>
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="flex-1 flex items-center justify-center">
+      <el-icon class="is-loading text-blue-500" :size="32">
+        <Loading />
+      </el-icon>
+      <span class="ml-2 text-gray-500">加载中...</span>
+    </div>
+
+    <!-- 空状态 -->
+    <div v-else-if="filteredChats.length === 0" class="flex-1 flex items-center justify-center">
+      <el-empty description="暂无联系人">
+        <el-button type="primary" @click="handleAddClick">添加好友/群组</el-button>
+      </el-empty>
     </div>
 
     <!-- 聊天列表 -->
-    <div class="flex-1 overflow-y-auto px-2 py-2 space-y-2">
+    <div v-else class="flex-1 overflow-y-auto px-2 py-2 space-y-2">
       <div v-for="(item, index) in filteredChats" :key="index"
         class="flex items-center p-3 rounded-lg hover:bg-white cursor-pointer transition-colors duration-150 shadow-sm"
         :class="{ 'bg-blue-50': item.selected }" @click="handleChatClick(item)">
@@ -24,15 +42,20 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between">
             <h3 class="font-medium text-gray-800 truncate">{{ item.name }}</h3>
-            <span class="text-xs text-gray-500">{{ item.time }}</span>
+            <span v-if="item.time" class="text-xs text-gray-500">{{ item.time }}</span>
           </div>
           <p class="text-sm text-gray-600 truncate">{{ item.lastMessage }}</p>
         </div>
 
         <!-- 未读数 -->
         <div v-if="item.unread > 0"
-          class="flex-shrink-0 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+          class="flex-shrink-0 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center ml-2">
           {{ item.unread > 99 ? '99+' : item.unread }}
+        </div>
+
+        <!-- 在线状态指示器（仅好友） -->
+        <div v-if="item.type === 'private' && item.onlineStatus === 'ONLINE'"
+          class="flex-shrink-0 w-2 h-2 bg-green-500 rounded-full ml-2" title="在线">
         </div>
       </div>
     </div>
@@ -42,7 +65,8 @@
 <script setup lang="ts">
 import { useFriendsStore } from '@/stores/friends';
 import { useGroupsStore } from '@/stores/groups';
-import { Plus } from '@element-plus/icons-vue';
+import { Loading, Plus, Refresh } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 import { computed, onMounted, ref } from 'vue';
 
 // Emits
@@ -57,6 +81,8 @@ const groupsStore = useGroupsStore();
 // State
 const search = ref('');
 const selectedChatId = ref<string | null>(null);
+const loading = ref(false);
+const isRefreshing = ref(false);
 
 // Computed
 const chats = computed(() => {
@@ -71,6 +97,7 @@ const chats = computed(() => {
       friendUsername: friend.friendUsername,
       remark: friend.remark,
       friendAvatar: friend.friendAvatar,
+      onlineStatus: friend.onlineStatus,
       name: friend.remark || friend.friendUsername,
       avatar: friend.friendAvatar,
       lastMessage: '点击开始聊天...',
@@ -115,13 +142,38 @@ function handleChatClick(chat: any) {
 }
 
 function handleAddClick() {
-  // TODO: 显示添加好友或创建群组的菜单
+  ElMessage.info('添加好友/群组功能开发中...');
+  // TODO: 打开添加好友/群组对话框
+}
+
+async function handleRefresh() {
+  isRefreshing.value = true;
+  try {
+    await Promise.all([
+      friendsStore.loadFriends(),
+      groupsStore.loadGroups(),
+    ]);
+    ElMessage.success('刷新成功');
+  } catch {
+    ElMessage.error('刷新失败');
+  } finally {
+    isRefreshing.value = false;
+  }
 }
 
 // Lifecycle
-onMounted(() => {
-  friendsStore.loadFriends();
-  groupsStore.loadGroups();
+onMounted(async () => {
+  loading.value = true;
+  try {
+    await Promise.all([
+      friendsStore.loadFriends(),
+      groupsStore.loadGroups(),
+    ]);
+  } catch {
+    ElMessage.error('加载联系人列表失败');
+  } finally {
+    loading.value = false;
+  }
 });
 </script>
 

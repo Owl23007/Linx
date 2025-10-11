@@ -18,8 +18,24 @@ export function useWebSocket() {
    * 连接 WebSocket
    */
   async function connect(baseUrl: string) {
+    // 防止重复连接
     if (connected.value || connecting.value) {
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.log('⚠️ WebSocket 已连接或正在连接中，跳过');
+      }
+
       return;
+    }
+
+    // 清理旧连接
+    if (client.value) {
+      try {
+        client.value.deactivate();
+      } catch {
+        // 忽略清理错误
+      }
+      client.value = null;
     }
 
     connecting.value = true;
@@ -32,22 +48,38 @@ export function useWebSocket() {
       }
 
       // 2. 创建 STOMP 客户端
-      const wsUrl = baseUrl.replace('http', 'ws') + `/ws?ticket=${ticket}`;
+      // 移除 baseUrl 末尾的 /api 路径（如果存在）
+      const cleanBaseUrl = baseUrl.replace(/\/api$/, '');
+      // 后端 STOMP 端点是 /stomp，带上 ticket 参数
+      const wsUrl = cleanBaseUrl.replace(/^http/, 'ws') + `/stomp?ticket=${ticket}`;
+
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.log('🔗 准备连接 WebSocket:', wsUrl.replace(/ticket=[^&]+/, 'ticket=***'));
+      }
 
       client.value = new Client({
         brokerURL: wsUrl,
         connectHeaders: {},
         debug: (str) => {
-          console.log('STOMP Debug:', str);
+          // STOMP 调试信息（开发环境）
+          if (import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.log('STOMP Debug:', str);
+          }
         },
-        reconnectDelay: 5000,
+        // 禁用自动重连,避免使用过期的 ticket
+        reconnectDelay: 0,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
       });
 
       // 3. 连接成功回调
       client.value.onConnect = () => {
-        console.log('WebSocket 连接成功');
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.log('✅ WebSocket 连接成功');
+        }
         connected.value = true;
         connecting.value = false;
         chatStore.setWsConnected(true);
@@ -63,24 +95,46 @@ export function useWebSocket() {
 
       // 4. 连接错误回调
       client.value.onStompError = (frame) => {
-        console.error('STOMP 错误:', frame);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.error('❌ STOMP 错误:', frame);
+        }
         connected.value = false;
         connecting.value = false;
         chatStore.setWsConnected(false);
-        ElMessage.error('连接失败');
+
+        // 清理客户端,避免使用过期的 ticket 重连
+        if (client.value) {
+          client.value.deactivate();
+          client.value = null;
+        }
+
+        ElMessage.error(`连接失败: ${frame.headers?.message || '未知错误'}`);
       };
 
       // 5. WebSocket 错误回调
       client.value.onWebSocketError = (event) => {
-        console.error('WebSocket 错误:', event);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.error('❌ WebSocket 错误:', event);
+        }
         connected.value = false;
         connecting.value = false;
         chatStore.setWsConnected(false);
+
+        // 清理客户端
+        if (client.value) {
+          client.value.deactivate();
+          client.value = null;
+        }
       };
 
       // 6. 断开连接回调
       client.value.onDisconnect = () => {
-        console.log('WebSocket 已断开');
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.log('🔌 WebSocket 已断开');
+        }
         connected.value = false;
         chatStore.setWsConnected(false);
       };
@@ -88,9 +142,19 @@ export function useWebSocket() {
       // 7. 激活连接
       client.value.activate();
     } catch (error) {
-      console.error('连接 WebSocket 失败:', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('❌ 连接 WebSocket 失败:', error);
+      }
       connecting.value = false;
-      ElMessage.error('连接失败');
+
+      // 清理客户端
+      if (client.value) {
+        client.value.deactivate();
+        client.value = null;
+      }
+
+      ElMessage.error(`连接失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 
@@ -103,13 +167,19 @@ export function useWebSocket() {
     client.value.subscribe('/user/queue/messages', (message: IMessage) => {
       try {
         const chatMessage: ChatMessage = JSON.parse(message.body);
-        console.log('收到私聊消息:', chatMessage);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.log('📨 收到私聊消息:', chatMessage);
+        }
 
         // 添加到消息列表
         const conversationId = `private_${chatMessage.senderId}`;
         chatStore.addMessage(conversationId, chatMessage);
       } catch (error) {
-        console.error('解析私聊消息失败:', error);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.error('❌ 解析私聊消息失败:', error);
+        }
       }
     });
   }
@@ -220,6 +290,22 @@ export function useWebSocket() {
     }
   }
 
+  /**
+   * 重新连接 (会获取新的 ticket)
+   */
+  async function reconnect(baseUrl: string) {
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.log('尝试重新连接 WebSocket...');
+    }
+
+    // 先断开现有连接
+    disconnect();
+
+    // 重新连接
+    await connect(baseUrl);
+  }
+
   // 组件卸载时自动断开连接
   onUnmounted(() => {
     disconnect();
@@ -230,6 +316,7 @@ export function useWebSocket() {
     connecting,
     connect,
     disconnect,
+    reconnect,
     sendPrivateMessage,
     sendGroupMessage,
     sendTypingStatus,
