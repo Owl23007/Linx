@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import top.contins.linx.model.enums.MessageStatus;
 import top.contins.linx.model.enums.MessageType;
 
 import java.time.LocalDateTime;
@@ -117,6 +118,19 @@ public class ChatMessageEntity {
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 
+    /**
+     * 消息状态
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20)
+    private MessageStatus status = MessageStatus.NORMAL;
+
+    /**
+     * 引用的消息ID（用于回复功能）
+     */
+    @Column(name = "quoted_message_id", length = 100)
+    private String quotedMessageId;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -130,6 +144,9 @@ public class ChatMessageEntity {
         }
         if (isDeleted == null) {
             isDeleted = false;
+        }
+        if (status == null) {
+            status = MessageStatus.NORMAL;
         }
     }
 

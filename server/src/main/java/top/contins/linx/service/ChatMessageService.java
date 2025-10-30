@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.contins.linx.model.common.ChatMessage;
 import top.contins.linx.model.entity.ChatMessageEntity;
+import top.contins.linx.model.enums.MessageStatus;
 import top.contins.linx.model.enums.MessageType;
 import top.contins.linx.repository.ChatMessageRepository;
 
@@ -202,5 +203,162 @@ public class ChatMessageService {
         message.setExtra(entity.getExtra());
         message.setIsRead(entity.getIsRead());
         return message;
+    }
+
+    /**
+     * 撤回消息
+     * 
+     * @param messageId 消息ID
+     * @param userId 操作用户ID（必须是发送者）
+     * @return 是否撤回成功
+     */
+    @Transactional
+    public boolean revokeMessage(String messageId, Long userId) {
+        if (messageId == null || userId == null) {
+            log.warn("撤回消息失败：参数为空");
+            return false;
+        }
+
+        try {
+            Optional<ChatMessageEntity> messageOpt = chatMessageRepository.findByMessageId(messageId);
+            
+            if (messageOpt.isEmpty()) {
+                log.warn("撤回消息失败：消息不存在, messageId={}", messageId);
+                return false;
+            }
+
+            ChatMessageEntity message = messageOpt.get();
+            
+            // 验证是否是消息发送者
+            if (!message.getSenderId().equals(userId)) {
+                log.warn("撤回消息失败：无权限, messageId={}, userId={}", messageId, userId);
+                return false;
+            }
+
+            // 检查消息是否已被撤回
+            if (message.getStatus() == MessageStatus.REVOKED) {
+                log.warn("撤回消息失败：消息已被撤回, messageId={}", messageId);
+                return false;
+            }
+
+            // 标记为已撤回
+            message.setStatus(MessageStatus.REVOKED);
+            message.setContent("[消息已撤回]");
+            chatMessageRepository.save(message);
+            
+            log.info("消息已撤回: messageId={}, userId={}", messageId, userId);
+            return true;
+            
+        } catch (Exception e) {
+            log.error("撤回消息失败: messageId={}, userId={}", messageId, userId, e);
+            return false;
+        }
+    }
+
+    /**
+     * 保存引用回复消息
+     * 
+     * @param message 消息对象
+     * @param quotedMessageId 被引用的消息ID
+     * @param maxDepth 最大引用深度（防止无限嵌套）
+     * @return 保存的消息实体
+     */
+    @Transactional
+    public ChatMessageEntity saveQuotedMessage(ChatMessage message, String quotedMessageId, int maxDepth) {
+        if (message == null) {
+            throw new IllegalArgumentException("消息对象不能为空");
+        }
+
+        if (quotedMessageId != null && !quotedMessageId.isEmpty()) {
+            // 验证被引用的消息是否存在
+            Optional<ChatMessageEntity> quotedOpt = chatMessageRepository.findByMessageId(quotedMessageId);
+            
+            if (quotedOpt.isEmpty()) {
+                log.warn("被引用的消息不存在: quotedMessageId={}", quotedMessageId);
+                // 继续保存，但不设置引用关系
+            } else {
+                // 检查引用深度
+                int depth = calculateQuoteDepth(quotedMessageId);
+                if (depth >= maxDepth) {
+                    log.warn("引用深度超过限制: quotedMessageId={}, depth={}, maxDepth={}", 
+                        quotedMessageId, depth, maxDepth);
+                    // 超过深度限制，不设置引用关系
+                    quotedMessageId = null;
+                }
+            }
+        }
+
+        ChatMessageEntity entity = ChatMessageEntity.builder()
+                .messageId(message.getMessageId())
+                .type(message.getType())
+                .senderId(message.getSenderId())
+                .senderName(message.getSenderName())
+                .receiverId(message.getReceiverId())
+                .groupId(message.getGroupId())
+                .content(message.getContent())
+                .timestamp(message.getTimestamp())
+                .extra(message.getExtra())
+                .isRead(message.getIsRead() != null ? message.getIsRead() : false)
+                .quotedMessageId(quotedMessageId)
+                .build();
+
+        ChatMessageEntity saved = chatMessageRepository.save(entity);
+        log.info("引用回复消息已保存: messageId={}, quotedMessageId={}", 
+            saved.getMessageId(), quotedMessageId);
+        return saved;
+    }
+
+    /**
+     * 计算引用深度（递归）
+     * 
+     * @param messageId 消息ID
+     * @return 引用深度
+     */
+    private int calculateQuoteDepth(String messageId) {
+        if (messageId == null || messageId.isEmpty()) {
+            return 0;
+        }
+
+        Optional<ChatMessageEntity> messageOpt = chatMessageRepository.findByMessageId(messageId);
+        
+        if (messageOpt.isEmpty()) {
+            return 0;
+        }
+
+        ChatMessageEntity message = messageOpt.get();
+        String quotedId = message.getQuotedMessageId();
+        
+        if (quotedId == null || quotedId.isEmpty()) {
+            return 0;
+        }
+
+        return 1 + calculateQuoteDepth(quotedId);
+    }
+
+    /**
+     * 获取引用的消息详情
+     * 
+     * @param messageId 消息ID
+     * @return 被引用的消息，如果不存在返回null
+     */
+    public ChatMessageEntity getQuotedMessage(String messageId) {
+        if (messageId == null || messageId.isEmpty()) {
+            return null;
+        }
+
+        Optional<ChatMessageEntity> messageOpt = chatMessageRepository.findByMessageId(messageId);
+        
+        if (messageOpt.isEmpty()) {
+            return null;
+        }
+
+        ChatMessageEntity message = messageOpt.get();
+        String quotedId = message.getQuotedMessageId();
+        
+        if (quotedId == null || quotedId.isEmpty()) {
+            return null;
+        }
+
+        return chatMessageRepository.findByMessageId(quotedId).orElse(null);
     }
 }
