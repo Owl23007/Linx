@@ -27,3 +27,53 @@ logging:
   level:
     root: INFO
     com.linx: DEBUG
+
+# Linx 应用配置
+linx:
+  # WebSocket配置
+  websocket:
+    heartbeat-interval: 30s
+    timeout: 60s
+    max-connections: 10000
+    heartbeat-enabled: true
+
+  # N2N P2P配置
+  n2n:
+    supernode-address: "127.0.0.1:7777"
+    community-prefix: "linx"
+    virtual-ip-range: "192.168.100.0/24"
+    binary-directory: "native/n2n"
+    startup-timeout: 30
+    max-restart-attempts: 3
+    health-check-interval: 10
+    encryption-enabled: true
+    log-level: 2
+
+  # 文件服务配置
+  file:
+    storage-root: "/tmp/linx/files"
+    upload-temp-dir: "/tmp/linx/upload"
+    chunk-size: 5242880  # 5MB
+    max-file-size: 1073741824  # 1GB
+    allowed-mime-types:
+      - "image/jpeg"
+      - "image/png"
+      - "image/gif"
+      - "image/webp"
+      - "application/pdf"
+      - "application/zip"
+      - "text/plain"
+      - "application/json"
+    blocked-extensions:
+      - ".exe"
+      - ".bat"
+      - ".sh"
+      - ".cmd"
+      - ".com"
+      - ".pif"
+      - ".scr"
+      - ".vbs"
+      - ".js"
+    image-quality: 0.85
+    thumbnail-width: 100
+    thumbnail-height: 100
