@@ -20,7 +20,12 @@ Remove-Item -Recurse -Force "node_modules\electron" -ErrorAction SilentlyContinu
 Write-Host "完成" -ForegroundColor Green
 
 Write-Host "Step 2: 创建 electron 骨架目录..." -ForegroundColor Yellow
-pnpm add electron@38.0.0 --save-dev --ignore-scripts
+$ElectronVersion = Read-Host "请输入 Electron 版本 (例如 38.0.0)"
+if ([string]::IsNullOrEmpty($ElectronVersion)) {
+    $ElectronVersion = "38.0.0"
+    Write-Host "未输入版本，使用默认版本: $ElectronVersion" -ForegroundColor DarkGray
+}
+pnpm add electron@$ElectronVersion --save-dev --ignore-scripts
 Write-Host "完成" -ForegroundColor Green
 
 Write-Host "Step 3: 解压 electron 包..." -ForegroundColor Yellow
