@@ -1,10 +1,12 @@
 import { setupDragHandlers } from '../ipc/dragHandler.js';
+import { setupEasyTierHandlers } from '../ipc/easytierHandler.js';
 import { setupUserHandlers } from '../ipc/userHandler.js';
 import { setupWindowHandlers } from '../ipc/windowsHandler.js';
 
 class IpcManager {
-  constructor(windowManager) {
+  constructor(windowManager, easyTierManager) {
     this.windowManager = windowManager;
+    this.easyTierManager = easyTierManager;
   }
 
   /**
@@ -14,6 +16,7 @@ class IpcManager {
     setupWindowHandlers(this.windowManager);
     setupDragHandlers();
     setupUserHandlers(appDb);
+    setupEasyTierHandlers(this.easyTierManager);
   }
 }
 

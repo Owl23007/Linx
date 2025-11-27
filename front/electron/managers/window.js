@@ -64,9 +64,16 @@ class WindowManager {
   setupWindowEvents() {
     if (!this.mainWindow) return;
 
+    const config = getAppConfig();
+
     // 窗口准备好后显示
     this.mainWindow.once('ready-to-show', () => {
       this.mainWindow.show();
+
+      // 开发环境下自动打开开发者工具
+      if (config.isDev) {
+        this.mainWindow.webContents.openDevTools();
+      }
     });
 
     // 窗口关闭时清理引用

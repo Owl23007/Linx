@@ -439,15 +439,18 @@ async function handleLogin(): Promise<void> {
   const success = await performLogin();
   if (success) {
     ElMessage.success({ message: '登录成功', offset: 50, customClass: 'message' });
-    await authService.switchToMainWindow();
+    if (isElectron()) {
+      await authService.switchToMainWindow();
+    }
     router.push('/main');
   }
 }
 
 async function handleTest(): Promise<void> {
-  await authService.switchToMainWindow();
+  if (isElectron()) {
+    await authService.switchToMainWindow();
+  }
   router.push('/main');
-
 }
 
 async function handleRegister(): Promise<void> {

@@ -19,7 +19,8 @@
     "url": "https://github.com/Owl23007/Let-s-Talk.git"
   },
   "scripts": {
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps && node scripts/download-easytier.js",
+    "download:easytier": "node scripts/download-easytier.js",
     "dev": "vite --host",
     "electron": "cross-env NODE_ENV=development electron .",
     "electron:prod": "cross-env NODE_ENV=production electron .",
@@ -96,6 +97,10 @@
       {
         "from": "public/database",
         "to": "database"
+      },
+      {
+        "from": "electron/bin",
+        "to": "bin"
       }
     ],
     "npmRebuild": true,

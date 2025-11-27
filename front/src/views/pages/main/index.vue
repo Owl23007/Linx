@@ -2,15 +2,15 @@
   <div class="min-h-screen w-full overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 relative">
     <!-- Electron 拖动区域 -->
     <header v-if="isElectron()"
-      class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-3 shadow-sm">
+      class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-50 shadow-sm bg-white/80 backdrop-blur-sm">
       <!-- 左侧：Logo -->
       <div class="flex-shrink-0 absolute left-[-40px]">
         <Title :size="0.7" />
       </div>
 
       <div ref="dragAreaRef" class="flex-1 h-full drag-area" />
-      <div class="flex">
-        <el-button size="small" class="window-btn minimize-btn">
+      <div class="flex flex-shrink-0 no-drag">
+        <el-button size="small" class="window-btn minimize-btn" @click="showEasyTierDialog = true">
           <el-icon :size="16">
             <Setting />
           </el-icon>
@@ -108,6 +108,9 @@
 
     <!-- 好友请求对话框 -->
     <friend-requests-dialog v-model:visible="showFriendRequestsDialog" />
+
+    <!-- EasyTier 对话框 -->
+    <easy-tier-dialog v-model="showEasyTierDialog" />
   </div>
 </template>
 
@@ -122,6 +125,7 @@ import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
 import AddFriendDialog from '@/views/components/add-friend-dialog.vue';
 import CreateGroupDialog from '@/views/components/create-group-dialog.vue';
+import EasyTierDialog from '@/views/components/easytier-dialog.vue';
 import FriendRequestsDialog from '@/views/components/friend-requests-dialog.vue';
 import MessageInput from '@/views/components/message-input.vue';
 import MessageItem from '@/views/components/message-item.vue';
@@ -155,6 +159,7 @@ const messageContainer = ref<HTMLElement | null>(null);
 const showAddFriendDialog = ref(false);
 const showCreateGroupDialog = ref(false);
 const showFriendRequestsDialog = ref(false);
+const showEasyTierDialog = ref(false);
 const loading = ref(false);
 const typingUsers = ref<string[]>([]);
 const currentChat = ref<Conversation | null>(null);
@@ -428,5 +433,9 @@ watch(
     background-color: #ef4444;
     color: white;
   }
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
 }
 </style>

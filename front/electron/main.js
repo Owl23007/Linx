@@ -1,5 +1,6 @@
 import { app, Menu } from 'electron';
 import DatabaseManager from './managers/database.js';
+import EasyTierManager from './managers/easytier.js';
 import IpcManager from './managers/ipc.js';
 import KeytarManager from './managers/keytar.js';
 import WindowManager from './managers/window.js';
@@ -10,7 +11,8 @@ class ElectronApp {
     this.windowManager = new WindowManager();
     this.keytarManager = new KeytarManager(logger);
     this.databaseManager = new DatabaseManager(logger, this.keytarManager);
-    this.ipcManager = new IpcManager(this.windowManager);
+    this.easyTierManager = new EasyTierManager();
+    this.ipcManager = new IpcManager(this.windowManager, this.easyTierManager);
   }
 
   async init() {
@@ -29,6 +31,10 @@ class ElectronApp {
         // 初始化数据库服务
         await this.databaseManager.init();
         logger.info('DATABASE_INIT', '数据库初始化成功');
+
+        // 初始化 EasyTier
+        await this.easyTierManager.init();
+        logger.info('EASYTIER_INIT', 'EasyTier 初始化成功');
 
         // 创建 IPC 管理器
         this.ipcManager.setupHandlers(this.databaseManager.appDb);
