@@ -19,6 +19,7 @@
     "url": "https://github.com/Owl23007/Let-s-Talk.git"
   },
   "scripts": {
+    "postinstall": "electron-builder install-app-deps",
     "dev": "vite --host",
     "electron": "cross-env NODE_ENV=development electron .",
     "electron:prod": "cross-env NODE_ENV=production electron .",
@@ -40,6 +41,7 @@
     "rebuild": "electron-rebuild"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
     "@stomp/stompjs": "^7.2.0",
     "axios": "^1.11.0",
     "better-sqlite3": "^12.2.0",
