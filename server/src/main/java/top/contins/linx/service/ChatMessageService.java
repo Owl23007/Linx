@@ -1,16 +1,14 @@
 package top.contins.linx.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.contins.linx.model.common.ChatMessage;
 import top.contins.linx.model.entity.ChatMessageEntity;
 import top.contins.linx.model.enums.MessageType;
-import top.contins.linx.repository.ChatMessageRepository;
+import top.contins.linx.repository.ChatMessageMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,11 +21,11 @@ import java.util.Optional;
 @Service
 public class ChatMessageService {
 
-    private final ChatMessageRepository chatMessageRepository;
+    private final ChatMessageMapper chatMessageMapper;
 
     @Autowired
-    public ChatMessageService(ChatMessageRepository chatMessageRepository) {
-        this.chatMessageRepository = chatMessageRepository;
+    public ChatMessageService(ChatMessageMapper chatMessageMapper) {
+        this.chatMessageMapper = chatMessageMapper;
     }
 
     /**
@@ -48,9 +46,9 @@ public class ChatMessageService {
                 .isRead(message.getIsRead() != null ? message.getIsRead() : false)
                 .build();
 
-        ChatMessageEntity saved = chatMessageRepository.save(entity);
-        log.info("消息已保存到数据库: messageId={}, type={}", saved.getMessageId(), saved.getType());
-        return saved;
+        chatMessageMapper.insert(entity);
+        log.info("消息已保存到数据库: messageId={}, type={}", entity.getMessageId(), entity.getType());
+        return entity;
     }
 
     /**
@@ -73,51 +71,54 @@ public class ChatMessageService {
                         .build())
                 .toList();
 
-        return chatMessageRepository.saveAll(entities);
+        for (ChatMessageEntity entity : entities) {
+            chatMessageMapper.insert(entity);
+        }
+        return entities;
     }
 
     /**
      * 查询私聊历史记录
      */
     public Page<ChatMessageEntity> getPrivateChatHistory(Long userId1, Long userId2, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return chatMessageRepository.findPrivateChatHistory(userId1, userId2, pageable);
+        Page<ChatMessageEntity> pageParam = new Page<>(page, size);
+        return (Page<ChatMessageEntity>) chatMessageMapper.findPrivateChatHistory(pageParam, userId1, userId2);
     }
 
     /**
      * 查询群聊历史记录
      */
     public Page<ChatMessageEntity> getGroupChatHistory(String groupId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return chatMessageRepository.findGroupChatHistory(groupId, pageable);
+        Page<ChatMessageEntity> pageParam = new Page<>(page, size);
+        return (Page<ChatMessageEntity>) chatMessageMapper.findGroupChatHistory(pageParam, groupId);
     }
 
     /**
      * 查询指定时间之后的私聊消息
      */
     public List<ChatMessageEntity> getPrivateMessagesAfter(Long userId1, Long userId2, LocalDateTime afterTime) {
-        return chatMessageRepository.findPrivateMessagesAfter(userId1, userId2, afterTime);
+        return chatMessageMapper.findPrivateMessagesAfter(userId1, userId2, afterTime);
     }
 
     /**
      * 查询指定时间之后的群聊消息
      */
     public List<ChatMessageEntity> getGroupMessagesAfter(String groupId, LocalDateTime afterTime) {
-        return chatMessageRepository.findGroupMessagesAfter(groupId, afterTime);
+        return chatMessageMapper.findGroupMessagesAfter(groupId, afterTime);
     }
 
     /**
      * 统计未读消息数量（私聊）
      */
     public long countUnreadPrivateMessages(Long userId, Long otherUserId) {
-        return chatMessageRepository.countUnreadPrivateMessages(userId, otherUserId);
+        return chatMessageMapper.countUnreadPrivateMessages(userId, otherUserId);
     }
 
     /**
      * 统计用户的所有未读消息数量
      */
     public long countAllUnreadMessages(Long userId) {
-        return chatMessageRepository.countAllUnreadMessages(userId);
+        return chatMessageMapper.countAllUnreadMessages(userId);
     }
 
     /**
@@ -125,7 +126,7 @@ public class ChatMessageService {
      */
     @Transactional
     public boolean markMessageAsRead(String messageId) {
-        int updated = chatMessageRepository.markAsRead(messageId, LocalDateTime.now());
+        int updated = chatMessageMapper.markAsRead(messageId, LocalDateTime.now());
         if (updated > 0) {
             log.info("消息已标记为已读: messageId={}", messageId);
             return true;
@@ -138,7 +139,7 @@ public class ChatMessageService {
      */
     @Transactional
     public int markPrivateMessagesAsRead(Long userId, Long otherUserId) {
-        int updated = chatMessageRepository.markPrivateMessagesAsRead(userId, otherUserId, LocalDateTime.now());
+        int updated = chatMessageMapper.markPrivateMessagesAsRead(userId, otherUserId, LocalDateTime.now());
         log.info("批量标记消息为已读: userId={}, otherUserId={}, count={}", userId, otherUserId, updated);
         return updated;
     }
@@ -148,7 +149,7 @@ public class ChatMessageService {
      */
     @Transactional
     public boolean deleteMessage(String messageId) {
-        int deleted = chatMessageRepository.softDeleteMessage(messageId, LocalDateTime.now());
+        int deleted = chatMessageMapper.softDeleteMessage(messageId, LocalDateTime.now());
         if (deleted > 0) {
             log.info("消息已删除: messageId={}", messageId);
             return true;
@@ -160,30 +161,30 @@ public class ChatMessageService {
      * 根据消息ID查找消息
      */
     public Optional<ChatMessageEntity> findByMessageId(String messageId) {
-        return chatMessageRepository.findByMessageId(messageId);
+        return Optional.ofNullable(chatMessageMapper.findByMessageId(messageId));
     }
 
     /**
      * 查询最近的聊天会话
      */
     public List<ChatMessageEntity> getRecentConversations(Long userId, int limit) {
-        return chatMessageRepository.findRecentConversations(userId, limit);
+        return chatMessageMapper.findRecentConversations(userId, limit);
     }
 
     /**
      * 搜索私聊消息
      */
     public Page<ChatMessageEntity> searchPrivateMessages(Long userId1, Long userId2, String keyword, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return chatMessageRepository.searchPrivateMessages(userId1, userId2, keyword, pageable);
+        Page<ChatMessageEntity> pageParam = new Page<>(page, size);
+        return (Page<ChatMessageEntity>) chatMessageMapper.searchPrivateMessages(pageParam, userId1, userId2, keyword);
     }
 
     /**
      * 根据消息类型查询私聊消息
      */
     public Page<ChatMessageEntity> getPrivateMessagesByType(Long userId1, Long userId2, MessageType type, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return chatMessageRepository.findPrivateMessagesByType(userId1, userId2, type, pageable);
+        Page<ChatMessageEntity> pageParam = new Page<>(page, size);
+        return (Page<ChatMessageEntity>) chatMessageMapper.findPrivateMessagesByType(pageParam, userId1, userId2, type);
     }
 
     /**

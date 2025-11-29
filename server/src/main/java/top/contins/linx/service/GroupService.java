@@ -10,13 +10,12 @@ import top.contins.linx.model.enums.GroupStatus;
 import top.contins.linx.model.enums.GroupType;
 import top.contins.linx.model.vo.GroupMemberVO;
 import top.contins.linx.model.vo.GroupVO;
-import top.contins.linx.repository.GroupMemberRepository;
-import top.contins.linx.repository.GroupRepository;
-import top.contins.linx.repository.UserRepository;
+import top.contins.linx.repository.GroupMemberMapper;
+import top.contins.linx.repository.GroupMapper;
+import top.contins.linx.repository.UserMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -26,17 +25,17 @@ import java.util.stream.Collectors;
 @Transactional
 public class GroupService {
 
-    private final GroupRepository groupRepository;
-    private final GroupMemberRepository groupMemberRepository;
-    private final UserRepository userRepository;
+    private final GroupMapper groupMapper;
+    private final GroupMemberMapper groupMemberMapper;
+    private final UserMapper userMapper;
 
     @Autowired
-    public GroupService(GroupRepository groupRepository,
-                       GroupMemberRepository groupMemberRepository,
-                       UserRepository userRepository) {
-        this.groupRepository = groupRepository;
-        this.groupMemberRepository = groupMemberRepository;
-        this.userRepository = userRepository;
+    public GroupService(GroupMapper groupMapper,
+                       GroupMemberMapper groupMemberMapper,
+                       UserMapper userMapper) {
+        this.groupMapper = groupMapper;
+        this.groupMemberMapper = groupMemberMapper;
+        this.userMapper = userMapper;
     }
 
     /**
@@ -58,7 +57,8 @@ public class GroupService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        Group savedGroup = groupRepository.save(group);
+        groupMapper.insert(group);
+        Group savedGroup = group; // ID is populated after insert
 
         // 2. 添加群主为第一个成员
         GroupMember ownerMember = GroupMember.builder()
@@ -69,7 +69,7 @@ public class GroupService {
                 .lastActiveAt(LocalDateTime.now())
                 .isMuted(false)
                 .build();
-        groupMemberRepository.save(ownerMember);
+        groupMemberMapper.insert(ownerMember);
 
         // 3. 添加初始成员
         if (createGroupDto.getInitialMembers() != null && !createGroupDto.getInitialMembers().isEmpty()) {
@@ -87,20 +87,22 @@ public class GroupService {
      * 加入群组
      */
     public void joinGroup(Long groupId, Long userId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("群组不存在"));
+        Group group = groupMapper.selectById(groupId);
+        if (group == null) {
+            throw new RuntimeException("群组不存在");
+        }
 
         if (group.getStatus() != GroupStatus.ACTIVE) {
             throw new RuntimeException("群组已不可用");
         }
 
         // 检查是否已经是成员
-        if (groupMemberRepository.existsByGroupIdAndUserId(groupId, userId)) {
+        if (groupMemberMapper.existsByGroupIdAndUserId(groupId, userId)) {
             throw new RuntimeException("您已经是群组成员");
         }
 
         // 检查群组人数限制
-        long currentMemberCount = groupMemberRepository.countByGroupId(groupId);
+        long currentMemberCount = groupMemberMapper.countByGroupId(groupId);
         if (currentMemberCount >= group.getMaxMembers()) {
             throw new RuntimeException("群组成员已满");
         }
@@ -118,27 +120,33 @@ public class GroupService {
      * 退出群组
      */
     public void leaveGroup(Long groupId, Long userId) {
-        GroupMember member = groupMemberRepository.findByGroupIdAndUserId(groupId, userId)
-                .orElseThrow(() -> new RuntimeException("您不是群组成员"));
+        GroupMember member = groupMemberMapper.findByGroupIdAndUserId(groupId, userId);
+        if (member == null) {
+            throw new RuntimeException("您不是群组成员");
+        }
 
         // 群主不能直接退出，需要先转让群组
         if (member.getRole() == GroupMemberRole.OWNER) {
             throw new RuntimeException("群主不能直接退出群组，请先转让群主身份");
         }
 
-        groupMemberRepository.delete(member);
+        groupMemberMapper.deleteById(member.getId());
     }
 
     /**
      * 解散群组（仅群主可操作）
      */
     public void disbandGroup(Long groupId, Long operatorId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("群组不存在"));
+        Group group = groupMapper.selectById(groupId);
+        if (group == null) {
+            throw new RuntimeException("群组不存在");
+        }
 
         // 检查操作权限
-        GroupMember operatorMember = groupMemberRepository.findByGroupIdAndUserId(groupId, operatorId)
-                .orElseThrow(() -> new RuntimeException("您不是群组成员"));
+        GroupMember operatorMember = groupMemberMapper.findByGroupIdAndUserId(groupId, operatorId);
+        if (operatorMember == null) {
+            throw new RuntimeException("您不是群组成员");
+        }
 
         if (operatorMember.getRole() != GroupMemberRole.OWNER) {
             throw new RuntimeException("只有群主可以解散群组");
@@ -147,17 +155,17 @@ public class GroupService {
         // 更新群组状态
         group.setStatus(GroupStatus.DISBANDED);
         group.setUpdatedAt(LocalDateTime.now());
-        groupRepository.save(group);
+        groupMapper.updateById(group);
 
         // 删除所有成员关系
-        groupMemberRepository.deleteByGroupId(groupId);
+        groupMemberMapper.deleteByGroupId(groupId);
     }
 
     /**
      * 获取用户加入的群组列表
      */
     public List<GroupVO> getUserGroups(Long userId) {
-        List<Group> groups = groupRepository.findGroupsByUserIdAndStatus(userId, GroupStatus.ACTIVE);
+        List<Group> groups = groupMapper.findGroupsByUserIdAndStatus(userId, GroupStatus.ACTIVE);
         return groups.stream()
                 .map(group -> buildGroupVO(group, userId))
                 .collect(Collectors.toList());
@@ -167,18 +175,20 @@ public class GroupService {
      * 获取群组详情
      */
     public GroupVO getGroupDetails(Long groupId, Long requesterId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("群组不存在"));
+        Group group = groupMapper.selectById(groupId);
+        if (group == null) {
+            throw new RuntimeException("群组不存在");
+        }
 
         // 检查用户是否是群组成员
-        if (!groupMemberRepository.existsByGroupIdAndUserId(groupId, requesterId)) {
+        if (!groupMemberMapper.existsByGroupIdAndUserId(groupId, requesterId)) {
             throw new RuntimeException("您不是群组成员，无权查看群组详情");
         }
 
         GroupVO groupVO = buildGroupVO(group, requesterId);
 
         // 加载成员列表
-        List<GroupMember> members = groupMemberRepository.findByGroupIdOrderByJoinedAtAsc(groupId);
+        List<GroupMember> members = groupMemberMapper.findByGroupIdOrderByJoinedAtAsc(groupId);
         List<GroupMemberVO> memberVOs = members.stream()
                 .map(this::buildGroupMemberVO)
                 .collect(Collectors.toList());
@@ -192,11 +202,11 @@ public class GroupService {
      */
     public List<GroupMemberVO> getGroupMembers(Long groupId, Long requesterId) {
         // 检查用户是否是群组成员
-        if (!groupMemberRepository.existsByGroupIdAndUserId(groupId, requesterId)) {
+        if (!groupMemberMapper.existsByGroupIdAndUserId(groupId, requesterId)) {
             throw new RuntimeException("您不是群组成员，无权查看成员列表");
         }
 
-        List<GroupMember> members = groupMemberRepository.findByGroupIdOrderByJoinedAtAsc(groupId);
+        List<GroupMember> members = groupMemberMapper.findByGroupIdOrderByJoinedAtAsc(groupId);
         return members.stream()
                 .map(this::buildGroupMemberVO)
                 .collect(Collectors.toList());
@@ -207,16 +217,20 @@ public class GroupService {
      */
     public void removeMember(Long groupId, Long operatorId, Long targetUserId) {
         // 检查操作者权限
-        GroupMember operator = groupMemberRepository.findByGroupIdAndUserId(groupId, operatorId)
-                .orElseThrow(() -> new RuntimeException("您不是群组成员"));
+        GroupMember operator = groupMemberMapper.findByGroupIdAndUserId(groupId, operatorId);
+        if (operator == null) {
+            throw new RuntimeException("您不是群组成员");
+        }
 
         if (operator.getRole() == GroupMemberRole.MEMBER) {
             throw new RuntimeException("权限不足，无法移除成员");
         }
 
         // 检查目标成员
-        GroupMember targetMember = groupMemberRepository.findByGroupIdAndUserId(groupId, targetUserId)
-                .orElseThrow(() -> new RuntimeException("目标用户不是群组成员"));
+        GroupMember targetMember = groupMemberMapper.findByGroupIdAndUserId(groupId, targetUserId);
+        if (targetMember == null) {
+            throw new RuntimeException("目标用户不是群组成员");
+        }
 
         // 不能移除群主
         if (targetMember.getRole() == GroupMemberRole.OWNER) {
@@ -229,7 +243,7 @@ public class GroupService {
             throw new RuntimeException("管理员不能移除其他管理员");
         }
 
-        groupMemberRepository.delete(targetMember);
+        groupMemberMapper.deleteById(targetMember.getId());
     }
 
     /**
@@ -237,16 +251,20 @@ public class GroupService {
      */
     public void setMemberRole(Long groupId, Long operatorId, Long targetUserId, GroupMemberRole newRole) {
         // 检查操作者权限
-        GroupMember operator = groupMemberRepository.findByGroupIdAndUserId(groupId, operatorId)
-                .orElseThrow(() -> new RuntimeException("您不是群组成员"));
+        GroupMember operator = groupMemberMapper.findByGroupIdAndUserId(groupId, operatorId);
+        if (operator == null) {
+            throw new RuntimeException("您不是群组成员");
+        }
 
         if (operator.getRole() != GroupMemberRole.OWNER) {
             throw new RuntimeException("只有群主可以设置成员角色");
         }
 
         // 检查目标成员
-        GroupMember targetMember = groupMemberRepository.findByGroupIdAndUserId(groupId, targetUserId)
-                .orElseThrow(() -> new RuntimeException("目标用户不是群组成员"));
+        GroupMember targetMember = groupMemberMapper.findByGroupIdAndUserId(groupId, targetUserId);
+        if (targetMember == null) {
+            throw new RuntimeException("目标用户不是群组成员");
+        }
 
         // 不能设置自己的角色
         if (operatorId.equals(targetUserId)) {
@@ -259,14 +277,14 @@ public class GroupService {
         }
 
         targetMember.setRole(newRole);
-        groupMemberRepository.save(targetMember);
+        groupMemberMapper.updateById(targetMember);
     }
 
     /**
      * 搜索群组
      */
     public List<GroupVO> searchGroups(String keyword, Long userId) {
-        List<Group> groups = groupRepository.findByNameContainingAndStatus(keyword, GroupStatus.ACTIVE);
+        List<Group> groups = groupMapper.findByNameContainingAndStatus(keyword, GroupStatus.ACTIVE);
         return groups.stream()
                 .map(group -> buildGroupVO(group, userId))
                 .collect(Collectors.toList());
@@ -284,7 +302,7 @@ public class GroupService {
                 .lastActiveAt(LocalDateTime.now())
                 .isMuted(false)
                 .build();
-        groupMemberRepository.save(member);
+        groupMemberMapper.insert(member);
     }
 
     /**
@@ -293,16 +311,16 @@ public class GroupService {
     private GroupVO buildGroupVO(Group group, Long requesterId) {
         // 获取当前用户在群组中的角色
         GroupMemberRole myRole = null;
-        Optional<GroupMember> myMembership = groupMemberRepository.findByGroupIdAndUserId(group.getId(), requesterId);
-        if (myMembership.isPresent()) {
-            myRole = myMembership.get().getRole();
+        GroupMember myMembership = groupMemberMapper.findByGroupIdAndUserId(group.getId(), requesterId);
+        if (myMembership != null) {
+            myRole = myMembership.getRole();
         }
 
         // 获取成员数量
-        long memberCount = groupMemberRepository.countByGroupId(group.getId());
+        long memberCount = groupMemberMapper.countByGroupId(group.getId());
 
         // 获取群主信息
-        User owner = userRepository.findById(group.getOwnerId()).orElse(null);
+        User owner = userMapper.selectById(group.getOwnerId());
 
         return GroupVO.builder()
                 .id(group.getId())
@@ -326,7 +344,7 @@ public class GroupService {
      * 构建GroupMemberVO对象
      */
     private GroupMemberVO buildGroupMemberVO(GroupMember member) {
-        User user = userRepository.findById(member.getUserId()).orElse(null);
+        User user = userMapper.selectById(member.getUserId());
 
         return GroupMemberVO.builder()
                 .membershipId(member.getId())

@@ -1,6 +1,10 @@
 package top.contins.linx.model.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,78 +16,68 @@ import java.time.LocalDateTime;
 /**
  * 群组成员实体
  */
-@Entity
-@Table(name = "group_members",
-       uniqueConstraints = {
-           @UniqueConstraint(columnNames = {"group_id", "user_id"})
-       },
-       indexes = {
-           @Index(name = "idx_group_members_group", columnList = "group_id"),
-           @Index(name = "idx_group_members_user", columnList = "user_id"),
-           @Index(name = "idx_group_members_role", columnList = "role")
-       })
+@TableName("group_members")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class GroupMember {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
      * 群组ID
      */
-    @Column(name = "group_id", nullable = false)
+    @TableField("group_id")
     private Long groupId;
 
     /**
      * 用户ID
      */
-    @Column(name = "user_id", nullable = false)
+    @TableField("user_id")
     private Long userId;
 
     /**
      * 成员角色
      */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @TableField("role")
     private GroupMemberRole role = GroupMemberRole.MEMBER;
 
     /**
      * 群昵称
      */
-    @Column(name = "nickname", length = 50)
+    @TableField("nickname")
     private String nickname;
 
     /**
      * 加入时间
      */
-    @Column(name = "joined_at", nullable = false)
+    @TableField(value = "joined_at", fill = FieldFill.INSERT)
     private LocalDateTime joinedAt;
 
     /**
      * 最后活跃时间
      */
-    @Column(name = "last_active_at")
+    @TableField(value = "last_active_at", fill = FieldFill.INSERT)
     private LocalDateTime lastActiveAt;
 
     /**
      * 是否禁言
      */
-    @Column(name = "is_muted", nullable = false)
+    @TableField("is_muted")
     private Boolean isMuted = false;
 
     /**
      * 禁言到期时间
      */
-    @Column(name = "mute_until")
+    @TableField("mute_until")
     private LocalDateTime muteUntil;
 
-    @PrePersist
-    protected void onCreate() {
-        joinedAt = LocalDateTime.now();
-        lastActiveAt = LocalDateTime.now();
-    }
+    // TODO: Migrate @PrePersist logic to Service or MetaObjectHandler
+    // @PrePersist
+    // protected void onCreate() {
+    //     joinedAt = LocalDateTime.now();
+    //     lastActiveAt = LocalDateTime.now();
+    // }
 }

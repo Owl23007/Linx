@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/linx_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2B8&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:postgresql://localhost:5432/linx_db
     username: linx_service
     password: linx
 
@@ -12,18 +12,13 @@ spring:
         username: nacos
         password: ${nacos.password}
 
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    properties:
-      hibernate:
-        format_sql: true
-        jdbc:
-          batch_size: 20
-        order_inserts: true
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
 
 
 # Logging configuration for development
@@ -31,4 +26,3 @@ logging:
   level:
     root: INFO
     com.linx: DEBUG
-

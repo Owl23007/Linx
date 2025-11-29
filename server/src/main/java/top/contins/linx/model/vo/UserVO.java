@@ -1,7 +1,5 @@
 package top.contins.linx.model.vo;
 
-import jakarta.persistence.*;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

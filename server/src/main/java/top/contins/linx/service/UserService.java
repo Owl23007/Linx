@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import top.contins.linx.model.entity.User;
 import top.contins.linx.model.enums.UserStatus;
 import top.contins.linx.model.vo.UserVO;
-import top.contins.linx.repository.UserRepository;
+import top.contins.linx.repository.UserMapper;
 import top.contins.linx.util.RedisUtil;
 
 import java.time.LocalDateTime;
@@ -21,12 +21,12 @@ import java.time.LocalDateTime;
 @Service
 @Transactional
 public class UserService {
-    private final UserRepository userRepository;
+    private final UserMapper userMapper;
     private final RedisUtil redisUtil;
 
     @Autowired
-    public  UserService(UserRepository userRepository, RedisUtil redisUtil) {
-        this.userRepository = userRepository;
+    public  UserService(UserMapper userMapper, RedisUtil redisUtil) {
+        this.userMapper = userMapper;
         this.redisUtil = redisUtil;
     }
 
@@ -38,8 +38,10 @@ public class UserService {
      * - HIDDEN / AWAY ：隐身状态，不更新 lastSeenAt<br>
      */
     public User updateUserStatus(Long userId, UserStatus status) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在: " + userId));
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在: " + userId);
+        }
 
         user.setStatus(status);
 
@@ -52,7 +54,8 @@ public class UserService {
 
         user.setUpdatedAt(now);
 
-        return userRepository.save(user);
+        userMapper.updateById(user);
+        return user;
     }
 
     /**
@@ -65,8 +68,10 @@ public class UserService {
         if (userVO != null) {
             return userVO;
         }
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在: " + userId));
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在: " + userId);
+        }
         userVO = new UserVO(user);
 
         redisUtil.set(key, userVO);
@@ -77,10 +82,12 @@ public class UserService {
      * 更新最后活跃时间（心跳机制调用）
      */
     public void updateLastSeenAt(Long userId, LocalDateTime now) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在: " + userId));
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在: " + userId);
+        }
         user.updateLastSeenAt(now);
-        userRepository.save(user);
+        userMapper.updateById(user);
     }
 
     /**
@@ -89,8 +96,12 @@ public class UserService {
      * - 如果用户已存在，不修改状态，仅确保记录存在
      */
     public void createOrUpdateUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElse(new User(userId, UserStatus.OFFLINE, null, null));
-        userRepository.save(user);
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            user = new User(userId, UserStatus.OFFLINE, null, null);
+            userMapper.insert(user);
+        } else {
+            userMapper.updateById(user);
+        }
     }
 }

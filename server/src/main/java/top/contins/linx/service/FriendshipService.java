@@ -8,12 +8,11 @@ import top.contins.linx.model.entity.Friendship;
 import top.contins.linx.model.enums.FriendshipStatus;
 import top.contins.linx.model.entity.User;
 import top.contins.linx.model.vo.FriendVO;
-import top.contins.linx.repository.FriendshipRepository;
-import top.contins.linx.repository.UserRepository;
+import top.contins.linx.repository.FriendshipMapper;
+import top.contins.linx.repository.UserMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -23,14 +22,14 @@ import java.util.stream.Collectors;
 @Transactional
 public class FriendshipService {
 
-    private final FriendshipRepository friendshipRepository;
-    private final UserRepository userRepository;
+    private final FriendshipMapper friendshipMapper;
+    private final UserMapper userMapper;
 
     @Autowired
-    public FriendshipService(FriendshipRepository friendshipRepository,
-                           UserRepository userRepository) {
-        this.friendshipRepository = friendshipRepository;
-        this.userRepository = userRepository;
+    public FriendshipService(FriendshipMapper friendshipMapper,
+                           UserMapper userMapper) {
+        this.friendshipMapper = friendshipMapper;
+        this.userMapper = userMapper;
     }
 
     /**
@@ -51,12 +50,12 @@ public class FriendshipService {
         }
 
         // 3. 检查是否已经是好友
-        if (friendshipRepository.areFriends(requesterId, addresseeId)) {
+        if (friendshipMapper.areFriends(requesterId, addresseeId)) {
             throw new RuntimeException("你们已经是好友了");
         }
 
         // 4. 检查是否已有待处理的请求
-        if (friendshipRepository.hasPendingRequest(requesterId, addresseeId)) {
+        if (friendshipMapper.hasPendingRequest(requesterId, addresseeId)) {
             throw new RuntimeException("已存在待处理的好友请求");
         }
 
@@ -70,15 +69,17 @@ public class FriendshipService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        friendshipRepository.save(friendship);
+        friendshipMapper.insert(friendship);
     }
 
     /**
      * 处理好友请求（接受或拒绝）
      */
     public void handleFriendRequest(Long userId, Long friendshipId, boolean accept) {
-        Friendship friendship = friendshipRepository.findById(friendshipId)
-                .orElseThrow(() -> new RuntimeException("好友请求不存在"));
+        Friendship friendship = friendshipMapper.selectById(friendshipId);
+        if (friendship == null) {
+            throw new RuntimeException("好友请求不存在");
+        }
 
         // 检查是否是请求的接收者
         if (!friendship.getAddresseeId().equals(userId)) {
@@ -94,32 +95,31 @@ public class FriendshipService {
         friendship.setStatus(accept ? FriendshipStatus.ACCEPTED : FriendshipStatus.REJECTED);
         friendship.setUpdatedAt(LocalDateTime.now());
 
-        friendshipRepository.save(friendship);
+        friendshipMapper.updateById(friendship);
     }
 
     /**
      * 删除好友
      */
     public void removeFriend(Long userId, Long friendId) {
-        Optional<Friendship> friendship = friendshipRepository.findFriendshipBetweenUsers(userId, friendId);
+        Friendship friendship = friendshipMapper.findFriendshipBetweenUsers(userId, friendId);
 
-        if (friendship.isEmpty()) {
+        if (friendship == null) {
             throw new RuntimeException("好友关系不存在");
         }
 
-        Friendship f = friendship.get();
-        if (f.getStatus() != FriendshipStatus.ACCEPTED) {
+        if (friendship.getStatus() != FriendshipStatus.ACCEPTED) {
             throw new RuntimeException("你们不是好友关系");
         }
 
-        friendshipRepository.delete(f);
+        friendshipMapper.deleteById(friendship.getId());
     }
 
     /**
      * 获取好友列表
      */
     public List<FriendVO> getFriends(Long userId) {
-        List<Friendship> friendships = friendshipRepository.findFriendsByUserIdAndStatus(
+        List<Friendship> friendships = friendshipMapper.findFriendsByUserIdAndStatus(
                 userId, FriendshipStatus.ACCEPTED);
 
         return friendships.stream()
@@ -131,7 +131,7 @@ public class FriendshipService {
      * 获取收到的好友请求
      */
     public List<FriendVO> getReceivedFriendRequests(Long userId) {
-        List<Friendship> requests = friendshipRepository.findReceivedRequestsByUserIdAndStatus(
+        List<Friendship> requests = friendshipMapper.findReceivedRequestsByUserIdAndStatus(
                 userId, FriendshipStatus.PENDING);
 
         return requests.stream()
@@ -143,7 +143,7 @@ public class FriendshipService {
      * 获取发送的好友请求
      */
     public List<FriendVO> getSentFriendRequests(Long userId) {
-        List<Friendship> requests = friendshipRepository.findSentRequestsByUserIdAndStatus(
+        List<Friendship> requests = friendshipMapper.findSentRequestsByUserIdAndStatus(
                 userId, FriendshipStatus.PENDING);
 
         return requests.stream()
@@ -155,29 +155,28 @@ public class FriendshipService {
      * 更新好友备注
      */
     public void updateFriendRemark(Long userId, Long friendId, String remark) {
-        Optional<Friendship> friendship = friendshipRepository.findFriendshipBetweenUsers(userId, friendId);
+        Friendship friendship = friendshipMapper.findFriendshipBetweenUsers(userId, friendId);
 
-        if (friendship.isEmpty()) {
+        if (friendship == null) {
             throw new RuntimeException("好友关系不存在");
         }
 
-        Friendship f = friendship.get();
-        if (f.getStatus() != FriendshipStatus.ACCEPTED) {
+        if (friendship.getStatus() != FriendshipStatus.ACCEPTED) {
             throw new RuntimeException("你们不是好友关系");
         }
 
         // 只有请求发起者或好友本人可以修改备注
-        if (f.getRequesterId().equals(userId)) {
-            f.setRemark(remark);
-        } else if (f.getAddresseeId().equals(userId)) {
+        if (friendship.getRequesterId().equals(userId)) {
+            friendship.setRemark(remark);
+        } else if (friendship.getAddresseeId().equals(userId)) {
             // 对于接收者，需要创建反向的备注逻辑或使用其他字段
-            f.setRemark(remark);
+            friendship.setRemark(remark);
         } else {
             throw new RuntimeException("无权修改此备注");
         }
 
-        f.setUpdatedAt(LocalDateTime.now());
-        friendshipRepository.save(f);
+        friendship.setUpdatedAt(LocalDateTime.now());
+        friendshipMapper.updateById(friendship);
     }
 
     /**
@@ -187,7 +186,7 @@ public class FriendshipService {
         try {
             // 尝试作为ID解析
             Long userId = Long.parseLong(userInput);
-            return userRepository.findById(userId).orElse(null);
+            return userMapper.selectById(userId);
         } catch (NumberFormatException e) {
             // 作为用户名查找（这里需要根据实际的User实体调整）
             // 由于当前User实体没有username字段，可能需要调整
@@ -205,7 +204,7 @@ public class FriendshipService {
                 : friendship.getRequesterId();
 
         // 获取好友用户信息
-        User friendUser = userRepository.findById(friendId).orElse(null);
+        User friendUser = userMapper.selectById(friendId);
 
         return FriendVO.builder()
                 .friendshipId(friendship.getId())

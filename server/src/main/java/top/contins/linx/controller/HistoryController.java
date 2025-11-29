@@ -1,12 +1,12 @@
 package top.contins.linx.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import top.contins.linx.model.common.ChatMessage;
@@ -58,20 +58,21 @@ public class HistoryController {
                 return Result.error("用户未登录");
             }
 
+            // MyBatis-Plus Page is 1-based
             Page<ChatMessageEntity> messagePage = chatMessageService.getPrivateChatHistory(
-                    currentUserId, otherUserId, page, size);
+                    currentUserId, otherUserId, page + 1, size);
 
-            List<ChatMessage> messages = messagePage.getContent().stream()
+            List<ChatMessage> messages = messagePage.getRecords().stream()
                     .map(chatMessageService::entityToMessage)
                     .collect(Collectors.toList());
 
             Map<String, Object> result = new HashMap<>();
             result.put("messages", messages);
-            result.put("currentPage", messagePage.getNumber());
-            result.put("totalPages", messagePage.getTotalPages());
-            result.put("totalElements", messagePage.getTotalElements());
-            result.put("hasNext", messagePage.hasNext());
-            result.put("hasPrevious", messagePage.hasPrevious());
+            result.put("currentPage", messagePage.getCurrent() - 1);
+            result.put("totalPages", messagePage.getPages());
+            result.put("totalElements", messagePage.getTotal());
+            result.put("hasNext", messagePage.getCurrent() < messagePage.getPages());
+            result.put("hasPrevious", messagePage.getCurrent() > 1);
 
             return Result.success("获取私聊历史记录成功", result);
 
@@ -99,19 +100,20 @@ public class HistoryController {
 
             // TODO: 验证用户是否是群组成员
 
-            Page<ChatMessageEntity> messagePage = chatMessageService.getGroupChatHistory(groupId, page, size);
+            // MyBatis-Plus Page is 1-based
+            Page<ChatMessageEntity> messagePage = chatMessageService.getGroupChatHistory(groupId, page + 1, size);
 
-            List<ChatMessage> messages = messagePage.getContent().stream()
+            List<ChatMessage> messages = messagePage.getRecords().stream()
                     .map(chatMessageService::entityToMessage)
                     .collect(Collectors.toList());
 
             Map<String, Object> result = new HashMap<>();
             result.put("messages", messages);
-            result.put("currentPage", messagePage.getNumber());
-            result.put("totalPages", messagePage.getTotalPages());
-            result.put("totalElements", messagePage.getTotalElements());
-            result.put("hasNext", messagePage.hasNext());
-            result.put("hasPrevious", messagePage.hasPrevious());
+            result.put("currentPage", messagePage.getCurrent() - 1);
+            result.put("totalPages", messagePage.getPages());
+            result.put("totalElements", messagePage.getTotal());
+            result.put("hasNext", messagePage.getCurrent() < messagePage.getPages());
+            result.put("hasPrevious", messagePage.getCurrent() > 1);
 
             return Result.success("获取群聊历史记录成功", result);
 
@@ -364,19 +366,20 @@ public class HistoryController {
                 return Result.error("用户未登录");
             }
 
+            // MyBatis-Plus Page is 1-based
             Page<ChatMessageEntity> messagePage = chatMessageService.searchPrivateMessages(
-                    currentUserId, otherUserId, keyword, page, size);
+                    currentUserId, otherUserId, keyword, page + 1, size);
 
-            List<ChatMessage> messages = messagePage.getContent().stream()
+            List<ChatMessage> messages = messagePage.getRecords().stream()
                     .map(chatMessageService::entityToMessage)
                     .collect(Collectors.toList());
 
             Map<String, Object> result = new HashMap<>();
             result.put("messages", messages);
             result.put("keyword", keyword);
-            result.put("currentPage", messagePage.getNumber());
-            result.put("totalPages", messagePage.getTotalPages());
-            result.put("totalElements", messagePage.getTotalElements());
+            result.put("currentPage", messagePage.getCurrent() - 1);
+            result.put("totalPages", messagePage.getPages());
+            result.put("totalElements", messagePage.getTotal());
 
             return Result.success("搜索消息成功", result);
 
@@ -405,19 +408,20 @@ public class HistoryController {
                 return Result.error("用户未登录");
             }
 
+            // MyBatis-Plus Page is 1-based
             Page<ChatMessageEntity> messagePage = chatMessageService.getPrivateMessagesByType(
-                    currentUserId, otherUserId, type, page, size);
+                    currentUserId, otherUserId, type, page + 1, size);
 
-            List<ChatMessage> messages = messagePage.getContent().stream()
+            List<ChatMessage> messages = messagePage.getRecords().stream()
                     .map(chatMessageService::entityToMessage)
                     .collect(Collectors.toList());
 
             Map<String, Object> result = new HashMap<>();
             result.put("messages", messages);
             result.put("type", type);
-            result.put("currentPage", messagePage.getNumber());
-            result.put("totalPages", messagePage.getTotalPages());
-            result.put("totalElements", messagePage.getTotalElements());
+            result.put("currentPage", messagePage.getCurrent() - 1);
+            result.put("totalPages", messagePage.getPages());
+            result.put("totalElements", messagePage.getTotal());
 
             return Result.success("获取指定类型消息成功", result);
 
