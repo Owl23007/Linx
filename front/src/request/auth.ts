@@ -38,6 +38,14 @@ export function refreshToken(): Promise<Result> {
 }
 
 /**
+ * 使用 Refresh Token 登录
+ */
+export function loginWithRefreshToken(token: string, endpoint: string): Promise<Result> {
+  // 尝试将 refreshToken 放入 Body
+  return post('/auth/refresh', { refreshToken: token }, endpoint);
+}
+
+/**
  * 用户登出
  */
 export function logout(): Promise<void> {

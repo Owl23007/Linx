@@ -42,6 +42,19 @@ class AuthService {
   }
 
   /**
+   * 使用 Refresh Token 登录
+   * @param {string} token - Refresh Token
+   * @param {string} endpoint - 服务器URL
+   */
+  async loginWithRefreshToken(token: string, endpoint: string) {
+    // 注意：这里假设后端 /auth/refresh 接口支持通过 Body 传递 refreshToken
+    // 如果后端只支持 Header，可能需要调整
+    const res = await auth.loginWithRefreshToken(token, endpoint);
+
+    return res;
+  }
+
+  /**
    * 切换为主窗口
    * @return {Promise<void>}
    */

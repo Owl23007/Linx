@@ -20,4 +20,9 @@ contextBridge.exposeInMainWorld('electronApi', {
 
   // 移除监听器
   removeListener: (channel, callback) => ipcRenderer.removeListener(channel, callback),
+
+  // 用户账号管理
+  saveAccount: (userData) => ipcRenderer.invoke('user:save-account', userData),
+  getAccounts: () => ipcRenderer.invoke('user:get-accounts'),
+  deleteAccount: (accountInfo) => ipcRenderer.invoke('user:delete-account', accountInfo),
 });

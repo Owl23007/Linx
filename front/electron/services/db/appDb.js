@@ -14,31 +14,58 @@ export class AppDb {
    * @param {string} userData.username - 用户名
    * @param {string} userData.nickname - 昵称
    * @param {string} userData.avatar_url - 头像URL (可选)
+   * @param {string} userData.refresh_token - 刷新令牌
    * @returns {Promise<number>} 新插入用户的ID
    */
   async addUser(userData) {
-    const { server_url, username, nickname, avatar_url } = userData;
+    const { server_url, username, nickname, avatar_url, refresh_token } = userData;
 
-    if (!server_url || !username || !nickname) {
-      throw new Error('server_url, username 和 nickname 是必填字段');
+    if (!server_url || !username || !nickname || !refresh_token) {
+      throw new Error('server_url, username, nickname 和 refresh_token 是必填字段');
     }
 
     const sql = `
-      INSERT INTO user (server_url, username, nickname, avatar_url, updated_at)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      INSERT INTO user (server_url, username, nickname, avatar_url, refresh_token, updated_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `;
 
     try {
-      const result = await this.dbInstance.run(sql, [server_url, username, nickname, avatar_url]);
+      const result = await this.dbInstance.prepare(sql).run(server_url, username, nickname, avatar_url, refresh_token);
 
-      return result.lastID;
+      return result.lastInsertRowid;
     } catch (error) {
       // 处理唯一约束冲突
-      if (error.code === 'SQLITE_CONSTRAINT' && error.message.includes('unique_server_user')) {
-        throw new Error(`用户 ${username}@${server_url} 已存在`);
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        // 如果已存在，则更新
+        return this.updateUser(userData);
       }
       throw error;
     }
+  }
+
+  /**
+   * 更新用户信息
+   * @param {Object} userData - 用户数据
+   * @returns {Promise<number>} 更新的用户ID
+   */
+  async updateUser(userData) {
+    const { server_url, username, nickname, avatar_url, refresh_token } = userData;
+
+    const sql = `
+      UPDATE user
+      SET nickname = ?, avatar_url = ?, refresh_token = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE server_url = ? AND username = ?
+    `;
+
+    const result = await this.dbInstance.prepare(sql).run(nickname, avatar_url, refresh_token, server_url, username);
+
+    if (result.changes > 0) {
+      const user = await this.getUserByServerAndUsername(server_url, username);
+
+      return user ? user.user_id : 0;
+    }
+
+    return 0;
   }
 
   /**
@@ -53,12 +80,12 @@ export class AppDb {
     }
 
     const sql = `
-      SELECT id, server_url, username, nickname, avatar_url, created_at, updated_at
+      SELECT user_id, server_url, username, nickname, avatar_url, refresh_token, created_at, updated_at
       FROM user
       WHERE server_url = ? AND username = ?
     `;
 
-    return await this.dbInstance.get(sql, [server_url, username]);
+    return await this.dbInstance.prepare(sql).get(server_url, username);
   }
 
   /**
@@ -72,12 +99,22 @@ export class AppDb {
     }
 
     const sql = `
-      SELECT id, server_url, username, nickname, avatar_url, created_at, updated_at
+      SELECT user_id, server_url, username, nickname, avatar_url, refresh_token, created_at, updated_at
       FROM user
-      WHERE id = ?
+      WHERE user_id = ?
     `;
 
-    return await this.dbInstance.get(sql, [userId]);
+    return await this.dbInstance.prepare(sql).get(userId);
+  }
+
+  /**
+   * 删除用户
+   * @param {string} server_url - 服务器地址
+   * @param {string} username - 用户名
+   */
+  async deleteUser(server_url, username) {
+    const sql = 'DELETE FROM user WHERE server_url = ? AND username = ?';
+    await this.dbInstance.prepare(sql).run(server_url, username);
   }
 
   /**
@@ -92,7 +129,7 @@ export class AppDb {
     const { limit, offset, orderBy = 'updated_at DESC' } = options;
 
     let sql = `
-      SELECT id, server_url, username, nickname, avatar_url, created_at, updated_at
+      SELECT user_id, server_url, username, nickname, avatar_url, refresh_token, created_at, updated_at
       FROM user
       ORDER BY ${orderBy}
     `;
@@ -109,7 +146,7 @@ export class AppDb {
       }
     }
 
-    return await this.dbInstance.all(sql, params);
+    return this.dbInstance.prepare(sql).all(...params);
   }
 
   /**

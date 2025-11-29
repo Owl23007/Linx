@@ -1,10 +1,10 @@
 spring:
   # Production database configuration
   datasource:
-    url: jdbc:mysql://localhost:3306/linx_prod?useSSL=false&serverTimezone=UTC
-    driverClassName: com.mysql.cj.jdbc.Driver
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:postgresql://localhost:5432/linx_db?useSSL=false&serverTimezone=UTC
+    driverClassName: org.postgresql.Driver
+    username: linx_service
+    password: ${DB_PASSWORD:linx}
 
   cloud:
     nacos:
@@ -15,13 +15,16 @@ spring:
 
   # JPA Configuration for production
   jpa:
-    database-platform: org.hibernate.dialect.MySQL8Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         format_sql: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
 
 # Logging configuration for production
 logging:

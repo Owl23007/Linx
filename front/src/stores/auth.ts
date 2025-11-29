@@ -34,6 +34,26 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function loginWithRefreshToken(refreshToken: string, endpoint: string) {
+    if (loading.value) return;
+    loading.value = true;
+    try {
+      const response = await authService.loginWithRefreshToken(refreshToken, endpoint);
+      if (response.code == 0) {
+        token.value = response.data.accessToken;
+        localStorage.setItem('token', response.data.accessToken);
+        // 如果后端返回了新的 refreshToken，也更新它
+        if (response.data.refreshToken) {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
+      }
+
+      return response;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function register(form: RegisterRequest, endpoint: string) {
     if (loading.value) return;
     loading.value = true;

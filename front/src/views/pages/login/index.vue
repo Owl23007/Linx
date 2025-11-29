@@ -53,6 +53,25 @@
         <Transition :name="transitionName" mode="out-in">
           <!-- 登录表单 -->
           <div v-if="activeTab === 'login'" key="login" class="form-content mt-16">
+            <!-- 最近登录 -->
+            <div v-if="savedAccounts.length > 0" class="mb-4">
+              <div class="text-xs text-gray-500 mb-2 px-1">最近登录</div>
+              <div class="space-y-2 max-h-32 overflow-y-auto">
+                <div v-for="account in savedAccounts" :key="account.user_id"
+                     class="flex items-center p-2 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 transition-colors border border-gray-100"
+                     @click="handleAccountLogin(account)">
+                  <el-avatar :size="32" :src="account.avatar_url" class="shrink-0">{{ account.nickname?.charAt(0) }}</el-avatar>
+                  <div class="ml-2 flex-1 min-w-0">
+                    <div class="text-sm font-medium truncate text-gray-700">{{ account.nickname }}</div>
+                    <div class="text-xs text-gray-400 truncate">{{ account.server_url }}</div>
+                  </div>
+                  <el-button link size="small" class="!text-gray-400 hover:!text-red-500" @click.stop="handleDeleteAccount(account)">
+                    <el-icon><Close /></el-icon>
+                  </el-button>
+                </div>
+              </div>
+            </div>
+
             <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
               <el-form-item>
                 <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large" class="round-input">
@@ -179,6 +198,7 @@
 <script setup lang="ts">
 // ========== 导入依赖 ==========
 import type { LoginRequest, RegisterRequest } from '@/models/auth';
+import { getUserInfo } from '@/request/auth';
 import authService from '@/services/authService';
 import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
@@ -203,6 +223,7 @@ const tabs = [
 const authStore = useAuthStore();
 
 // 页面状态
+const savedAccounts = ref<any[]>([]);
 const activeTab = ref<'login' | 'register'>('login');
 const loading = ref(false);
 const captchaLoading = ref(false);
@@ -276,6 +297,56 @@ async function refreshCaptcha() {
   }
 }
 
+// 加载已保存的账号
+async function loadSavedAccounts() {
+  if (isElectron()) {
+    try {
+      savedAccounts.value = await window.electronApi.getAccounts();
+    } catch (e) {
+      console.error('获取已保存账号失败', e);
+    }
+  }
+}
+
+// 点击已保存账号登录
+async function handleAccountLogin(account: any) {
+  serverUrl.value = account.server_url;
+  loginForm.value.account = account.username;
+
+  loading.value = true;
+  try {
+    // 尝试使用 refreshToken 登录
+    const res = await authStore.loginWithRefreshToken(account.refresh_token, account.server_url);
+    if (res.code === 0) {
+      useGlobalStore().setEndpoint(account.server_url);
+      ElMessage.success({ message: '登录成功', offset: 50, customClass: 'message' });
+      if (isElectron()) {
+        await authService.switchToMainWindow();
+      }
+      router.push('/main');
+    } else {
+      ElMessage.warning('登录凭证已过期，请重新输入密码');
+    }
+  } catch (e) {
+    ElMessage.warning('自动登录失败，请手动登录');
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 删除已保存账号
+async function handleDeleteAccount(account: any) {
+  try {
+    await window.electronApi.deleteAccount({
+      server_url: account.server_url,
+      username: account.username
+    });
+    await loadSavedAccounts();
+  } catch (e) {
+    console.error('删除账号失败', e);
+  }
+}
+
 // 登录逻辑
 async function performLogin(): Promise<boolean> {
   if (loading.value) return false;
@@ -287,6 +358,23 @@ async function performLogin(): Promise<boolean> {
     const res: any = await authStore.login(loginForm.value, serverUrl.value);
     if (res.code == 0) {
       useGlobalStore().setEndpoint(serverUrl.value);
+
+      // 获取用户信息并保存账号
+      try {
+        const userRes = await getUserInfo();
+        if (userRes.code === 0 && isElectron()) {
+          const userInfo = userRes.data;
+          await window.electronApi.saveAccount({
+            server_url: serverUrl.value,
+            username: userInfo.username,
+            nickname: userInfo.nickname || userInfo.username,
+            avatar_url: userInfo.avatar || '',
+            refresh_token: res.data.refreshToken
+          });
+        }
+      } catch (e) {
+        console.error('保存账号失败', e);
+      }
 
       return true;
     }
@@ -481,6 +569,9 @@ onMounted(async () => {
 
   // 设置默认服务器地址
   serverUrl.value = import.meta.env.VITE_DEFAULT_BASE_URL || 'http://localhost:8081';
+
+  // 加载已保存的账号
+  await loadSavedAccounts();
 
   // 获取用户列表
   // await getUserList();
