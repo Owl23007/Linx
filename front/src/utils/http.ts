@@ -25,7 +25,7 @@ http.interceptors.request.use(config => {
   config.baseURL = endpoint;
 
   const token = localStorage.getItem('token');
-  if (token) {
+  if (token && !config.headers?.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
@@ -55,11 +55,12 @@ const client = http as {
 export const get = <T = any>(
   url: string,
   params?: Record<string, any>,
-  endpoint?: string
+  endpoint?: string,
+  config?: AxiosRequestConfig
 ): Promise<T> => {
   if (endpoint) tempEndpoint.value = endpoint;
 
-  return client.get<T>(url, { params }).finally(() => {
+  return client.get<T>(url, { params, ...config }).finally(() => {
     if (endpoint) tempEndpoint.value = '';
   });
 };
@@ -67,11 +68,12 @@ export const get = <T = any>(
 export const post = <T = any>(
   url: string,
   data?: Record<string, any> | FormData,
-  endpoint?: string
+  endpoint?: string,
+  config?: AxiosRequestConfig
 ): Promise<T> => {
   if (endpoint) tempEndpoint.value = endpoint;
 
-  return client.post<T>(url, data).finally(() => {
+  return client.post<T>(url, data, config).finally(() => {
     if (endpoint) tempEndpoint.value = '';
   });
 };
@@ -79,22 +81,24 @@ export const post = <T = any>(
 export const put = <T = any>(
   url: string,
   data?: Record<string, any> | FormData,
-  endpoint?: string
+  endpoint?: string,
+  config?: AxiosRequestConfig
 ): Promise<T> => {
   if (endpoint) tempEndpoint.value = endpoint;
 
-  return client.put<T>(url, data).finally(() => {
+  return client.put<T>(url, data, config).finally(() => {
     if (endpoint) tempEndpoint.value = '';
   });
 };
 
 export const del = <T = any>(
   url: string,
-  endpoint?: string
+  endpoint?: string,
+  config?: AxiosRequestConfig
 ): Promise<T> => {
   if (endpoint) tempEndpoint.value = endpoint;
 
-  return client.delete<T>(url).finally(() => {
+  return client.delete<T>(url, config).finally(() => {
     if (endpoint) tempEndpoint.value = '';
   });
 };

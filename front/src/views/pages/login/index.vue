@@ -310,24 +310,67 @@ async function loadSavedAccounts() {
 
 // 点击已保存账号登录
 async function handleAccountLogin(account: any) {
+  console.log('Attempting login with account:', account);
   serverUrl.value = account.server_url;
   loginForm.value.account = account.username;
 
   loading.value = true;
   try {
+    if (!account.refresh_token) {
+      console.error('Missing refresh token for account:', account.username);
+      throw new Error('No refresh token');
+    }
+    console.log('Sending refresh token request...');
     // 尝试使用 refreshToken 登录
-    const res = await authStore.loginWithRefreshToken(account.refresh_token, account.server_url);
+    const res = await authService.loginWithRefreshToken(account.refresh_token, account.server_url);
+    console.log('Refresh token response:', res);
+
     if (res.code === 0) {
+      // 1. 更新 Token
+      authStore.token = res.data.accessToken;
+      localStorage.setItem('token', res.data.accessToken);
+
+      const newRefreshToken = res.data.refreshToken;
+      if (newRefreshToken) {
+        localStorage.setItem('refreshToken', newRefreshToken);
+      }
+
+      // 2. 设置 Endpoint
       useGlobalStore().setEndpoint(account.server_url);
+
+      // 3. 获取用户信息并更新本地存储/数据库
+      try {
+        const userRes = await getUserInfo();
+        if (userRes.code === 0) {
+          const userInfo = userRes.data;
+          authStore.user = userInfo;
+          localStorage.setItem('user', JSON.stringify(userInfo));
+
+          if (isElectron()) {
+            await window.electronApi.saveAccount({
+              server_url: account.server_url,
+              username: userInfo.username,
+              nickname: userInfo.nickname || userInfo.username,
+              avatar_url: userInfo.avatar || '',
+              refresh_token: newRefreshToken || account.refresh_token
+            });
+          }
+        }
+      } catch (e) {
+        console.error('更新用户信息失败', e);
+      }
+
       ElMessage.success({ message: '登录成功', offset: 50, customClass: 'message' });
       if (isElectron()) {
         await authService.switchToMainWindow();
       }
       router.push('/main');
     } else {
+      console.warn('Refresh token expired or invalid:', res);
       ElMessage.warning('登录凭证已过期，请重新输入密码');
     }
-  } catch {
+  } catch (e) {
+    console.error('Auto login failed:', e);
     ElMessage.warning('自动登录失败，请手动登录');
   } finally {
     loading.value = false;

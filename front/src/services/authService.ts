@@ -1,5 +1,5 @@
 import type { LoginRequest, RegisterRequest } from '@/models/auth';
-import auth from '@/request/auth';
+import * as auth from '@/request/auth';
 import { isElectron, sendIpc } from '@/utils/electron';
 
 /**
@@ -14,8 +14,8 @@ class AuthService {
     *
     * @return {Promise<void>}
    */
-  async register(data:RegisterRequest, endpoint: string) {
-    const res =  await auth.register(data, endpoint);
+  async register(data: RegisterRequest, endpoint: string) {
+    const res = await auth.register(data, endpoint);
 
     return res;
   }

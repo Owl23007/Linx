@@ -72,7 +72,7 @@ class WindowManager {
 
       // 开发环境下自动打开开发者工具
       if (config.isDev) {
-        this.mainWindow.webContents.openDevTools();
+        this.mainWindow.webContents.openDevTools({ mode: 'detach' });
       }
     });
 
@@ -170,6 +170,12 @@ class WindowManager {
       this.mainWindow.setContentSize(1200, 800);
       this.mainWindow.center();
       this.mainWindow.show();
+
+      // 切换后确保 DevTools 打开（独立窗口模式）
+      const config = getAppConfig();
+      if (config.isDev) {
+        this.mainWindow.webContents.openDevTools({ mode: 'detach' });
+      }
     }, 240);
 
   }

@@ -12,7 +12,7 @@ export function getCaptcha(serverUrl: string): Promise<Result> {
 /**
  * 用户登录
  */
-export function login(data:any, endpoint: string): Promise<Result> {
+export function login(data: any, endpoint: string): Promise<Result> {
   return post('/auth/login', data, endpoint);
 }
 
@@ -41,8 +41,14 @@ export function refreshToken(): Promise<Result> {
  * 使用 Refresh Token 登录
  */
 export function loginWithRefreshToken(token: string, endpoint: string): Promise<Result> {
-  // 尝试将 refreshToken 放入 Body
-  return post('/auth/refresh', { refreshToken: token }, endpoint);
+  // 后端要求 Refresh Token 必须在 Header 中，Header Key 为 "Refresh-Token"
+  // 同时保留 Authorization 头以避免拦截器添加过期的 Access Token
+  return post('/auth/refresh', { refreshToken: token }, endpoint, {
+    headers: {
+      'Refresh-Token': `Bearer ${token}`,
+      'Authorization': `Bearer ${token}`
+    }
+  });
 }
 
 /**
