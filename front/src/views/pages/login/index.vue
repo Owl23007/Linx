@@ -327,7 +327,7 @@ async function handleAccountLogin(account: any) {
     } else {
       ElMessage.warning('登录凭证已过期，请重新输入密码');
     }
-  } catch (e) {
+  } catch {
     ElMessage.warning('自动登录失败，请手动登录');
   } finally {
     loading.value = false;

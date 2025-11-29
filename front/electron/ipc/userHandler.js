@@ -32,7 +32,7 @@ export function setupUserHandlers(dbInstance) {
   // 删除账号
   ipcMain.handle('user:delete-account', async (event, { server_url, username }) => {
     try {
-      await appDb.deleteUser(server_url, username);
+      await appDb.deleteUserByAccount(server_url, username);
 
       return true;
     } catch (error) {

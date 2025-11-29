@@ -37,7 +37,7 @@ export class AppDb {
       // 处理唯一约束冲突
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         // 如果已存在，则更新
-        return this.updateUser(userData);
+        return this.updateUserByAccount(userData);
       }
       throw error;
     }
@@ -48,7 +48,7 @@ export class AppDb {
    * @param {Object} userData - 用户数据
    * @returns {Promise<number>} 更新的用户ID
    */
-  async updateUser(userData) {
+  async updateUserByAccount(userData) {
     const { server_url, username, nickname, avatar_url, refresh_token } = userData;
 
     const sql = `
@@ -112,7 +112,7 @@ export class AppDb {
    * @param {string} server_url - 服务器地址
    * @param {string} username - 用户名
    */
-  async deleteUser(server_url, username) {
+  async deleteUserByAccount(server_url, username) {
     const sql = 'DELETE FROM user WHERE server_url = ? AND username = ?';
     await this.dbInstance.prepare(sql).run(server_url, username);
   }
@@ -157,7 +157,7 @@ export class AppDb {
    * @param {string} updateData.avatar_url - 头像URL (可选)
    * @returns {Promise<boolean>} 是否更新成功
    */
-  async updateUser(userId, updateData) {
+  async updateUserById(userId, updateData) {
     if (!userId) {
       throw new Error('userId 是必填参数');
     }
@@ -198,7 +198,7 @@ export class AppDb {
    * @param {number} userId - 用户ID
    * @returns {Promise<boolean>} 是否删除成功
    */
-  async deleteUser(userId) {
+  async deleteUserById(userId) {
     if (!userId) {
       throw new Error('userId 是必填参数');
     }
