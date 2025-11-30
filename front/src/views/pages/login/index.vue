@@ -53,57 +53,100 @@
         <Transition :name="transitionName" mode="out-in">
           <!-- 登录表单 -->
           <div v-if="activeTab === 'login'" key="login" class="form-content mt-16">
-            <!-- 最近登录 -->
-            <div v-if="savedAccounts.length > 0" class="mb-4">
-              <div class="text-xs text-gray-500 mb-2 px-1">最近登录</div>
-              <div class="space-y-2 max-h-32 overflow-y-auto">
-                <div v-for="account in savedAccounts" :key="account.user_id"
-                     class="flex items-center p-2 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 transition-colors border border-gray-100"
-                     @click="handleAccountLogin(account)">
-                  <el-avatar :size="32" :src="account.avatar_url" class="shrink-0">{{ account.nickname?.charAt(0) }}</el-avatar>
-                  <div class="ml-2 flex-1 min-w-0">
-                    <div class="text-sm font-medium truncate text-gray-700">{{ account.nickname }}</div>
-                    <div class="text-xs text-gray-400 truncate">{{ account.server_url }}</div>
-                  </div>
-                  <el-button link size="small" class="!text-gray-400 hover:!text-red-500" @click.stop="handleDeleteAccount(account)">
-                    <el-icon><Close /></el-icon>
-                  </el-button>
+            <!-- 自动登录视图 -->
+            <div v-if="savedAccounts.length > 0 && showAccountView" class="flex flex-col items-center pt-4">
+              <el-avatar :size="100" :src="currentAccount?.avatar_url"
+                class="mb-6 shadow-lg border-4 border-white large-avatar">
+                {{ currentAccount?.nickname?.charAt(0) }}
+              </el-avatar>
+
+              <el-dropdown trigger="click" @command="handleCommand">
+                <div class="flex items-center cursor-pointer text-gray-700 hover:text-blue-600 mb-8 transition-colors">
+                  <span class="text-xl font-medium mr-2">{{ currentAccount?.nickname }}</span>
+                  <el-icon :size="18">
+                    <ArrowDown />
+                  </el-icon>
                 </div>
-              </div>
+                <template #dropdown>
+                  <el-dropdown-menu class="min-w-[200px]">
+                    <el-dropdown-item v-for="account in savedAccounts" :key="account.user_id" :command="account">
+                      <div class="flex items-center w-full py-1 group min-w-60">
+                        <div class="flex items-center gap-3 overflow-hidden flex-1 mr-2">
+                          <el-avatar :size="28" :src="account.avatar_url" class="shrink-0">{{
+                            account.nickname?.charAt(0) }}</el-avatar>
+                          <div class="flex flex-col overflow-hidden">
+                            <span class="text-sm font-medium truncate">{{ account.nickname }}</span>
+                            <span class="text-xs text-gray-400 truncate">{{ account.server_url }}</span>
+                          </div>
+                        </div>
+                        <div
+                          class="shrink-0 w-8 h-8 rounded-full transition-colors opacity-0 group-hover:opacity-100 group-hover:bg-gray-200 cursor-pointer flex items-center justify-center"
+                          @click.stop="handleDeleteAccount(account)">
+                          <el-icon
+                            class="text-gray-400 transition-colors flex items-center justify-center translate-x-0.5"
+                            :size="16">
+                            <Close />
+                          </el-icon>
+                        </div>
+                      </div>
+                    </el-dropdown-item>
+                    <el-dropdown-item divided command="add_account">
+                      <div class="flex items-center gap-2 text-blue-500 py-1">
+                        <el-icon>
+                          <Plus />
+                        </el-icon>
+                        <span>添加账号</span>
+                      </div>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
 
-            <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
-              <el-form-item>
-                <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large" class="round-input">
-                  <template #prefix>
-                    <el-icon>
-                      <Server />
-                    </el-icon>
-                  </template>
-                </el-input>
-              </el-form-item>
-              <div class="h-2" />
-              <el-form-item prop="account">
-                <el-input v-model="loginForm.account" clearable placeholder="请输入账号或邮箱" size="large" class="round-input">
-                  <template #prefix>
-                    <el-icon>
-                      <User />
-                    </el-icon>
-                  </template>
-                </el-input>
-              </el-form-item>
-              <div class="h-2" />
-              <el-form-item prop="password">
-                <el-input v-model="loginForm.password" clearable type="password" placeholder="请输入密码" size="large"
-                  show-password class="round-input">
-                  <template #prefix>
-                    <el-icon>
-                      <Lock />
-                    </el-icon>
-                  </template>
-                </el-input>
-              </el-form-item>
-            </el-form>
+            <!-- 常规登录表单 -->
+            <div v-else>
+              <div v-if="savedAccounts.length > 0" class="mb-4">
+                <el-button link type="primary" @click="showAccountView = true" class="px-0!">
+                  <el-icon class="mr-1">
+                    <ArrowLeft />
+                  </el-icon> 返回账号列表
+                </el-button>
+              </div>
+
+              <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules">
+                <el-form-item>
+                  <el-input v-model="serverUrl" clearable placeholder="输入服务器地址" size="large" class="round-input">
+                    <template #prefix>
+                      <el-icon>
+                        <Server />
+                      </el-icon>
+                    </template>
+                  </el-input>
+                </el-form-item>
+                <div class="h-2" />
+                <el-form-item prop="account">
+                  <el-input v-model="loginForm.account" clearable placeholder="请输入账号或邮箱" size="large"
+                    class="round-input">
+                    <template #prefix>
+                      <el-icon>
+                        <User />
+                      </el-icon>
+                    </template>
+                  </el-input>
+                </el-form-item>
+                <div class="h-2" />
+                <el-form-item prop="password">
+                  <el-input v-model="loginForm.password" clearable type="password" placeholder="请输入密码" size="large"
+                    show-password class="round-input">
+                    <template #prefix>
+                      <el-icon>
+                        <Lock />
+                      </el-icon>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-form>
+            </div>
           </div>
 
           <!-- 注册表单 -->
@@ -181,13 +224,19 @@
 
     <!-- 底部按钮区域 -->
     <div :class="{ 'bottom-25 scale-125': !isElectron() }" class="px-4 pb-4 overflow-hidden absolute bottom-0 w-55">
-      <el-form-item v-if="activeTab === 'login'" class="mb-4">
-        <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loading" @click="handleLogin">
+      <el-form-item v-if="activeTab === 'login' && showAccountView" class="mb-4">
+        <el-button type="primary" size="large" class="w-full rounded-lg!" :loading="loading"
+          @click="handleAccountLogin(currentAccount)">
+          登录
+        </el-button>
+      </el-form-item>
+      <el-form-item v-else-if="activeTab === 'login' && !showAccountView" class="mb-4">
+        <el-button type="primary" size="large" class="w-full rounded-lg!" :loading="loading" @click="handleLogin">
           登录
         </el-button>
       </el-form-item>
       <el-form-item v-else-if="activeTab === 'register'" class="mb-0">
-        <el-button type="primary" size="large" class="w-full !rounded-lg" :loading="loading" @click="handleRegister">
+        <el-button type="primary" size="large" class="w-full rounded-lg!" :loading="loading" @click="handleRegister">
           注册
         </el-button>
       </el-form-item>
@@ -205,8 +254,8 @@ import { useGlobalStore } from '@/stores/global';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
 import TitleLogo from '@/views/components/title-icon.vue';
-import { Close, Key, Lock, Message, Minus, Refresh, Setting, User } from '@element-plus/icons-vue';
-import { type FormInstance, type FormRules, ElMessage } from 'element-plus';
+import { ArrowDown, ArrowLeft, Close, Key, Lock, Message, Minus, Plus, Refresh, Setting, User } from '@element-plus/icons-vue';
+import { type FormInstance, type FormRules, ElMessage, ElMessageBox } from 'element-plus';
 import { nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Server from './components/server-icon.vue';
@@ -224,11 +273,13 @@ const authStore = useAuthStore();
 
 // 页面状态
 const savedAccounts = ref<any[]>([]);
+const showAccountView = ref(false);
+const currentAccount = ref<any>(null);
 const activeTab = ref<'login' | 'register'>('login');
 const loading = ref(false);
 const captchaLoading = ref(false);
 const error = ref<string>('');
-const serverUrl = ref('http://localhost:9080/api/linx'); // 默认服务器地址
+const serverUrl = ref(''); // 默认服务器地址
 const captchaImage = ref<string>('');
 const captchaId = ref<string>('');
 
@@ -245,6 +296,26 @@ const registerForm = ref<RegisterRequest>({
   captchaCode: '',
   captchaId: ''
 });
+
+// ========== 辅助函数 ==========
+function formatUrl(url: string): string {
+  let formattedUrl = url.trim();
+  if (!formattedUrl) return '';
+
+  if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+    formattedUrl = `http://${formattedUrl}`;
+  }
+
+  if (formattedUrl.endsWith('/')) {
+    formattedUrl = formattedUrl.slice(0, -1);
+  }
+
+  if (!formattedUrl.endsWith('/api')) {
+    formattedUrl += '/api';
+  }
+
+  return formattedUrl;
+}
 
 // ========== 窗口操作函数 ==========
 function handleCloseWindow() {
@@ -274,7 +345,8 @@ function switchTabLogic(tab: 'login' | 'register') {
 async function refreshCaptcha() {
   try {
     captchaLoading.value = true;
-    const response = await authService.getCaptcha(serverUrl.value);
+    const formattedUrl = formatUrl(serverUrl.value);
+    const response = await authService.getCaptcha(formattedUrl);
     if (response) {
       captchaId.value = response.data.split(':')[0];
       captchaImage.value = response.data.substring(response.data.indexOf(':') + 1);
@@ -301,29 +373,39 @@ async function refreshCaptcha() {
 async function loadSavedAccounts() {
   if (isElectron()) {
     try {
-      savedAccounts.value = await window.electronApi.getAccounts();
-    } catch (e) {
-      console.error('获取已保存账号失败', e);
+      savedAccounts.value = await authService.getSavedAccounts();
+      if (savedAccounts.value.length > 0) {
+        currentAccount.value = savedAccounts.value[0];
+        showAccountView.value = true;
+      }
+    } catch {
+      // 无操作
     }
+  }
+}
+
+function handleCommand(command: any) {
+  if (command === 'add_account') {
+    showAccountView.value = false;
+  } else {
+    currentAccount.value = command;
   }
 }
 
 // 点击已保存账号登录
 async function handleAccountLogin(account: any) {
-  console.log('Attempting login with account:', account);
-  serverUrl.value = account.server_url;
+  const formattedUrl = formatUrl(account.server_url);
+  serverUrl.value = formattedUrl;
   loginForm.value.account = account.username;
 
   loading.value = true;
   try {
     if (!account.refresh_token) {
-      console.error('Missing refresh token for account:', account.username);
-      throw new Error('No refresh token');
+      throw new Error('登录凭证不存在');
     }
-    console.log('Sending refresh token request...');
+
     // 尝试使用 refreshToken 登录
-    const res = await authService.loginWithRefreshToken(account.refresh_token, account.server_url);
-    console.log('Refresh token response:', res);
+    const res = await authService.loginWithRefreshToken(account.refresh_token, formattedUrl);
 
     if (res.code === 0) {
       // 1. 更新 Token
@@ -336,7 +418,7 @@ async function handleAccountLogin(account: any) {
       }
 
       // 2. 设置 Endpoint
-      useGlobalStore().setEndpoint(account.server_url);
+      useGlobalStore().setEndpoint(formattedUrl);
 
       // 3. 获取用户信息并更新本地存储/数据库
       try {
@@ -347,31 +429,28 @@ async function handleAccountLogin(account: any) {
           localStorage.setItem('user', JSON.stringify(userInfo));
 
           if (isElectron()) {
-            await window.electronApi.saveAccount({
-              server_url: account.server_url,
+            await authService.saveAccount({
+              server_url: formattedUrl,
               username: userInfo.username,
               nickname: userInfo.nickname || userInfo.username,
-              avatar_url: userInfo.avatar || '',
+              avatar_url: userInfo.avatarImage || '',
               refresh_token: newRefreshToken || account.refresh_token
             });
           }
         }
-      } catch (e) {
-        console.error('更新用户信息失败', e);
+      } catch {
+        showError('获取用户信息失败');
       }
 
-      ElMessage.success({ message: '登录成功', offset: 50, customClass: 'message' });
       if (isElectron()) {
         await authService.switchToMainWindow();
       }
       router.push('/main');
     } else {
-      console.warn('Refresh token expired or invalid:', res);
       ElMessage.warning('登录凭证已过期，请重新输入密码');
     }
-  } catch (e) {
-    console.error('Auto login failed:', e);
-    ElMessage.warning('自动登录失败，请手动登录');
+  } catch {
+    ElMessage.warning('登录失败');
   } finally {
     loading.value = false;
   }
@@ -380,13 +459,33 @@ async function handleAccountLogin(account: any) {
 // 删除已保存账号
 async function handleDeleteAccount(account: any) {
   try {
-    await window.electronApi.deleteAccount({
+    await ElMessageBox.confirm(
+      '确定要删除该账号吗？这将移除本地的数据',
+      '删除账号',
+      {
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+
+    await authService.deleteAccount({
       server_url: account.server_url,
       username: account.username
     });
     await loadSavedAccounts();
-  } catch (e) {
-    console.error('删除账号失败', e);
+
+    // 如果删除的是当前选中的账号，更新选中状态
+    if (currentAccount.value?.username === account.username && currentAccount.value?.server_url === account.server_url) {
+      if (savedAccounts.value.length > 0) {
+        currentAccount.value = savedAccounts.value[0];
+      } else {
+        showAccountView.value = false;
+        currentAccount.value = null;
+      }
+    }
+  } catch {
+    // 错误处理
   }
 }
 
@@ -398,25 +497,27 @@ async function performLogin(): Promise<boolean> {
   error.value = '';
 
   try {
-    const res: any = await authStore.login(loginForm.value, serverUrl.value);
+    const formattedUrl = formatUrl(serverUrl.value);
+    const res: any = await authStore.login(loginForm.value, formattedUrl);
     if (res.code == 0) {
-      useGlobalStore().setEndpoint(serverUrl.value);
+      useGlobalStore().setEndpoint(formattedUrl);
+      serverUrl.value = formattedUrl;
 
       // 获取用户信息并保存账号
       try {
         const userRes = await getUserInfo();
         if (userRes.code === 0 && isElectron()) {
           const userInfo = userRes.data;
-          await window.electronApi.saveAccount({
-            server_url: serverUrl.value,
+          await authService.saveAccount({
+            server_url: formattedUrl,
             username: userInfo.username,
             nickname: userInfo.nickname || userInfo.username,
-            avatar_url: userInfo.avatar || '',
+            avatar_url: userInfo.avatarImage || '',
             refresh_token: res.data.refreshToken
           });
         }
-      } catch (e) {
-        console.error('保存账号失败', e);
+      } catch {
+        // 无操作
       }
 
       return true;
@@ -448,7 +549,8 @@ async function performRegister(): Promise<boolean> {
       registerForm.value.captchaId = captchaId.value;
     }
 
-    const res = await authService.register(registerForm.value, serverUrl.value);
+    const formattedUrl = formatUrl(serverUrl.value);
+    const res = await authService.register(registerForm.value, formattedUrl);
     if (res.code == 0) {
       switchTab('login', 0);
 
@@ -569,7 +671,6 @@ async function handleLogin(): Promise<void> {
 
   const success = await performLogin();
   if (success) {
-    ElMessage.success({ message: '登录成功', offset: 50, customClass: 'message' });
     if (isElectron()) {
       await authService.switchToMainWindow();
     }
@@ -820,5 +921,10 @@ onUnmounted(() => {
 .message {
   width: 70%;
   max-width: 300px;
+}
+
+/* 大头像默认文字大小 */
+.el-avatar--circle.large-avatar {
+  font-size: 2.5rem !important;
 }
 </style>

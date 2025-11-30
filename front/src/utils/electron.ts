@@ -8,6 +8,11 @@ interface ElectronApi {
   send: (channel: string, ...args: any[]) => void
   on: (channel: string, callback: (...args: any[]) => void) => (() => void)
   removeListener: (channel: string, callback: (...args: any[]) => void) => void
+
+  // Account Management
+  saveAccount: (userData: any) => Promise<any>
+  getAccounts: () => Promise<any[]>
+  deleteAccount: (accountInfo: any) => Promise<any>
 }
 
 // 通用 IPC 响应接口

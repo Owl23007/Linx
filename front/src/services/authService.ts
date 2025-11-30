@@ -1,5 +1,6 @@
 import type { LoginRequest, RegisterRequest } from '@/models/auth';
 import * as auth from '@/request/auth';
+import * as localAccount from '@/request/local-account';
 import { isElectron, sendIpc } from '@/utils/electron';
 
 /**
@@ -7,6 +8,31 @@ import { isElectron, sendIpc } from '@/utils/electron';
  * 用于auth窗口中进行用户相关操作
  */
 class AuthService {
+  /**
+   * 获取本地保存的账号列表
+   */
+  async getSavedAccounts() {
+    if (!isElectron()) return [];
+
+    return await localAccount.getSavedAccounts();
+  }
+
+  /**
+   * 保存账号信息到本地
+   */
+  async saveAccount(account: any) {
+    if (!isElectron()) return;
+    await localAccount.saveAccount(account);
+  }
+
+  /**
+   * 删除本地账号
+   */
+  async deleteAccount(account: { server_url: string; username: string }) {
+    if (!isElectron()) return;
+    await localAccount.deleteAccount(account);
+  }
+
   /**
    * 创建用户（注册）
     * @param {RegisterRequest} data - 注册请求数据
@@ -47,8 +73,6 @@ class AuthService {
    * @param {string} endpoint - 服务器URL
    */
   async loginWithRefreshToken(token: string, endpoint: string) {
-    // 注意：这里假设后端 /auth/refresh 接口支持通过 Body 传递 refreshToken
-    // 如果后端只支持 Header，可能需要调整
     const res = await auth.loginWithRefreshToken(token, endpoint);
 
     return res;
