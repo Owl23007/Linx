@@ -10,7 +10,7 @@ const routes = [
   {
     path: '/main',
     name: 'Main',
-    component: () => import('@/views/pages/main/index.vue'),
+    component: () => import('@/views/pages/lobby/index.vue'),
   },
   {
     path: '/',

@@ -61,30 +61,42 @@
               </el-avatar>
 
               <el-dropdown trigger="click" @command="handleCommand">
-                <div class="flex items-center cursor-pointer text-gray-700 hover:text-blue-600 mb-8 transition-colors">
-                  <span class="text-xl font-medium mr-2">{{ currentAccount?.nickname }}</span>
-                  <el-icon :size="18">
-                    <ArrowDown />
-                  </el-icon>
+                <div
+                  class="flex items-center justify-center cursor-pointer text-gray-700 hover:text-blue-600 mb-8 transition-colors w-full relative">
+                  <!-- 左侧占位（宽度 = 右侧箭头宽度） -->
+                  <span class="w-5"></span>
+
+                  <!-- 居中的文字（真正居中） -->
+                  <span class="text-xl font-medium text-center flex-1 truncate px-2">
+                    {{ currentAccount?.nickname }}
+                  </span>
+
+                  <!-- 右侧箭头 -->
+                  <span class="shrink-0 w-5 flex items-center justify-center">
+                    <el-icon :size="18" color="currentColor">
+                      <ArrowDown />
+                    </el-icon>
+                  </span>
                 </div>
+
+                <!-- Dropdown Menu (保持不变) -->
                 <template #dropdown>
                   <el-dropdown-menu class="min-w-[200px]">
                     <el-dropdown-item v-for="account in savedAccounts" :key="account.user_id" :command="account">
                       <div class="flex items-center w-full py-1 group min-w-60">
                         <div class="flex items-center gap-3 overflow-hidden flex-1 mr-2">
-                          <el-avatar :size="28" :src="account.avatar_url" class="shrink-0">{{
-                            account.nickname?.charAt(0) }}</el-avatar>
+                          <el-avatar :size="28" :src="account.avatar_url" class="shrink-0">
+                            {{ account.nickname?.charAt(0) }}
+                          </el-avatar>
                           <div class="flex flex-col overflow-hidden">
                             <span class="text-sm font-medium truncate">{{ account.nickname }}</span>
                             <span class="text-xs text-gray-400 truncate">{{ account.server_url }}</span>
                           </div>
                         </div>
                         <div
-                          class="shrink-0 w-8 h-8 rounded-full transition-colors opacity-0 group-hover:opacity-100 group-hover:bg-gray-200 cursor-pointer flex items-center justify-center"
+                          class="shrink-0 w-8 h-8 rounded-full transition-opacity opacity-0 group-hover:opacity-100 group-hover:bg-gray-200 cursor-pointer flex items-center justify-center"
                           @click.stop="handleDeleteAccount(account)">
-                          <el-icon
-                            class="text-gray-400 transition-colors flex items-center justify-center translate-x-0.5"
-                            :size="16">
+                          <el-icon class="text-gray-400" :size="16">
                             <Close />
                           </el-icon>
                         </div>
@@ -448,9 +460,13 @@ async function handleAccountLogin(account: any) {
       router.push('/main');
     } else {
       ElMessage.warning('登录凭证已过期，请重新输入密码');
+      showAccountView.value = false;
+      loginForm.value.password = '';
     }
   } catch {
     ElMessage.warning('登录失败');
+    showAccountView.value = false;
+    loginForm.value.password = '';
   } finally {
     loading.value = false;
   }

@@ -196,3 +196,25 @@ export function maximizeWindow() {
     sendIpc('maximize-window');
   }
 }
+
+/**
+ * 获取窗口最大化状态
+ */
+export async function getWindowMaximized(): Promise<boolean> {
+  if (isElectron()) {
+    const res = await invokeIpc<boolean>('get-window-maximized');
+
+    return res.data;
+  }
+
+  return false;
+}
+
+/**
+ * 监听窗口最大化状态变化
+ * @param callback 回调函数
+ * @returns 取消监听的函数
+ */
+export function onWindowMaximizedStateChanged(callback: (isMaximized: boolean) => void): (() => void) | undefined {
+  return onIpc('window-maximized-state-changed', callback);
+}

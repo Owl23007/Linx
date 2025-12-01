@@ -80,6 +80,16 @@ class WindowManager {
     this.mainWindow.on('closed', () => {
       this.mainWindow = null;
     });
+
+    // 监听最大化事件
+    this.mainWindow.on('maximize', () => {
+      this.mainWindow.webContents.send('window-maximized-state-changed', true);
+    });
+
+    // 监听取消最大化事件
+    this.mainWindow.on('unmaximize', () => {
+      this.mainWindow.webContents.send('window-maximized-state-changed', false);
+    });
   }
 
   /**
@@ -105,6 +115,17 @@ class WindowManager {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.minimize();
     }
+  }
+
+  /**
+   * 获取主窗口最大化状态
+   */
+  isMainWindowMaximized() {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      return this.mainWindow.isMaximized();
+    }
+
+    return false;
   }
 
   /**
@@ -167,7 +188,7 @@ class WindowManager {
       this.mainWindow.setMinimizable(true);
       this.mainWindow.setClosable(true);
       this.mainWindow.setMinimumSize(800, 600);
-      this.mainWindow.setContentSize(1200, 800);
+      this.mainWindow.setContentSize(800, 600);
       this.mainWindow.center();
       this.mainWindow.show();
 

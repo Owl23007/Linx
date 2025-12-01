@@ -58,5 +58,12 @@ export const easyTierService = {
     if (!api) return { success: false, data: [], error: 'Not in Electron environment' };
 
     return await api.invoke('easytier:getPeers');
+  },
+
+  async getRoute(): Promise<IpcResponse<any[]>> {
+    const api = getElectronApi();
+    if (!api) return { success: false, data: [], error: 'Not in Electron environment' };
+
+    return await api.invoke('easytier:getRoute');
   }
 };

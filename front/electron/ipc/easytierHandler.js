@@ -34,4 +34,14 @@ export function setupEasyTierHandlers(easyTierManager) {
       return { success: false, error: error.message };
     }
   });
+
+  ipcMain.handle('easytier:getRoute', async () => {
+    try {
+      const routes = await easyTierManager.getRoute();
+
+      return { success: true, data: routes };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
 }

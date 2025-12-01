@@ -16,6 +16,14 @@ export function setupWindowHandlers(windowManager) {
     windowManager.toggleMaximizeMainWindow();
   });
 
+  // 获取窗口最大化状态
+  ipcMain.handle('get-window-maximized', () => {
+    return {
+      success: true,
+      data: windowManager.isMainWindowMaximized()
+    };
+  });
+
   // 切换为主窗口
   ipcMain.on('set-main-window', () => {
     windowManager.switchToMainWindow();

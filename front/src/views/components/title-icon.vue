@@ -1,7 +1,7 @@
 <template>
   <!-- 标题 -->
   <div class="text-center w-auto min-w-max select-none" :style="{ zIndex: zIndex, scale: size }">
-    <div class="relative px-6 py-2">
+    <div class="relative px-(-2) py-2">
       <!-- 艺术字logo -->
       <h1 class="logo-art">
         <span class="logo-art-talk">{{ appTitle }}</span>
@@ -43,16 +43,7 @@ const appTitle = import.meta.env.APP_TITLE || 'LinX';
   position: relative;
 
   &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: inherit;
-    z-index: -1;
+    display: none;
   }
 }
 

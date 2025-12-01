@@ -259,6 +259,50 @@ class EasyTierManager {
       });
     });
   }
+
+  async getRoute() {
+    if (!this.process) {
+      throw new Error('EasyTier is not running');
+    }
+
+    const cliPath = this.getCliPath();
+    if (!fs.existsSync(cliPath)) {
+      throw new Error('EasyTier CLI not found');
+    }
+
+    return new Promise((resolve, reject) => {
+      const args = ['-o', 'json'];
+      if (this.rpcPort) {
+        args.push('-p', `127.0.0.1:${this.rpcPort}`);
+      }
+      args.push('route');
+
+      const child = spawn(cliPath, args);
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      child.on('close', (code) => {
+        if (code !== 0) {
+          reject(new Error(`CLI exited with code ${code}: ${stderr}`));
+        } else {
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } catch (e) {
+            reject(new Error(`Failed to parse CLI output: ${e.message}`));
+          }
+        }
+      });
+    });
+  }
 }
 
 export default EasyTierManager;
