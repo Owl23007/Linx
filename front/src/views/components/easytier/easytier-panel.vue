@@ -4,7 +4,9 @@
       <template #header>
         <div class="flex justify-between items-center">
           <div class="flex items-center gap-2">
-            <el-icon class="text-blue-500"><Connection /></el-icon>
+            <el-icon class="text-blue-500">
+              <Connection />
+            </el-icon>
             <span class="text-lg font-bold text-gray-700">EasyTier 组网</span>
           </div>
           <el-tag v-if="status.running" type="success" effect="dark" round>
@@ -15,11 +17,7 @@
       </template>
 
       <div v-if="status.running" class="flex flex-col items-center justify-center py-8 space-y-4">
-        <el-result
-          icon="success"
-          title="服务运行正常"
-          sub-title="EasyTier 虚拟网络已连接"
-        >
+        <el-result icon="success" title="服务运行正常" sub-title="EasyTier 虚拟网络已连接">
           <template #extra>
             <div class="flex gap-4">
               <el-button type="primary" @click="showPeers" plain>查看房间成员</el-button>
@@ -35,22 +33,13 @@
             <el-input v-model="config.networkName" placeholder="请输入网络名称" clearable />
           </el-form-item>
           <el-form-item label="网络密钥">
-            <el-input
-              v-model="config.networkSecret"
-              type="password"
-              show-password
-              placeholder="请输入网络密钥"
-            />
+            <el-input v-model="config.networkSecret" type="password" show-password placeholder="请输入网络密钥" />
           </el-form-item>
           <el-form-item label="服务器地址 (Peers)" required>
-            <el-input
-              v-model="peersInput"
-              placeholder="请输入服务器地址，例如: tcp://1.2.3.4:11010"
-              type="textarea"
-              :rows="2"
-            />
+            <el-input v-model="peersInput" placeholder="请输入服务器地址，例如: tcp://1.2.3.4:11010" type="textarea" :rows="2" />
             <div class="text-xs text-gray-400 mt-1">多个地址请用逗号分隔</div>
-          </el-form-item>          <el-collapse class="mb-6">
+          </el-form-item>
+          <el-collapse class="mb-6">
             <el-collapse-item title="高级设置" name="1">
               <div class="p-4 bg-gray-50">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -64,7 +53,8 @@
                     <el-input v-model="listenersInput" placeholder="例如: tcp://0.0.0.0:11010" />
                   </el-form-item>
                   <el-form-item label="RPC 端口">
-                    <el-input-number v-model="config.rpcPort" :min="1" :max="65535" controls-position="right" class="w-full" />
+                    <el-input-number v-model="config.rpcPort" :min="1" :max="65535" controls-position="right"
+                      class="w-full" />
                   </el-form-item>
                   <el-form-item label="设备名称">
                     <el-input v-model="config.devName" placeholder="例如: tun0" />
@@ -136,7 +126,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="loss_rate" label="丢包率" width="100">
-           <template #default="{ row }">
+          <template #default="{ row }">
             {{ row.loss_rate !== null && row.loss_rate !== undefined ? (row.loss_rate * 100).toFixed(1) + '%' : '0%' }}
           </template>
         </el-table-column>
@@ -149,10 +139,10 @@
 </template>
 
 <script setup lang="ts">
+import { easyTierService, type EasyTierConfig, type EasyTierStatus } from '@/services/easytierService';
 import { Connection } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
-import { easyTierService, type EasyTierConfig, type EasyTierStatus } from '../../services/easytierService';
 
 const status = ref<EasyTierStatus>({ running: false, pid: null });
 const loading = ref(false);

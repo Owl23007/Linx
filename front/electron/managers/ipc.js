@@ -4,18 +4,19 @@ import { setupUserHandlers } from '../ipc/userHandler.js';
 import { setupWindowHandlers } from '../ipc/windowsHandler.js';
 
 class IpcManager {
-  constructor(windowManager, easyTierManager) {
+  constructor(windowManager, easyTierManager, databaseManager) {
     this.windowManager = windowManager;
     this.easyTierManager = easyTierManager;
+    this.databaseManager = databaseManager;
   }
 
   /**
    * 设置所有 IPC 处理器
    */
-  setupHandlers(appDb) {
+  setupHandlers() {
     setupWindowHandlers(this.windowManager);
     setupDragHandlers();
-    setupUserHandlers(appDb);
+    setupUserHandlers(this.databaseManager);
     setupEasyTierHandlers(this.easyTierManager);
   }
 }

@@ -1,3 +1,8 @@
+import { initializeUserData } from './setup.js';
+
+// 最先执行初始化
+initializeUserData();
+
 import { app, Menu } from 'electron';
 import DatabaseManager from './managers/database.js';
 import EasyTierManager from './managers/easytier.js';
@@ -12,7 +17,7 @@ class ElectronApp {
     this.keytarManager = new KeytarManager(logger);
     this.databaseManager = new DatabaseManager(logger, this.keytarManager);
     this.easyTierManager = new EasyTierManager();
-    this.ipcManager = new IpcManager(this.windowManager, this.easyTierManager);
+    this.ipcManager = new IpcManager(this.windowManager, this.easyTierManager, this.databaseManager);
   }
 
   async init() {
@@ -37,7 +42,7 @@ class ElectronApp {
         logger.info('EASYTIER_INIT', 'EasyTier 初始化成功');
 
         // 创建 IPC 管理器
-        this.ipcManager.setupHandlers(this.databaseManager.appDb);
+        this.ipcManager.setupHandlers();
 
         // 创建认证窗口
         this.windowManager.createAuthWindow();

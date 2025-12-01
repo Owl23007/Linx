@@ -288,7 +288,9 @@ export const useChatStore = defineStore('chat', () => {
 
     // 调用API
     if (conversation.type === 'private') {
-      const userId = Number.parseInt(conversationId.split('_')[1]);
+      const parts = conversationId.split('_');
+      const userId = Number.parseInt(parts[1]);
+      if (!userId) return;
       try {
         await linxApi.chat.unread.markPrivateAsRead(userId);
       } catch {

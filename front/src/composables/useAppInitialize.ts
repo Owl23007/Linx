@@ -28,8 +28,8 @@ export function useAppInitialize() {
         groupsStore.initialize(),
         chatStore.initialize(),
       ]);
-    } catch (error) {
-      console.error('应用初始化失败:', error);
+    } catch {
+      // 初始化失败
     }
   }
 

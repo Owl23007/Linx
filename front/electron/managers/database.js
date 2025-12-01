@@ -28,7 +28,9 @@ class DatabaseManager {
   async initAppDatabase() {
     try {
       // get userData path
-      const appDataPath = path.join(app.getPath('userData'), 'UserData'); // 存储用户数据的目录
+      // 使用环境变量中的全局数据路径，确保多实例共享
+      const baseDataPath = process.env.LINX_DATA_PATH || app.getPath('userData');
+      const appDataPath = path.join(baseDataPath, 'UserData'); // 存储用户数据的目录
       const appDbPath = path.join(appDataPath, 'app.db');
       this.ensureDir(path.dirname(appDbPath));
 
@@ -41,6 +43,7 @@ class DatabaseManager {
       const dbPassword = await this.getDatabasePassword('app');
       this.appDb.pragma('cipher = sqlcipher');
       this.appDb.pragma(`key = '${dbPassword}'`);
+      this.appDb.pragma('journal_mode = WAL'); // 启用 WAL 模式以支持多实例并发
 
       try {
         // 尝试测试数据库连接
@@ -56,16 +59,18 @@ class DatabaseManager {
           this.appDb = new Database(appDbPath);
           this.appDb.pragma('cipher = sqlcipher');
           this.appDb.pragma(`key = '${dbPassword}'`);
+          this.appDb.pragma('journal_mode = WAL');
         } else {
           throw testError;
         }
       }
 
       // 读取并执行初始化脚本
-      const initScript = await fs.promises.readFile(
-        path.join(process.cwd(), 'public/database/initApp.sql'),
-        'utf8'
-      );
+      const sqlPath = app.isPackaged
+        ? path.join(process.resourcesPath, 'database/initApp.sql')
+        : path.join(app.getAppPath(), 'public/database/initApp.sql');
+
+      const initScript = await fs.promises.readFile(sqlPath, 'utf8');
 
       this.appDb.exec(initScript);
       this.Logger.info('APP_DB', 'App数据库初始化成功');
@@ -90,12 +95,14 @@ class DatabaseManager {
       const dbPassword = await this.getDatabasePassword(userId);
       userDb.pragma('cipher = sqlcipher');
       userDb.pragma(`key = '${dbPassword}'`);
+      userDb.pragma('journal_mode = WAL'); // 启用 WAL 模式
 
       // 读取并执行用户数据库初始化脚本
-      const initScript = await fs.promises.readFile(
-        path.join(process.cwd(), 'public/database/initUserDatabase.sql'),
-        'utf8'
-      );
+      const sqlPath = app.isPackaged
+        ? path.join(process.resourcesPath, 'database/initUserDatabase.sql')
+        : path.join(app.getAppPath(), 'public/database/initUserDatabase.sql');
+
+      const initScript = await fs.promises.readFile(sqlPath, 'utf8');
 
       userDb.exec(initScript);
 
@@ -137,6 +144,7 @@ class DatabaseManager {
       const dbPassword = await this.getDatabasePassword(userId);
       userDb.pragma('cipher = sqlcipher');
       userDb.pragma(`key = '${dbPassword}'`);
+      userDb.pragma('journal_mode = WAL'); // 启用 WAL 模式
 
       try {
         // 测试数据库连接

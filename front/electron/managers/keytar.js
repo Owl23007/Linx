@@ -8,7 +8,7 @@ import { aesDecrypt, aesEncrypt, generateSalt, hashWithSalt } from '../utils/sec
 
 // ================ 全局配置 ================
 // Keytar 凭据
-const KEYTAR_SERVICE = 'LinxAppMainKEK';
+const LEGACY_KEYTAR_SERVICE = 'LinxAppMainKEK'; // 旧版固定服务名（用于兼容升级）
 const KEYTAR_ACCOUNT_MAIN_KEK = 'mainKEK'; // 全局主密钥
 
 // ================ 核心类 ================
@@ -17,21 +17,46 @@ class KeytarManager {
     this.Logger = logger;
     this._mainKEK = null;     // mainKEK（Buffer）
     this._deviceId = null;  // 设备标识（字符串）
+    this.serviceName = this.getServiceName(); // 动态生成服务名
+  }
+
+  // ================ 0. 获取服务名 ================
+  getServiceName() {
+    // 基于全局数据路径生成哈希，确保多实例共享同一套凭据
+    const userDataPath = process.env.LINX_DATA_PATH || app.getPath('userData');
+    const pathHash = crypto.createHash('sha256').update(userDataPath).digest('hex').substring(0, 16);
+
+    return `LinxApp-${pathHash}`;
   }
 
   // ================ 1. 初始化 mainKEK ================
   async init() {
     try {
-      const mainKEK = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK);
+      let mainKEK = await keytar.getPassword(this.serviceName, KEYTAR_ACCOUNT_MAIN_KEK);
+
+      // 兼容性检查：如果新服务名下没有密钥，但存在旧数据文件，尝试从旧服务名获取
+      if (!mainKEK) {
+        const baseDataPath = process.env.LINX_DATA_PATH || app.getPath('userData');
+        const legacyDbPath = path.join(baseDataPath, 'UserData', 'app.db');
+        // 只有当旧数据库存在时才尝试读取旧凭据，避免便携版误读系统凭据
+        if (fs.existsSync(legacyDbPath)) {
+          const legacyKEK = await keytar.getPassword(LEGACY_KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK);
+          if (legacyKEK) {
+            mainKEK = legacyKEK;
+            this.serviceName = LEGACY_KEYTAR_SERVICE; // 切换回旧服务名以保持兼容
+            this.Logger.info('KEYTAR_INIT', '检测到旧版数据，已切换至兼容模式 (Legacy Service)');
+          }
+        }
+      }
 
       if (!mainKEK) {
         const newMainKEK = crypto.randomBytes(32);
-        await keytar.setPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK, newMainKEK.toString('hex'));
+        await keytar.setPassword(this.serviceName, KEYTAR_ACCOUNT_MAIN_KEK, newMainKEK.toString('hex'));
         this._mainKEK = newMainKEK;
-        this.Logger.info('KEYTAR_INIT', 'mainKEK 已生成');
+        this.Logger.info('KEYTAR_INIT', `mainKEK 已生成 (Service: ${this.serviceName})`);
       } else {
         this._mainKEK = Buffer.from(mainKEK, 'hex');
-        this.Logger.info('KEYTAR_INIT', 'mainKEK 已加载');
+        this.Logger.info('KEYTAR_INIT', `mainKEK 已加载 (Service: ${this.serviceName})`);
       }
     } catch (error) {
       this.Logger.error('KEYTAR_INIT', `初始化失败: ${error.message}`);
@@ -122,7 +147,49 @@ class KeytarManager {
       return null;
     }
   }
-  // ================= 4. 创建用户数据库目录 =================
+
+  // ================= 4.1 数据加密与解密 =================
+  encryptData(data, keyHex) {
+    try {
+      const key = Buffer.from(keyHex, 'hex');
+      const buffer = Buffer.from(data, 'utf8');
+      // aesEncrypt 返回 iv + ciphertext 的 Buffer
+      const encryptedBuffer = aesEncrypt(buffer, key);
+
+      return {
+        v: 1,
+        d: encryptedBuffer.toString('base64')
+      };
+    } catch (error) {
+      this.Logger.error('ENCRYPT', `加密失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  decryptData(encryptedData, keyHex) {
+    try {
+      const key = Buffer.from(keyHex, 'hex');
+      if (encryptedData.v === 1) {
+        const buffer = Buffer.from(encryptedData.d, 'base64');
+        const decryptedBuffer = aesDecrypt(buffer, key);
+
+        return decryptedBuffer.toString('utf8');
+      }
+      throw new Error(`未知的加密版本: ${encryptedData.v}`);
+    } catch (error) {
+      this.Logger.error('DECRYPT', `解密失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // ================= 4.2 获取用户数据库路径 =================
+  getUserDatabasePath(userId) {
+    const dir = this.ensureUserDatabaseDir(userId);
+
+    return path.join(dir, 'user.db');
+  }
+
+  // ================= 4.3 创建用户数据库目录 =================
   ensureUserDatabaseDir(userId) {
     if (!userId) throw new Error('用户ID不能为空');
 
@@ -130,7 +197,7 @@ class KeytarManager {
     const deviceId = this.getDeviceId();
     const hash = crypto.createHash('sha256').update(Buffer.from(`${userId}-${deviceId}`, 'utf8')).digest('hex');
 
-    const baseDir =  app.getPath('userData')  ;
+    const baseDir = process.env.LINX_DATA_PATH || app.getPath('userData');
     const userDbDir = path.join(baseDir, 'user_data', hash);
 
     // 确保目录存在并设置安全权限
@@ -141,6 +208,8 @@ class KeytarManager {
     } catch (err) {
       // 记录日志
       this.Logger.warn('MKDIR_USER_DB', err.message);
+
+      return null;
     }
   }
 
@@ -150,7 +219,8 @@ class KeytarManager {
 
     if (this._deviceId) return this._deviceId;
 
-    const filePath = path.join(process.cwd(), '.linx_id');
+    const baseDir = process.env.LINX_DATA_PATH || app.getPath('userData');
+    const filePath = path.join(baseDir, '.linx_id');
 
     const deviceString = loadFromFile(filePath);
 
@@ -188,6 +258,38 @@ class KeytarManager {
     this._deviceId = deviceIdHex;
 
     return deviceIdHex;
+  }
+
+  // ================ 7. 删除用户数据 ================
+  async deleteUserData(userId, deleteFiles = false) {
+    if (!userId) throw new Error('用户ID不能为空');
+
+    const deviceId = this.getDeviceId();
+    const service = `linx-user-${userId}-${deviceId}`;
+    const hashedService = hashWithSalt(service, 'linx-user-dek-salt-v1');
+
+    try {
+      // 1. 删除 Keytar 中的凭据
+      const credentials = await keytar.findCredentials(hashedService);
+      for (const cred of credentials) {
+        await keytar.deletePassword(hashedService, cred.account);
+      }
+      this.Logger.info('DELETE_USER_DATA', `用户 ${userId} 凭据已清除`);
+
+      // 2. 删除文件（如果需要）
+      if (deleteFiles) {
+        const dbPath = this.getUserDatabasePath(userId);
+        const dbDir = path.dirname(dbPath);
+
+        if (fs.existsSync(dbDir)) {
+          fs.rmSync(dbDir, { recursive: true, force: true });
+          this.Logger.info('DELETE_USER_DATA', `用户 ${userId} 数据文件已删除`);
+        }
+      }
+    } catch (error) {
+      this.Logger.error('DELETE_USER_DATA', `删除用户数据失败: ${error.message}`);
+      throw error;
+    }
   }
 
   // ================ 6. 创建设备标识存储格式 ================

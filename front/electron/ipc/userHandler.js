@@ -3,10 +3,10 @@ import { AppDb } from '../services/db/appDb.js';
 
 /**
  * 设置用户相关的IPC处理器
- * @param {import('better-sqlite3').Database} dbInstance - 数据库实例
+ * @param {import('../managers/database.js').default} databaseManager - 数据库管理器实例
  */
-export function setupUserHandlers(dbInstance) {
-  const appDb = new AppDb(dbInstance);
+export function setupUserHandlers(databaseManager) {
+  const appDb = new AppDb(databaseManager.appDb);
 
   // 保存账号信息 (登录成功后调用)
   ipcMain.handle('user:save-account', async (event, userData) => {
@@ -15,6 +15,18 @@ export function setupUserHandlers(dbInstance) {
       return await appDb.addUser(userData);
     } catch (error) {
       console.error('保存账号失败:', error);
+      throw error;
+    }
+  });
+
+  // 初始化用户个人数据库 (登录成功后调用)
+  ipcMain.handle('user:init-db', async (event, userId) => {
+    try {
+      await databaseManager.initUserDatabase(userId);
+
+      return true;
+    } catch (error) {
+      console.error('初始化用户数据库失败:', error);
       throw error;
     }
   });

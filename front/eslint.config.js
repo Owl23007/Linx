@@ -117,6 +117,14 @@ export default defineConfig([
     }
   },
 
+  // Scripts 目录特殊规则 - 允许 console
+  {
+    files: ['scripts/**/*.js'],
+    rules: {
+      'no-console': 'off'
+    }
+  },
+
   // CommonJS 文件
   {
     files: ['**/*.cjs'],
