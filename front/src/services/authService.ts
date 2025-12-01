@@ -1,6 +1,6 @@
 import type { LoginRequest, RegisterRequest } from '@/models/auth';
 import * as auth from '@/request/auth';
-import * as localAccount from '@/request/local-account';
+import * as localAccount from '@/request/local/account';
 import { isElectron, sendIpc } from '@/utils/electron';
 
 /**
