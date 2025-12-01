@@ -22,6 +22,5 @@ import TopBar from '@/views/components/top-bar.vue';
 const isElectronEnv = isElectron();
 
 function handleOpenSettings() {
-  console.log('Open settings');
 }
 </script>

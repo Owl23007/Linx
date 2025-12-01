@@ -21,8 +21,8 @@
       </el-button>
       <el-button size="small" class="window-btn minimize-btn" @click="handleMaximizeWindow">
         <el-icon :size="16">
-          <FullScreenExit v-if="isMaximized" />
-          <FullScreen v-else />
+          <FullscreenExit v-if="isMaximized" />
+          <Fullscreen v-else />
         </el-icon>
       </el-button>
       <el-button size="small" class="window-btn close-btn" @click="handleCloseWindow">
@@ -36,15 +36,15 @@
 
 <script setup lang="ts">
 import { closeWindow, getWindowMaximized, isElectron, maximizeWindow, minimizeWindow, onWindowMaximizedStateChanged } from '@/utils/electron';
-import FullScreenExit from '@/views/components/fullscreen-exit-icon.vue';
-import FullScreen from '@/views/components/fullscreen-icon.vue';
-import Title from '@/views/components/title-icon.vue';
+import icons from '@/views/components/icons';
 import {
   Close,
   Minus,
   Setting
 } from '@element-plus/icons-vue';
 import { onMounted, onUnmounted, ref } from 'vue';
+
+const { Fullscreen, FullscreenExit, Title } = icons;
 
 const emit = defineEmits<{
   (e: 'open-settings'): void

@@ -27,7 +27,7 @@
     <!-- 标题图标 -->
     <div v-if="!(isElectron() && activeTab === 'register')"
       class="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
-      <TitleLogo :size="isElectron() ? 1 : 1.5" />
+      <Title :size="isElectron() ? 1 : 1.5" />
     </div>
 
     <!-- Tab 区域 -->
@@ -265,12 +265,14 @@ import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
-import TitleLogo from '@/views/components/title-icon.vue';
+import icons from '@/views/components/icons';
 import { ArrowDown, ArrowLeft, Close, Key, Lock, Message, Minus, Plus, Refresh, Setting, User } from '@element-plus/icons-vue';
 import { type FormInstance, type FormRules, ElMessage, ElMessageBox } from 'element-plus';
 import { nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Server from './components/server-icon.vue';
+
+const { Title } = icons;
 
 const router = useRouter();
 
