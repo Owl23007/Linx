@@ -2,19 +2,25 @@ name: Dependabot Auto Merge
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
   check_suite:
     types: [completed]
   workflow_dispatch:
     inputs:
       pr-number:
-        description: 'PR 号码 (留空则自动检测最新 Dependabot PR)'
+        description: '手动指定要合并的 Dependabot PR 编号（可选）'
         required: false
         type: string
+      merge-all-open:
+        description: '是否自动查找并尝试合并所有开放的 Dependabot PR？'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   pull-requests: write
   contents: write
+  checks: read
 
 jobs:
   auto-merge:
@@ -25,123 +31,160 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get PR Details
-        id: pr-details
+      - name: Determine PR(s) to process
+        id: find-prs
         uses: actions/github-script@v7
         with:
           script: |
-            // 优先使用手动输入的 PR 号码
-            const manualPrNumber = '${{ github.event.inputs.pr-number }}';
-            let prNumber = null;
-            let isDependabot = false;
+            const inputs = {
+              prNumber: '${{ github.event.inputs.pr-number }}'.trim() || null,
+              mergeAllOpen: (${{ github.event.inputs.merge-all-open }} === true),
+            };
 
-            if (manualPrNumber) {
-              prNumber = parseInt(manualPrNumber);
-              console.log(`📌 使用手动指定的 PR 号码: #${prNumber}`);
-            } else {
-              // 从 pull_request 事件获取
-              const pr = context.payload.pull_request;
-              if (!pr) {
-                console.log('ℹ️ 未获取到 PR 信息，跳过处理');
+            let prNumbers = [];
+
+            // 1. 优先处理手动指定的 PR
+            if (inputs.prNumber) {
+              const num = parseInt(inputs.prNumber, 10);
+              if (!isNaN(num) && num > 0) {
+                prNumbers.push(num);
+                console.log(`📌 手动模式：处理 PR #${num}`);
+              } else {
+                core.setFailed('无效的 PR 编号');
                 return;
               }
-              prNumber = pr.number;
+            }
+            // 2. 处理 workflow_dispatch + merge-all-open
+            else if (inputs.mergeAllOpen && context.eventName === 'workflow_dispatch') {
+              console.log('🔍 手动模式：查找所有开放的 Dependabot PR...');
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 100
+              });
+              for (const pr of prs) {
+                if (pr.user?.login === 'dependabot[bot]') {
+                  prNumbers.push(pr.number);
+                }
+              }
+              console.log(`📌 找到 ${prNumbers.length} 个开放的 Dependabot PR: #${prNumbers.join(', #')}`);
+            }
+            // 3. 自动事件（pull_request / check_suite）
+            else if (context.eventName === 'pull_request') {
+              const pr = context.payload.pull_request;
+              if (pr && pr.user?.login === 'dependabot[bot]') {
+                prNumbers.push(pr.number);
+                console.log(`🔄 自动模式（pull_request）：处理 PR #${pr.number}`);
+              }
+            }
+            else if (context.eventName === 'check_suite') {
+              const prs = context.payload.check_suite?.pull_requests || [];
+              for (const prRef of prs) {
+                const { data: pr } = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prRef.number
+                });
+                if (pr.user?.login === 'dependabot[bot]') {
+                  prNumbers.push(pr.number);
+                }
+              }
+              if (prNumbers.length > 0) {
+                console.log(`🔄 自动模式（check_suite）：关联 PR #${prNumbers.join(', #')}`);
+              }
             }
 
-            // 获取 PR 详情
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber
-            });
-
-            // 验证是 Dependabot 创建的 PR
-            if (pr.user.login !== 'dependabot[bot]') {
-              if (manualPrNumber) {
-                console.log(`❌ PR #${prNumber} 不是由 Dependabot 创建`);
-                core.setFailed(`PR #${prNumber} created by ${pr.user.login}, not Dependabot`);
-              } else {
-                console.log(`⏭️ PR #${prNumber} 不是 Dependabot 创建，跳过`);
-              }
+            if (prNumbers.length === 0) {
+              console.log('ℹ️ 未找到需要处理的 Dependabot PR');
+              core.setOutput('pr-numbers', '');
               return;
             }
 
-            isDependabot = true;
-            console.log(`✅ 找到 Dependabot PR #${prNumber}: ${pr.title}`);
-            core.setOutput('pr-number', prNumber);
-            core.setOutput('is-dependabot', 'true');
+            core.setOutput('pr-numbers', JSON.stringify(prNumbers));
+            core.setOutput('has-prs', 'true');
 
-      - name: Check PR Status
-        id: check-status
-        if: ${{ steps.pr-details.outputs.is-dependabot == 'true' }}
+      - name: Process Each PR
+        if: steps.find-prs.outputs.has-prs == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = ${{ steps.pr-details.outputs.pr-number }};
+            const prNumbers = JSON.parse('${{ steps.find-prs.outputs.pr-numbers }}');
+            const results = [];
 
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber
-            });
+            for (const prNumber of prNumbers) {
+              try {
+                console.log(`\n--- 处理 PR #${prNumber} ---`);
 
-            console.log('PR Status:', {
-              number: pr.number,
-              draft: pr.draft,
-              mergeable: pr.mergeable,
-              mergeable_state: pr.mergeable_state,
-              state: pr.state
-            });
+                const { data: pr } = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber
+                });
 
-            // 检查是否可以合并
-            const canMerge = !pr.draft &&
-                            pr.mergeable &&
-                            pr.mergeable_state === 'clean' &&
-                            pr.state === 'open';
+                // 验证是 Dependabot
+                if (pr.user?.login !== 'dependabot[bot]') {
+                  console.log(`❌ 跳过：PR #${prNumber} 不是 Dependabot 创建`);
+                  results.push({ pr: prNumber, status: 'skipped', reason: 'not_dependabot' });
+                  continue;
+                }
 
-            if (canMerge) {
-              console.log(`✅ PR #${prNumber} 满足合并条件`);
-            } else {
-              console.log(`❌ PR #${prNumber} 不满足合并条件`);
+                // 检查状态
+                const isDraft = pr.draft || false;
+                const stateOk = pr.state === 'open';
+                const mergeableOk = pr.mergeable === true;
+                const mergeableStateOk = pr.mergeable_state === 'clean';
+
+                console.log(`状态: draft=${isDraft}, state=${pr.state}, mergeable=${pr.mergeable}, mergeable_state=${pr.mergeable_state}`);
+
+                if (!stateOk) {
+                  console.log(`❌ PR #${prNumber} 已关闭，跳过`);
+                  results.push({ pr: prNumber, status: 'skipped', reason: 'not_open' });
+                  continue;
+                }
+
+                if (isDraft) {
+                  console.log(`⚠️ PR #${prNumber} 是草稿，跳过`);
+                  results.push({ pr: prNumber, status: 'skipped', reason: 'draft' });
+                  continue;
+                }
+
+                if (!mergeableOk || !mergeableStateOk) {
+                  console.log(`⚠️ PR #${prNumber} 存在冲突或未通过检查，暂不合并`);
+                  results.push({ pr: prNumber, status: 'not_mergeable', reason: pr.mergeable_state || 'conflict' });
+                  continue;
+                }
+
+                // 执行合并（squash）
+                await github.rest.pulls.merge({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber,
+                  merge_method: 'squash'
+                });
+
+                console.log(`✅ 成功合并 PR #${prNumber}`);
+                results.push({ pr: prNumber, status: 'merged' });
+
+                // 评论（可选）
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: '✅ 依赖更新已通过检查，自动合并完成。'
+                });
+
+              } catch (error) {
+                console.error(`💥 合并 PR #${prNumber} 失败:`, error.message);
+                results.push({ pr: prNumber, status: 'error', reason: error.message });
+              }
             }
 
-            core.setOutput('can-merge', canMerge ? 'true' : 'false');
-            core.setOutput('pr-number', prNumber);
+            // 最终汇总
+            const merged = results.filter(r => r.status === 'merged').length;
+            const failed = results.filter(r => r.status === 'error').length;
+            console.log(`\n📊 处理完成：共 ${prNumbers.length} 个 PR，成功合并 ${merged} 个，失败 ${failed} 个`);
 
-      - name: Enable Auto Merge
-        if: ${{ steps.check-status.outputs.can-merge == 'true' }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = ${{ steps.check-status.outputs.pr-number }};
-
-            try {
-              // 启用自动合并
-              await github.rest.pulls.merge({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: prNumber,
-                merge_method: 'squash'
-              });
-
-              console.log(`✅ PR #${prNumber} 已自动合并`);
-            } catch (error) {
-              console.log(`⚠️ 无法合并 PR #${prNumber}: ${error.message}`);
-            }
-
-      - name: Comment on PR
-        if: ${{ steps.check-status.outputs.pr-number }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = ${{ steps.check-status.outputs.pr-number }};
-            const canMerge = '${{ steps.check-status.outputs.can-merge }}' === 'true';
-
-            if (canMerge) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: '✅ CI 检查全部通过，已自动合并此 PR'
-              });
+            if (failed > 0) {
+              core.setFailed(`有 ${failed} 个 PR 合并失败，请查看日志`);
             }
