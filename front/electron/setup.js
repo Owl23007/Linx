@@ -9,7 +9,7 @@ import { logger } from './utils/log.js';
 const CONFIG = {
   MAX_INSTANCES: 5,
   PORTABLE_DATA_FOLDER: 'data',
-  INSTANCES_FOLDER: '_instances',
+  INSTANCES_FOLDER: 'instances',
   LOCK_FILE_NAME: '.app_lock',
   CLEAN_SECONDARY_INSTANCES: true,
 };
@@ -81,10 +81,13 @@ function cleanDir(dirPath) {
 function resolveBaseDir() {
   const exeDir = path.dirname(app.getPath('exe'));
   const cwd = process.cwd();
-
-  // 策略 A: 打包后 exe 同级目录下的 'data' 文件夹（便携版）
   const portableDir = path.join(exeDir, CONFIG.PORTABLE_DATA_FOLDER);
-  if (fs.existsSync(portableDir)) {
+  const portableMarker = path.join(exeDir, '.portable');
+
+  // 策略 A: 便携版 - 检测 .portable 标记文件或 data 文件夹已存在
+  if (fs.existsSync(portableMarker) || fs.existsSync(portableDir)) {
+    ensureDir(portableDir);
+
     return { baseDir: portableDir, isPortable: true };
   }
 

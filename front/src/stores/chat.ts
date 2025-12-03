@@ -289,6 +289,7 @@ export const useChatStore = defineStore('chat', () => {
     // 调用API
     if (conversation.type === 'private') {
       const parts = conversationId.split('_');
+      if (!parts[1]) return;
       const userId = Number.parseInt(parts[1]);
       if (!userId) return;
       try {

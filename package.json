@@ -1,0 +1,13 @@
+{
+  "name": "linx-root",
+  "private": true,
+  "scripts": {
+    "install-hooks": "node scripts/install-hooks.js",
+    "install-hooks-ps1": "powershell -ExecutionPolicy Bypass -File scripts/install-hooks.ps1",
+    "install-hooks-bash": "bash scripts/install-hooks.sh",
+    "setup": "npm install && npm run install-hooks"
+  },
+  "workspaces": [
+    "front"
+  ]
+}

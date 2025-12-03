@@ -778,7 +778,7 @@ onUnmounted(() => {
   z-index: 20;
 }
 
-::v-deep .register-form .el-form-item {
+:deep(.register-form .el-form-item) {
   margin-bottom: 15px !important;
 }
 

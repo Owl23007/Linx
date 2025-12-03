@@ -7,7 +7,7 @@ const platform = os.platform();
 const isWindows = platform === 'win32';
 
 let command, args;
-if (!isWindows) {
+if (isWindows) {
     // Try PowerShell first
     command = 'powershell';
     args = ['-ExecutionPolicy', 'Bypass', '-File', './scripts/install-hooks.ps1'];
