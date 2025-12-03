@@ -38,7 +38,7 @@ jobs:
           script: |
             const inputs = {
               prNumber: '${{ github.event.inputs.pr-number }}'.trim() || null,
-              mergeAllOpen: ('${{ github.event.inputs.merge-all-open }}' === 'true'),
+              mergeAllOpen: ('${{ github.event.inputs.merge-all-open }}' == 'true'),
             };
 
             let prNumbers = [];
@@ -68,7 +68,7 @@ jobs:
                   prNumbers.push(pr.number);
                 }
               }
-              console.log(`📌 找到 ${prNumbers.length} 个开放的 Dependabot PR: ${prNumbers.length > 0 ? '#' + prNumbers.join(', #') : '无'}`);
+              console.log(`📌 找到 ${prNumbers.length} 个开放的 Dependabot PR` + (prNumbers.length > 0 ? `: #${prNumbers.join(', #')}` : ''));
             }
             // 3. 自动事件（pull_request / check_suite）
             else if (context.eventName === 'pull_request') {
