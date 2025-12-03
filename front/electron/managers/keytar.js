@@ -8,7 +8,6 @@ import { aesDecrypt, aesEncrypt, generateSalt, hashWithSalt } from '../utils/sec
 
 // ================ 全局配置 ================
 // Keytar 凭据
-const LEGACY_KEYTAR_SERVICE = 'LinxAppMainKEK'; // 旧版固定服务名（用于兼容升级）
 const KEYTAR_ACCOUNT_MAIN_KEK = 'mainKEK'; // 全局主密钥
 
 // ================ 核心类 ================
@@ -46,21 +45,6 @@ class KeytarManager {
   async init() {
     try {
       let mainKEK = await keytar.getPassword(this.serviceName, KEYTAR_ACCOUNT_MAIN_KEK);
-
-      // 兼容性检查：如果新服务名下没有密钥，但存在旧数据文件，尝试从旧服务名获取
-      if (!mainKEK) {
-        const baseDataPath = process.env.LINX_DATA_PATH || app.getPath('userData');
-        const legacyDbPath = path.join(baseDataPath, 'UserData', 'app.db');
-        // 只有当旧数据库存在时才尝试读取旧凭据，避免便携版误读系统凭据
-        if (fs.existsSync(legacyDbPath)) {
-          const legacyKEK = await keytar.getPassword(LEGACY_KEYTAR_SERVICE, KEYTAR_ACCOUNT_MAIN_KEK);
-          if (legacyKEK) {
-            mainKEK = legacyKEK;
-            this.serviceName = LEGACY_KEYTAR_SERVICE; // 切换回旧服务名以保持兼容
-            this.Logger.info('KEYTAR_INIT', '检测到旧版数据，已切换至兼容模式 (Legacy Service)');
-          }
-        }
-      }
 
       if (!mainKEK) {
         const newMainKEK = crypto.randomBytes(32);
