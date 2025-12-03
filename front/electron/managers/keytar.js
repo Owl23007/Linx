@@ -29,6 +29,19 @@ class KeytarManager {
     return `LinxApp-${pathHash}`;
   }
 
+  /**
+   * 脱敏服务名，用于日志输出
+   * @param {string} serviceName - 原始服务名
+   * @returns {string} 脱敏后的服务名，如 "LinxApp-5bc0****10d3"
+   */
+  maskServiceName(serviceName) {
+    if (!serviceName || serviceName.length < 12) return '***';
+    const prefix = serviceName.substring(0, 12);
+    const suffix = serviceName.substring(serviceName.length - 4);
+
+    return `${prefix}****${suffix}`;
+  }
+
   // ================ 1. 初始化 mainKEK ================
   async init() {
     try {
@@ -53,10 +66,10 @@ class KeytarManager {
         const newMainKEK = crypto.randomBytes(32);
         await keytar.setPassword(this.serviceName, KEYTAR_ACCOUNT_MAIN_KEK, newMainKEK.toString('hex'));
         this._mainKEK = newMainKEK;
-        this.Logger.info('KEYTAR_INIT', `mainKEK 已生成 (Service: ${this.serviceName})`);
+        this.Logger.info('KEYTAR_INIT', `mainKEK 已生成 (Service: ${this.maskServiceName(this.serviceName)})`);
       } else {
         this._mainKEK = Buffer.from(mainKEK, 'hex');
-        this.Logger.info('KEYTAR_INIT', `mainKEK 已加载 (Service: ${this.serviceName})`);
+        this.Logger.info('KEYTAR_INIT', `mainKEK 已加载 (Service: ${this.maskServiceName(this.serviceName)})`);
       }
     } catch (error) {
       this.Logger.error('KEYTAR_INIT', `初始化失败: ${error.message}`);

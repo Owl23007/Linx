@@ -1,179 +1,238 @@
 import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import { logger } from './utils/log.js';
+
+// ==========================================
+// 配置常量
+// ==========================================
+const CONFIG = {
+  MAX_INSTANCES: 5,
+  PORTABLE_DATA_FOLDER: 'data',
+  INSTANCES_FOLDER: '_instances',
+  LOCK_FILE_NAME: '.app_lock',
+  CLEAN_SECONDARY_INSTANCES: true,
+};
+
+// 模块级状态：用于跟踪清理回调是否已注册
+let cleanupRegistered = false;
+let currentLockFile = null;
+
+// ==========================================
+// 工具函数
+// ==========================================
+
+/**
+ * 检查进程是否正在运行
+ */
+function isProcessRunning(pid) {
+  try {
+    if (!pid || isNaN(pid)) return false;
+    process.kill(pid, 0);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 确保目录存在
+ */
+function ensureDir(dirPath) {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    return true;
+  } catch (error) {
+    logger.error('APP_SETUP', `无法创建目录: ${dirPath}`, { error: error.message });
+
+    return false;
+  }
+}
+
+/**
+ * 清空目录内容（保留目录本身）
+ */
+function cleanDir(dirPath) {
+  try {
+    logger.info('APP_SETUP', `正在清理临时实例目录: ${dirPath}`);
+    for (const file of fs.readdirSync(dirPath)) {
+      fs.rmSync(path.join(dirPath, file), { recursive: true, force: true });
+    }
+
+    return true;
+  } catch (error) {
+    logger.warn('APP_SETUP', `清理目录失败: ${error.message}`);
+
+    return false;
+  }
+}
+
+// ==========================================
+// 路径解析
+// ==========================================
+
+/**
+ * 解析基础数据目录
+ */
+function resolveBaseDir() {
+  const exeDir = path.dirname(app.getPath('exe'));
+  const cwd = process.cwd();
+
+  // 策略 A: 打包后 exe 同级目录下的 'data' 文件夹（便携版）
+  const portableDir = path.join(exeDir, CONFIG.PORTABLE_DATA_FOLDER);
+  if (fs.existsSync(portableDir)) {
+    return { baseDir: portableDir, isPortable: true };
+  }
+
+  // 策略 B: 开发环境下项目根目录的 'data' 文件夹
+  if (!app.isPackaged) {
+    const devDir = path.join(cwd, CONFIG.PORTABLE_DATA_FOLDER);
+    if (fs.existsSync(devDir)) {
+      return { baseDir: devDir, isPortable: true };
+    }
+  }
+
+  // 策略 C: 系统标准 AppData 路径（安装版）
+  return { baseDir: app.getPath('userData'), isPortable: false };
+}
+
+// ==========================================
+// 锁管理
+// ==========================================
+
+/**
+ * 检查锁文件状态
+ */
+function checkLock(lockFile) {
+  if (!fs.existsSync(lockFile)) {
+    return { locked: false, pid: null };
+  }
+
+  try {
+    const pid = parseInt(fs.readFileSync(lockFile, 'utf8'), 10);
+    if (isProcessRunning(pid)) {
+      return { locked: true, pid };
+    }
+    logger.info('APP_SETUP', `发现陈旧的锁文件 (PID: ${pid})，将覆盖`);
+
+    return { locked: false, pid };
+  } catch {
+    return { locked: false, pid: null };
+  }
+}
+
+/**
+ * 尝试获取锁
+ */
+function acquireLock(lockFile) {
+  const { locked } = checkLock(lockFile);
+  if (locked) return false;
+
+  try {
+    fs.writeFileSync(lockFile, String(process.pid), 'utf8');
+    currentLockFile = lockFile;
+    registerCleanup();
+
+    return true;
+  } catch (error) {
+    logger.error('APP_SETUP', `锁操作失败: ${error.message}`);
+
+    return false;
+  }
+}
+
+/**
+ * 释放锁
+ */
+function releaseLock() {
+  if (!currentLockFile) return;
+
+  try {
+    if (fs.existsSync(currentLockFile)) {
+      const pid = parseInt(fs.readFileSync(currentLockFile, 'utf8'), 10);
+      if (pid === process.pid) {
+        fs.unlinkSync(currentLockFile);
+      }
+    }
+  } catch {
+    // 忽略清理错误
+  }
+}
+
+/**
+ * 注册退出时的清理逻辑
+ */
+function registerCleanup() {
+  if (cleanupRegistered) return;
+
+  process.on('exit', releaseLock);
+  process.on('SIGINT', () => { releaseLock(); process.exit(130); });
+  process.on('SIGTERM', () => { releaseLock(); process.exit(143); });
+
+  cleanupRegistered = true;
+}
+
+// ==========================================
+// 实例分配
+// ==========================================
+
+/**
+ * 分配可用的实例槽位
+ */
+function allocateInstance(baseDir) {
+  for (let id = 1; id <= CONFIG.MAX_INSTANCES; id++) {
+    const instancePath = path.join(baseDir, CONFIG.INSTANCES_FOLDER, `instance_${id}`);
+
+    if (!ensureDir(instancePath)) continue;
+
+    const lockFile = path.join(instancePath, CONFIG.LOCK_FILE_NAME);
+    const { locked } = checkLock(lockFile);
+
+    // 副实例（id > 1）且未被锁定时清理旧数据
+    if (!locked && CONFIG.CLEAN_SECONDARY_INSTANCES && id > 1) {
+      cleanDir(instancePath);
+    }
+
+    if (acquireLock(lockFile)) {
+      return { instanceId: id, instancePath };
+    }
+  }
+
+  return null;
+}
+
+// ==========================================
+// 主入口
+// ==========================================
 
 /**
  * 初始化用户数据路径
  * 处理便携模式检测和多实例数据隔离
  */
 export function initializeUserData() {
-  const exePath = app.getPath('exe');
-  const exeDir = path.dirname(exePath);
-  const cwd = process.cwd();
-
-  // ==========================================
-  // 1. 确定基础数据根目录 (Base User Data Dir)
-  // ==========================================
-  let baseDir = null;
-  let isPortable = false;
-
-  // 策略 A: 检查打包后的 exe 同级目录下是否有 'data' 文件夹
-  const portableDataDir = path.join(exeDir, 'data');
-  if (fs.existsSync(portableDataDir)) {
-    baseDir = portableDataDir;
-    isPortable = true;
-  }
-
-  // 策略 B: 开发环境下，检查项目根目录是否有 'data' 文件夹
-  if (!baseDir && !app.isPackaged) {
-    const devDataDir = path.join(cwd, 'data');
-    if (fs.existsSync(devDataDir)) {
-      baseDir = devDataDir;
-      isPortable = true;
-    }
-  }
-
-  // 策略 C: 默认安装模式，使用系统标准 AppData 路径
-  if (!baseDir) {
-    baseDir = app.getPath('userData');
-  }
-
-  // 核心：设置共享数据路径环境变量，供 Keytar 和 Database 使用
-  process.env.LINX_DATA_PATH = baseDir;
-
-  // ==========================================
-  // 2. 分配实例槽位 (Instance Slot Allocation)
-  // ==========================================
-  // 目标：找到一个未被占用的目录作为当前进程的 userData
-  // 槽位命名规则：
-  // - 主槽位: baseDir
-  // - 副槽位: baseDir + "_2", baseDir + "_3", ...
-
-  let instanceId = 1;
-  let finalUserDataPath = baseDir;
-  const maxInstances = 5; // 最大允许自动多开数
-
-  while (instanceId <= maxInstances) {
-    // 构造当前尝试的路径
-    // 统一策略：所有实例（包括主实例）都运行在 _instances 子目录下
-    // 这样 baseDir 仅作为共享数据存储（数据库、配置），不包含运行时缓存
-    finalUserDataPath = path.join(baseDir, '_instances', `instance_${instanceId}`);
-
-    // 确保目录存在
-    try {
-      if (!fs.existsSync(finalUserDataPath)) {
-        fs.mkdirSync(finalUserDataPath, { recursive: true });
-      }
-    } catch (err) {
-      console.error(`[Setup] 无法创建目录: ${finalUserDataPath}`, err);
-      instanceId++;
-      continue;
-    }
-
-    // 检查锁状态
-    // 策略：对于 instance_2 及以上的副实例，如果发现它们没在运行（锁是空的或陈旧的），
-    // 我们在启动前先清空目录，确保存储空间不膨胀。
-    const shouldClean = instanceId > 1;
-
-    if (tryAcquireLock(finalUserDataPath, shouldClean)) {
-      // 成功获取锁！
-      console.log(`[Setup] 实例初始化成功 (ID: ${instanceId})`);
-      console.log(`[Setup] 数据目录: ${finalUserDataPath}`);
-      console.log(`[Setup] 运行模式: ${isPortable ? '便携版 (Portable)' : '安装版 (Installed)'}`);
-
-      // 核心：告诉 Electron 使用这个目录
-      app.setPath('userData', finalUserDataPath);
-
-      return;
-    }
-
-    // 当前槽位被占用，尝试下一个
-    instanceId++;
-  }
-
-  console.warn('[Setup] 警告: 无法找到空闲的实例槽位，将强制使用主目录（可能会导致崩溃）');
-  app.setPath('userData', baseDir);
-}
-
-/**
- * 尝试获取目录锁
- * @param {string} dirPath 目标目录
- * @param {boolean} shouldClean 是否在获取锁前清空目录（用于副实例清理）
- * @returns {boolean} 是否成功获取锁
- */
-function tryAcquireLock(dirPath, shouldClean = false) {
-  const lockFile = path.join(dirPath, '.app_lock');
-
   try {
-    // 1. 检查是否存在锁文件
-    if (fs.existsSync(lockFile)) {
-      const pid = parseInt(fs.readFileSync(lockFile, 'utf8'), 10);
+    // 1. 解析基础数据目录
+    const { baseDir, isPortable } = resolveBaseDir();
+    process.env.LINX_DATA_PATH = baseDir;
 
-      // 2. 检查持有锁的进程是否存活
-      if (isProcessRunning(pid)) {
-        return false; // 进程活着，锁有效，获取失败
-      }
+    const mode = isPortable ? '便携版' : '安装版';
+    logger.info('APP_SETUP', `基础目录: ${baseDir} (${mode})`);
 
-      // 进程死了，锁是陈旧的，可以覆盖
-      console.log(`[Setup] 发现陈旧的锁文件 (PID: ${pid})，正在清理...`);
+    // 2. 分配实例槽位
+    const instance = allocateInstance(baseDir);
+
+    if (instance) {
+      logger.info('APP_SETUP', `实例 #${instance.instanceId}: ${instance.instancePath}`);
+      app.setPath('userData', instance.instancePath);
+    } else {
+      logger.warn('APP_SETUP', `已达到最大实例数 (${CONFIG.MAX_INSTANCES})，使用主目录（可能冲突）`);
+      app.setPath('userData', baseDir);
     }
-
-    // 3. [新增] 如果需要清理且目录未被锁定，则清空目录内容（保留目录本身）
-    // 这确保了副实例每次启动都是干净的，不会占用磁盘空间
-    if (shouldClean) {
-      try {
-        console.log(`[Setup] 正在清理临时实例目录: ${dirPath}`);
-        // 读取目录下的所有文件
-        const files = fs.readdirSync(dirPath);
-        for (const file of files) {
-          const curPath = path.join(dirPath, file);
-          // 强制删除文件或文件夹
-          fs.rmSync(curPath, { recursive: true, force: true });
-        }
-      } catch (cleanErr) {
-        console.warn(`[Setup] 清理目录失败 (非致命): ${cleanErr.message}`);
-      }
-    }
-
-    // 4. 写入当前 PID 获取锁
-    fs.writeFileSync(lockFile, String(process.pid));
-
-    // 5. 注册退出时的清理逻辑
-    const cleanup = () => {
-      try {
-        if (fs.existsSync(lockFile)) {
-          const currentPid = parseInt(fs.readFileSync(lockFile, 'utf8'), 10);
-          if (currentPid === process.pid) {
-            fs.unlinkSync(lockFile);
-          }
-        }
-      } catch { /* 忽略清理错误 */ }
-    };
-
-    // 监听各种退出信号
-    process.on('exit', cleanup);
-    process.on('SIGINT', () => { cleanup(); process.exit(); });
-    process.on('SIGTERM', () => { cleanup(); process.exit(); });
-
-    return true;
-
-  } catch (err) {
-    console.error(`[Setup] 锁操作失败: ${err.message}`);
-
-    return false;
-  }
-}
-
-/**
- * 检查进程是否运行
- */
-function isProcessRunning(pid) {
-  try {
-    if (!pid) return false;
-    process.kill(pid, 0); // 发送信号 0 检测进程是否存在
-
-    return true;
-  } catch {
-    return false;
+  } catch (error) {
+    logger.error('APP_SETUP', '初始化失败', { error: error.message });
   }
 }

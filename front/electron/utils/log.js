@@ -44,6 +44,15 @@ const LOG_LEVELS = {
   ERROR: 3
 };
 
+// 日志级别对应的颜色（ANSI转义码）
+const LEVEL_COLORS = {
+  DEBUG: '\x1b[36m', // 青色
+  INFO: '\x1b[32m',  // 绿色
+  WARN: '\x1b[33m',  // 黄色
+  ERROR: '\x1b[31m'  // 红色
+};
+const RESET_COLOR = '\x1b[0m';
+
 class Logger {
   // 添加静态实例变量，确保单例
   static instance = null;
@@ -170,6 +179,64 @@ class Logger {
   }
 
   /**
+   * 获取格式化的时间戳（含毫秒）
+   * @returns {string} 格式化的时间戳
+   */
+  getTimestamp() {
+    const now = new Date();
+    const pad = (n, len = 2) => String(n).padStart(len, '0');
+
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
+           `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${pad(now.getMilliseconds(), 3)}`;
+  }
+
+  /**
+   * 获取调用位置信息（文件名和行号）
+   * @returns {string} 调用位置，格式如 "setup.js:42"
+   */
+  getCallerLocation(skipInternal = true) {
+    try {
+      const err = new Error();
+      const stack = err.stack?.split('\n') || [];
+      // 跳过 Error、getCallerLocation、debug/info/warn/error、以及可能的内部调用
+      for (let i = 2; i < stack.length; i++) {
+        const line = stack[i];
+        // 如果需要跳过 log.js 自身的调用
+        if (skipInternal && (line.includes('utils/log.js') || line.includes('utils\\log.js'))) continue;
+        // 匹配文件路径和行号
+        const match = line.match(/(?:at\s+)?(?:.*?\s+\()?(.+?):(\d+)(?::\d+)?\)?$/);
+        if (match) {
+          const fullPath = match[1];
+          const lineNum = match[2];
+          // 提取文件名
+          const fileName = fullPath.split(/[\\/]/).pop();
+
+          return `${fileName}:${lineNum}`;
+        }
+      }
+    } catch {
+      // 忽略错误
+    }
+
+    return 'unknown';
+  }
+
+  /**
+   * 格式化控制台输出
+   * @param {string} level - 日志级别
+   * @param {string} tag - 日志标签
+   * @param {string} message - 日志消息
+   * @param {string} location - 调用位置
+   * @returns {string} 格式化的日志字符串
+   */
+  formatConsoleOutput(level, tag, message, location) {
+    const timestamp = this.getTimestamp();
+    const color = LEVEL_COLORS[level] || '';
+
+    return `${color}[${timestamp}][${level}][${tag}]${RESET_COLOR} ${message} ${LEVEL_COLORS.DEBUG}(${location})${RESET_COLOR}`;
+  }
+
+  /**
    * 记录 DEBUG 级别日志（仅开发环境控制台，不保存文件）
    * @param {string} tag - 日志标签
    * @param {string} message - 日志消息
@@ -179,9 +246,10 @@ class Logger {
     if (this.currentLevel > LOG_LEVELS.DEBUG) return;
 
     if (process.env.NODE_ENV === 'development') {
-      console.debug(`[DEBUG][${tag}]`, message);
+      const location = this.getCallerLocation();
+      console.debug(this.formatConsoleOutput('DEBUG', tag, message, location));
       if (Object.keys(context).length > 0) {
-        console.debug('Context:', context);
+        console.debug('  Context:', context);
       }
     }
   }
@@ -195,15 +263,16 @@ class Logger {
   info(tag, message, context = {}) {
     if (this.currentLevel > LOG_LEVELS.INFO) return;
 
-    const logInfo = this.createLogEntry('INFO', tag, message, context);
+    const location = this.getCallerLocation();
+    const logInfo = this.createLogEntry('INFO', tag, message, context, location);
 
     // 只写入到时间戳日志文件
     this.writeToLogFile(logInfo, false);
 
     if (process.env.NODE_ENV === 'development') {
-      console.info(`[INFO][${tag}]`, message);
+      console.info(this.formatConsoleOutput('INFO', tag, message, location));
       if (Object.keys(context).length > 0) {
-        console.info('Context:', context);
+        console.info('  Context:', context);
       }
     }
   }
@@ -217,15 +286,16 @@ class Logger {
   warn(tag, message, context = {}) {
     if (this.currentLevel > LOG_LEVELS.WARN) return;
 
-    const logInfo = this.createLogEntry('WARN', tag, message, context);
+    const location = this.getCallerLocation();
+    const logInfo = this.createLogEntry('WARN', tag, message, context, location);
 
     // 只写入到时间戳日志文件
     this.writeToLogFile(logInfo, false);
 
     if (process.env.NODE_ENV === 'development') {
-      console.warn(`[WARN][${tag}]`, message);
+      console.warn(this.formatConsoleOutput('WARN', tag, message, location));
       if (Object.keys(context).length > 0) {
-        console.warn('Context:', context);
+        console.warn('  Context:', context);
       }
     }
   }
@@ -238,6 +308,8 @@ class Logger {
    * @returns {Promise<void>}
    */
   async error(tag, message, context = {}) {
+    const location = this.getCallerLocation();
+
     // 简化处理：直接使用传入的Error或构造新Error
     let errObj;
     if (message instanceof Error) {
@@ -258,18 +330,18 @@ class Logger {
     const logInfo = this.createLogEntry('ERROR', tag, errObj.message, {
       ...context,
       stack: cleanedStack
-    });
+    }, location);
 
     // 写入到两个文件
     this.writeToLogFile(logInfo, true);
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[ERROR][${tag}]`, errObj);
+      console.error(this.formatConsoleOutput('ERROR', tag, errObj.message, location));
       if (Object.keys(context).length > 0) {
-        console.error('Context:', context);
+        console.error('  Context:', context);
       }
       // 输出清理后的堆栈，便于开发者快速定位
-      console.error('Cleaned Stack:', cleanedStack);
+      console.error('  Stack:', cleanedStack);
     }
 
     // 只有在应用准备就绪后才显示错误对话框
@@ -322,14 +394,16 @@ class Logger {
    * @param {string} tag - 日志标签
    * @param {string} message - 日志消息
    * @param {object} [context={}] - 额外上下文
+   * @param {string} [location=''] - 调用位置
    * @returns {object} 日志条目
    */
-  createLogEntry(level, tag, message, context = {}) {
+  createLogEntry(level, tag, message, context = {}, location = '') {
     return {
-      timestamp: new Date().toLocaleString(),
+      timestamp: this.getTimestamp(),
       level,
       tag,
       message,
+      location,
       context,
       platform: process.platform,
       version: app.getVersion(),
@@ -349,10 +423,11 @@ class Logger {
       const contextWithoutStack = { ...logInfo.context };
       delete contextWithoutStack.stack;
 
-      // 通用日志格式，展开stack为多行
-      const logEntry = `[${logInfo.timestamp}] [${logInfo.level}] [${logInfo.tag}] ${logInfo.message}${
-        logInfo.context.stack ? `\nStack Trace:\n${logInfo.context.stack}` : ''
-      }${Object.keys(contextWithoutStack).length > 0 ? '\nContext: ' + JSON.stringify(contextWithoutStack, null, 2) : ''
+      // 通用日志格式：时间戳 | 级别 | 标签 | 位置 | 消息
+      const locationPart = logInfo.location ? ` (${logInfo.location})` : '';
+      const logEntry = `[${logInfo.timestamp}][${logInfo.level}][${logInfo.tag}]${locationPart} ${logInfo.message}${
+        logInfo.context.stack ? `\n  Stack Trace:\n${logInfo.context.stack.split('\n').map(l => '    ' + l).join('\n')}` : ''
+      }${Object.keys(contextWithoutStack).length > 0 ? '\n  Context: ' + JSON.stringify(contextWithoutStack, null, 2).split('\n').join('\n  ') : ''
       }\n`;
 
       // 写入到时间戳日志文件
@@ -366,6 +441,7 @@ class Logger {
 Timestamp: ${logInfo.timestamp}
 Level: ${logInfo.level}
 Tag: ${logInfo.tag}
+Location: ${logInfo.location || 'unknown'}
 Message: ${logInfo.message}
 ${logInfo.context.stack ? `Stack Trace:\n${logInfo.context.stack}` : ''}
 
@@ -579,7 +655,7 @@ Node.js Version: ${logInfo.nodeVersion}
         .sort((a, b) => a.timestamp - b.timestamp); // 按时间戳排序，最旧的在前
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[INFO][Logger] 找到 ${fileInfos.length} 个时间戳日志文件`);
+        console.log(this.formatConsoleOutput('INFO', 'Logger', `找到 ${fileInfos.length} 个时间戳日志文件`, this.getCallerLocation(false)));
       }
 
       // 1. 删除超过指定天数的文件（基于文件名中的时间戳）
@@ -589,12 +665,12 @@ Node.js Version: ${logInfo.nodeVersion}
           try {
             fs.unlinkSync(fileInfo.path);
             if (process.env.NODE_ENV === 'development') {
-              console.log(`[INFO][Logger] 已删除过期日志文件: ${fileInfo.name}`);
+              console.log(this.formatConsoleOutput('INFO', 'Logger', `已删除过期日志文件: ${fileInfo.name}`, this.getCallerLocation(false)));
             }
             deletedCount++;
           } catch (error) {
             if (process.env.NODE_ENV === 'development') {
-              console.error(`[ERROR][Logger] 删除过期文件失败 ${fileInfo.name}:`, error);
+              console.error(this.formatConsoleOutput('ERROR', 'Logger', `删除过期文件失败 ${fileInfo.name}: ${error.message}`, this.getCallerLocation(false)));
             }
           }
         }
@@ -610,24 +686,24 @@ Node.js Version: ${logInfo.nodeVersion}
           try {
             fs.unlinkSync(fileInfo.path);
             if (process.env.NODE_ENV === 'development') {
-              console.log(`[INFO][Logger] 已删除超出数量限制的日志文件: ${fileInfo.name}`);
+              console.log(this.formatConsoleOutput('INFO', 'Logger', `已删除超出数量限制的日志文件: ${fileInfo.name}`, this.getCallerLocation(false)));
             }
             deletedCount++;
           } catch (error) {
             if (process.env.NODE_ENV === 'development') {
-              console.error(`[ERROR][Logger] 删除文件失败 ${fileInfo.name}:`, error);
+              console.error(this.formatConsoleOutput('ERROR', 'Logger', `删除文件失败 ${fileInfo.name}: ${error.message}`, this.getCallerLocation(false)));
             }
           }
         });
       }
 
       if (deletedCount > 0 && process.env.NODE_ENV === 'development') {
-        console.log(`[INFO][Logger] 总共删除了 ${deletedCount} 个日志文件`);
+        console.log(this.formatConsoleOutput('INFO', 'Logger', `总共删除了 ${deletedCount} 个日志文件`, this.getCallerLocation(false)));
       }
 
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('[ERROR][Logger] 清理旧日志失败:', error);
+        console.error(this.formatConsoleOutput('ERROR', 'Logger', `清理旧日志失败: ${error.message}`, this.getCallerLocation(false)));
       }
     }
   }

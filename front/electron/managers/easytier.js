@@ -33,21 +33,21 @@ class EasyTierManager {
 
   async init() {
     if (!fs.existsSync(this.binPath)) {
-      logger.error('EASYTIER', `Binary not found at ${this.binPath}`);
+      logger.error('EASYTIER', `未找到可执行文件: ${this.binPath}`);
     } else {
-      logger.info('EASYTIER', `Binary found at ${this.binPath}`);
+      logger.info('EASYTIER', `找到可执行文件: ${this.binPath}`);
     }
   }
 
   start(config) {
     if (this.process) {
-      logger.warn('EASYTIER', 'Process already running');
+      logger.warn('EASYTIER', '进程已在运行中');
 
       return false;
     }
 
     if (!fs.existsSync(this.binPath)) {
-      throw new Error(`EasyTier binary not found at ${this.binPath}`);
+      throw new Error(`未找到 EasyTier 可执行文件: ${this.binPath}`);
     }
 
     // Construct args from config
@@ -170,27 +170,27 @@ class EasyTierManager {
     // 默认参数
     // -d (daemon) 不需要，因为我们是用 spawn 管理子进程
 
-    logger.info('EASYTIER', `Starting EasyTier with args: ${args.join(' ')}`);
+    logger.info('EASYTIER', `正在启动 EasyTier，参数: ${args.join(' ')}`);
 
     try {
       this.process = spawn(this.binPath, args);
 
       this.process.stdout.on('data', (data) => {
-        logger.info('EASYTIER_STDOUT', data.toString());
+        logger.info('EASYTIER_STDOUT', data.toString().trim());
       });
 
       this.process.stderr.on('data', (data) => {
-        logger.error('EASYTIER_STDERR', data.toString());
+        logger.error('EASYTIER_STDERR', data.toString().trim());
       });
 
       this.process.on('close', (code) => {
-        logger.info('EASYTIER', `Process exited with code ${code}`);
+        logger.info('EASYTIER', `进程已退出，退出码: ${code}`);
         this.process = null;
       });
 
       return true;
     } catch (e) {
-      logger.error('EASYTIER', `Failed to start process: ${e.message}`);
+      logger.error('EASYTIER', `启动进程失败: ${e.message}`);
       throw e;
     }
   }
@@ -199,7 +199,7 @@ class EasyTierManager {
     if (this.process) {
       this.process.kill();
       this.process = null;
-      logger.info('EASYTIER', 'Process stopped');
+      logger.info('EASYTIER', '进程已停止');
 
       return true;
     }
@@ -216,12 +216,12 @@ class EasyTierManager {
 
   async getPeers() {
     if (!this.process) {
-      throw new Error('EasyTier is not running');
+      throw new Error('EasyTier 未运行');
     }
 
     const cliPath = this.getCliPath();
     if (!fs.existsSync(cliPath)) {
-      throw new Error('EasyTier CLI not found');
+      throw new Error('未找到 EasyTier CLI');
     }
 
     return new Promise((resolve, reject) => {
@@ -247,13 +247,13 @@ class EasyTierManager {
 
       child.on('close', (code) => {
         if (code !== 0) {
-          reject(new Error(`CLI exited with code ${code}: ${stderr}`));
+          reject(new Error(`CLI 退出，退出码 ${code}: ${stderr}`));
         } else {
           try {
             const result = JSON.parse(stdout);
             resolve(result);
           } catch (e) {
-            reject(new Error(`Failed to parse CLI output: ${e.message}`));
+            reject(new Error(`解析 CLI 输出失败: ${e.message}`));
           }
         }
       });
@@ -262,12 +262,12 @@ class EasyTierManager {
 
   async getRoute() {
     if (!this.process) {
-      throw new Error('EasyTier is not running');
+      throw new Error('EasyTier 未运行');
     }
 
     const cliPath = this.getCliPath();
     if (!fs.existsSync(cliPath)) {
-      throw new Error('EasyTier CLI not found');
+      throw new Error('未找到 EasyTier CLI');
     }
 
     return new Promise((resolve, reject) => {
@@ -291,13 +291,13 @@ class EasyTierManager {
 
       child.on('close', (code) => {
         if (code !== 0) {
-          reject(new Error(`CLI exited with code ${code}: ${stderr}`));
+          reject(new Error(`CLI 退出，退出码 ${code}: ${stderr}`));
         } else {
           try {
             const result = JSON.parse(stdout);
             resolve(result);
           } catch (e) {
-            reject(new Error(`Failed to parse CLI output: ${e.message}`));
+            reject(new Error(`解析 CLI 输出失败: ${e.message}`));
           }
         }
       });
