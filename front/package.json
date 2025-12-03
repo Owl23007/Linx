@@ -48,7 +48,7 @@
     "better-sqlite3": "^12.4.6",
     "better-sqlite3-multiple-ciphers": "^12.4.6",
     "crypto-js": "^4.2.0",
-    "element-plus": "^2.11.8",
+    "element-plus": "^2.11.9",
     "keytar": "^7.9.0",
     "pinia": "^3.0.4",
     "sockjs-client": "^1.6.1",
