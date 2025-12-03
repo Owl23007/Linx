@@ -1,8 +1,5 @@
 package top.contins.linx.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +21,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/user")
-@Tag(name = "用户管理", description = "聊天服务中的用户状态与信息查询")
 public class UserController {
 
     private final UserService userService;
@@ -39,10 +35,10 @@ public class UserController {
     /**
      * 根据用户ID获取用户状态
      */
-    @Operation(summary = "根据用户ID获取用户状态", description = "返回用户的在线状态、最后活跃时间")
+    
     @GetMapping("/{userId}")
     public Result<UserVO> getUser(
-            @Parameter(description = "目标用户ID", required = true)
+            
             @PathVariable Long userId) {
         try {
             UserVO userVO = userService.getUserVO(userId);
@@ -55,7 +51,7 @@ public class UserController {
     /**
      * 获取当前登录用户的信息（通过JWT解析）
      */
-    @Operation(summary = "获取当前登录用户信息", description = "基于 Authorization: Bearer <token> 自动识别当前用户")
+    
     @GetMapping("/me")
     public Result<UserVO> getCurrentUser() {
         try {
@@ -74,7 +70,7 @@ public class UserController {
     /**
      * 更新用户在线状态（如：在线、离开、勿扰）
      */
-    @Operation(summary = "更新用户在线状态", description = "用户主动切换状态，如 'online', 'away', 'dnd', 'offline'")
+    
     @PostMapping("/status")
     public Result<UserVO> updateUserStatus(@RequestBody Map<String, String> body) {
         String statusStr = body.get("status");

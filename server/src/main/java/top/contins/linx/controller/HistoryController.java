@@ -1,9 +1,7 @@
 package top.contins.linx.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -28,7 +26,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequestMapping("/chat/history")
-@Tag(name = "聊天历史记录", description = "聊天历史记录管理接口")
 public class HistoryController {
 
     private final ChatMessageService chatMessageService;
@@ -43,12 +40,11 @@ public class HistoryController {
     /**
      * 获取私聊历史记录
      */
-    @Operation(summary = "获取私聊历史记录", description = "分页获取两个用户之间的私聊历史记录")
     @GetMapping("/private/{otherUserId}")
     public Result<Map<String, Object>> getPrivateChatHistory(
-            @Parameter(description = "对方用户ID") @PathVariable Long otherUserId,
-            @Parameter(description = "页码，从0开始") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "每页条数") @RequestParam(defaultValue = "20") int size) {
+            @PathVariable Long otherUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
         try {
             UserSession userSession = applicationContext.getBean(UserSession.class);
@@ -85,12 +81,12 @@ public class HistoryController {
     /**
      * 获取群聊历史记录
      */
-    @Operation(summary = "获取群聊历史记录", description = "分页获取群组的聊天历史记录")
+    
     @GetMapping("/group/{groupId}")
     public Result<Map<String, Object>> getGroupChatHistory(
-            @Parameter(description = "群组ID") @PathVariable String groupId,
-            @Parameter(description = "页码，从0开始") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "每页条数") @RequestParam(defaultValue = "20") int size) {
+            @PathVariable String groupId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
         try {
             UserSession userSession = applicationContext.getBean(UserSession.class);
@@ -126,11 +122,10 @@ public class HistoryController {
     /**
      * 获取指定时间之后的私聊消息（用于增量同步）
      */
-    @Operation(summary = "获取指定时间之后的私聊消息", description = "用于增量同步，获取某个时间点之后的所有消息")
+    
     @GetMapping("/private/{otherUserId}/after")
     public Result<List<ChatMessage>> getPrivateMessagesAfter(
-            @Parameter(description = "对方用户ID") @PathVariable Long otherUserId,
-            @Parameter(description = "起始时间")
+            @PathVariable Long otherUserId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime afterTime) {
 
         try {
@@ -159,11 +154,10 @@ public class HistoryController {
     /**
      * 获取指定时间之后的群聊消息
      */
-    @Operation(summary = "获取指定时间之后的群聊消息", description = "用于增量同步，获取某个时间点之后的所有群聊消息")
+    
     @GetMapping("/group/{groupId}/after")
     public Result<List<ChatMessage>> getGroupMessagesAfter(
-            @Parameter(description = "群组ID") @PathVariable String groupId,
-            @Parameter(description = "起始时间")
+            @PathVariable String groupId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime afterTime) {
 
         try {
@@ -189,10 +183,10 @@ public class HistoryController {
     /**
      * 获取未读消息数量
      */
-    @Operation(summary = "获取未读消息数量", description = "获取与指定用户的未读私聊消息数量")
+    
     @GetMapping("/unread/{otherUserId}")
     public Result<Map<String, Object>> getUnreadCount(
-            @Parameter(description = "对方用户ID") @PathVariable Long otherUserId) {
+            @PathVariable Long otherUserId) {
 
         try {
             UserSession userSession = applicationContext.getBean(UserSession.class);
@@ -219,7 +213,7 @@ public class HistoryController {
     /**
      * 获取所有未读消息数量
      */
-    @Operation(summary = "获取所有未读消息数量", description = "获取当前用户的所有未读消息总数")
+    
     @GetMapping("/unread/total")
     public Result<Map<String, Object>> getTotalUnreadCount() {
         try {
@@ -246,10 +240,10 @@ public class HistoryController {
     /**
      * 标记消息为已读
      */
-    @Operation(summary = "标记消息为已读", description = "标记单条消息为已读状态")
+    
     @PutMapping("/read/{messageId}")
     public Result<String> markMessageAsRead(
-            @Parameter(description = "消息ID") @PathVariable String messageId) {
+            @PathVariable String messageId) {
 
         try {
             boolean success = chatMessageService.markMessageAsRead(messageId);
@@ -268,10 +262,10 @@ public class HistoryController {
     /**
      * 批量标记私聊消息为已读
      */
-    @Operation(summary = "批量标记私聊消息为已读", description = "将与指定用户的所有未读消息标记为已读")
+    
     @PutMapping("/read/batch/{otherUserId}")
     public Result<Map<String, Object>> markPrivateMessagesAsRead(
-            @Parameter(description = "对方用户ID") @PathVariable Long otherUserId) {
+            @PathVariable Long otherUserId) {
 
         try {
             UserSession userSession = applicationContext.getBean(UserSession.class);
@@ -298,10 +292,10 @@ public class HistoryController {
     /**
      * 删除消息
      */
-    @Operation(summary = "删除消息", description = "软删除指定消息")
+    
     @DeleteMapping("/{messageId}")
     public Result<String> deleteMessage(
-            @Parameter(description = "消息ID") @PathVariable String messageId) {
+            @PathVariable String messageId) {
 
         try {
             boolean success = chatMessageService.deleteMessage(messageId);
@@ -320,10 +314,10 @@ public class HistoryController {
     /**
      * 获取最近的聊天会话
      */
-    @Operation(summary = "获取最近的聊天会话", description = "获取用户最近的聊天会话列表（每个会话显示最后一条消息）")
+    
     @GetMapping("/conversations")
     public Result<List<ChatMessage>> getRecentConversations(
-            @Parameter(description = "返回的会话数量") @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(defaultValue = "20") int limit) {
 
         try {
             UserSession userSession = applicationContext.getBean(UserSession.class);
@@ -350,13 +344,13 @@ public class HistoryController {
     /**
      * 搜索私聊消息
      */
-    @Operation(summary = "搜索私聊消息", description = "在私聊历史中搜索包含关键词的消息")
+    
     @GetMapping("/search/private/{otherUserId}")
     public Result<Map<String, Object>> searchPrivateMessages(
-            @Parameter(description = "对方用户ID") @PathVariable Long otherUserId,
-            @Parameter(description = "搜索关键词") @RequestParam String keyword,
-            @Parameter(description = "页码，从0开始") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "每页条数") @RequestParam(defaultValue = "20") int size) {
+            @PathVariable Long otherUserId,
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
         try {
             UserSession userSession = applicationContext.getBean(UserSession.class);
@@ -392,13 +386,13 @@ public class HistoryController {
     /**
      * 根据消息类型查询
      */
-    @Operation(summary = "根据消息类型查询", description = "获取指定类型的私聊消息（如图片、文件等）")
+    
     @GetMapping("/type/private/{otherUserId}")
     public Result<Map<String, Object>> getPrivateMessagesByType(
-            @Parameter(description = "对方用户ID") @PathVariable Long otherUserId,
-            @Parameter(description = "消息类型") @RequestParam MessageType type,
-            @Parameter(description = "页码，从0开始") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "每页条数") @RequestParam(defaultValue = "20") int size) {
+            @PathVariable Long otherUserId,
+            @RequestParam MessageType type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
         try {
             UserSession userSession = applicationContext.getBean(UserSession.class);

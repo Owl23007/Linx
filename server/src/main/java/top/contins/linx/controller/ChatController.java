@@ -1,6 +1,5 @@
 package top.contins.linx.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +40,6 @@ public class ChatController {
      * 前端在建立 WebSocket 连接前先调用此接口，将用户信息存储到 HTTP Session 中
      * 后续的 WebSocket 握手会从 Session 中读取用户信息
      */
-    @Operation(summary = "建立 WebSocket 会话", description = "在建立 WebSocket 连接前调用，将用户身份信息存储到 HTTP Session")
     @PostMapping("/link")
     public Result<Map<String, String>> establishWebSocketSession(HttpServletRequest request) {
         try {

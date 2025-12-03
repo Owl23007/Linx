@@ -1,8 +1,5 @@
 package top.contins.linx.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +19,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/groups")
-@Tag(name = "群组管理", description = "群组创建、加入、退出、成员管理等功能")
 public class GroupController {
 
     private final GroupService groupService;
@@ -37,7 +33,6 @@ public class GroupController {
     /**
      * 创建群组
      */
-    @Operation(summary = "创建群组", description = "创建新的群组")
     @PostMapping
     public Result<GroupVO> createGroup(@RequestBody CreateGroupDto createGroupDto) {
         try {
@@ -52,7 +47,6 @@ public class GroupController {
     /**
      * 获取用户加入的群组列表
      */
-    @Operation(summary = "获取群组列表", description = "获取当前用户加入的所有群组")
     @GetMapping
     public Result<List<GroupVO>> getUserGroups() {
         try {
@@ -67,10 +61,8 @@ public class GroupController {
     /**
      * 获取群组详情
      */
-    @Operation(summary = "获取群组详情", description = "获取指定群组的详细信息")
     @GetMapping("/{groupId}")
     public Result<GroupVO> getGroupDetails(
-            @Parameter(description = "群组ID", required = true)
             @PathVariable Long groupId) {
         try {
             Long currentUserId = getCurrentUserId();
@@ -84,10 +76,8 @@ public class GroupController {
     /**
      * 加入群组
      */
-    @Operation(summary = "加入群组", description = "申请加入指定群组")
     @PostMapping("/{groupId}/join")
     public Result<String> joinGroup(
-            @Parameter(description = "群组ID", required = true)
             @PathVariable Long groupId) {
         try {
             Long currentUserId = getCurrentUserId();
@@ -101,10 +91,8 @@ public class GroupController {
     /**
      * 退出群组
      */
-    @Operation(summary = "退出群组", description = "退出指定群组")
     @PostMapping("/{groupId}/leave")
     public Result<String> leaveGroup(
-            @Parameter(description = "群组ID", required = true)
             @PathVariable Long groupId) {
         try {
             Long currentUserId = getCurrentUserId();
@@ -118,10 +106,8 @@ public class GroupController {
     /**
      * 解散群组
      */
-    @Operation(summary = "解散群组", description = "解散群组（仅群主可操作）")
     @DeleteMapping("/{groupId}")
     public Result<String> disbandGroup(
-            @Parameter(description = "群组ID", required = true)
             @PathVariable Long groupId) {
         try {
             Long currentUserId = getCurrentUserId();
@@ -135,10 +121,10 @@ public class GroupController {
     /**
      * 获取群组成员列表
      */
-    @Operation(summary = "获取群组成员", description = "获取指定群组的成员列表")
+    
     @GetMapping("/{groupId}/members")
     public Result<List<GroupMemberVO>> getGroupMembers(
-            @Parameter(description = "群组ID", required = true)
+            
             @PathVariable Long groupId) {
         try {
             Long currentUserId = getCurrentUserId();
@@ -152,12 +138,12 @@ public class GroupController {
     /**
      * 移除群组成员
      */
-    @Operation(summary = "移除群组成员", description = "从群组中移除指定成员（管理员操作）")
+    
     @DeleteMapping("/{groupId}/members/{userId}")
     public Result<String> removeMember(
-            @Parameter(description = "群组ID", required = true)
+            
             @PathVariable Long groupId,
-            @Parameter(description = "用户ID", required = true)
+            
             @PathVariable Long userId) {
         try {
             Long currentUserId = getCurrentUserId();
@@ -171,12 +157,12 @@ public class GroupController {
     /**
      * 设置成员角色
      */
-    @Operation(summary = "设置成员角色", description = "设置群组成员的角色（群主操作）")
+    
     @PutMapping("/{groupId}/members/{userId}/role")
     public Result<String> setMemberRole(
-            @Parameter(description = "群组ID", required = true)
+            
             @PathVariable Long groupId,
-            @Parameter(description = "用户ID", required = true)
+            
             @PathVariable Long userId,
             @RequestBody Map<String, String> body) {
         try {
@@ -193,10 +179,10 @@ public class GroupController {
     /**
      * 搜索群组
      */
-    @Operation(summary = "搜索群组", description = "根据关键词搜索群组")
+    
     @GetMapping("/search")
     public Result<List<GroupVO>> searchGroups(
-            @Parameter(description = "搜索关键词", required = true)
+            
             @RequestParam String keyword) {
         try {
             Long currentUserId = getCurrentUserId();

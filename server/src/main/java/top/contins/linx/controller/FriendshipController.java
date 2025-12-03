@@ -1,8 +1,5 @@
 package top.contins.linx.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -22,7 +19,6 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/friends")
-@Tag(name = "好友管理", description = "好友添加、删除、列表查询等功能")
 public class FriendshipController {
 
     private final FriendshipService friendshipService;
@@ -38,7 +34,6 @@ public class FriendshipController {
     /**
      * 发送好友请求
      */
-    @Operation(summary = "发送好友请求", description = "向指定用户发送好友请求")
     @PostMapping("/request")
     public Result<String> sendFriendRequest(@RequestBody FriendRequestDto request) {
         try {
@@ -53,10 +48,8 @@ public class FriendshipController {
     /**
      * 处理好友请求
      */
-    @Operation(summary = "处理好友请求", description = "接受或拒绝好友请求")
     @PostMapping("/request/{friendshipId}/handle")
     public Result<String> handleFriendRequest(
-            @Parameter(description = "好友关系ID", required = true)
             @PathVariable Long friendshipId,
             @RequestBody Map<String, Boolean> body) {
         try {
@@ -72,7 +65,6 @@ public class FriendshipController {
     /**
      * 获取好友列表
      */
-    @Operation(summary = "获取好友列表", description = "获取当前用户的所有好友")
     @GetMapping
     public Result<List<FriendVO>> getFriends() {
         try {
@@ -88,7 +80,6 @@ public class FriendshipController {
     /**
      * 获取收到的好友请求
      */
-    @Operation(summary = "获取收到的好友请求", description = "获取当前用户收到的待处理好友请求")
     @GetMapping("/requests/received")
     public Result<List<FriendVO>> getReceivedFriendRequests() {
         try {
@@ -103,7 +94,6 @@ public class FriendshipController {
     /**
      * 获取发送的好友请求
      */
-    @Operation(summary = "获取发送的好友请求", description = "获取当前用户发送的待处理好友请求")
     @GetMapping("/requests/sent")
     public Result<List<FriendVO>> getSentFriendRequests() {
         try {
@@ -118,10 +108,8 @@ public class FriendshipController {
     /**
      * 删除好友
      */
-    @Operation(summary = "删除好友", description = "删除指定好友")
     @DeleteMapping("/{friendId}")
     public Result<String> removeFriend(
-            @Parameter(description = "好友用户ID", required = true)
             @PathVariable Long friendId) {
         try {
             Long currentUserId = getCurrentUserId();
@@ -135,10 +123,8 @@ public class FriendshipController {
     /**
      * 更新好友备注
      */
-    @Operation(summary = "更新好友备注", description = "修改好友的备注名称")
     @PutMapping("/{friendId}/remark")
     public Result<String> updateFriendRemark(
-            @Parameter(description = "好友用户ID", required = true)
             @PathVariable Long friendId,
             @RequestBody Map<String, String> body) {
         try {

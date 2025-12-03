@@ -3,9 +3,7 @@ package top.contins.linx.repository;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 import top.contins.linx.model.entity.ChatMessageEntity;
 
 import java.time.LocalDateTime;
@@ -56,13 +54,13 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessageEntity> {
             "receiver_id = #{userId} AND is_read = false")
     long countAllUnreadMessages(@Param("userId") Long userId);
 
-    @org.apache.ibatis.annotations.Update("UPDATE chat_messages SET is_read = true, read_at = #{readAt} WHERE message_id = #{messageId}")
+    @Update("UPDATE chat_messages SET is_read = true, read_at = #{readAt} WHERE message_id = #{messageId}")
     int markAsRead(@Param("messageId") String messageId, @Param("readAt") LocalDateTime readAt);
 
-    @org.apache.ibatis.annotations.Update("UPDATE chat_messages SET is_read = true, read_at = #{readAt} WHERE receiver_id = #{userId} AND sender_id = #{otherUserId} AND is_read = false")
+    @Update("UPDATE chat_messages SET is_read = true, read_at = #{readAt} WHERE receiver_id = #{userId} AND sender_id = #{otherUserId} AND is_read = false")
     int markPrivateMessagesAsRead(@Param("userId") Long userId, @Param("otherUserId") Long otherUserId, @Param("readAt") LocalDateTime readAt);
 
-    @org.apache.ibatis.annotations.Update("UPDATE chat_messages SET is_deleted = true WHERE message_id = #{messageId}")
+    @Update("UPDATE chat_messages SET is_deleted = true WHERE message_id = #{messageId}")
     int softDeleteMessage(@Param("messageId") String messageId, @Param("deletedAt") LocalDateTime deletedAt);
 
     @Select("SELECT * FROM chat_messages WHERE id IN (" +

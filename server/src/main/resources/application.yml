@@ -1,6 +1,8 @@
 spring:
   application:
     name: linx
+  main:
+    allow-bean-definition-overriding: true
   profiles:
     active: dev
 
