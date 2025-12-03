@@ -1,0 +1,125 @@
+name: Dependabot Auto Merge
+
+on:
+  pull_request:
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  auto-merge:
+    name: Auto Merge Dependabot PR
+    runs-on: ubuntu-latest
+    # 只在 Dependabot 创建的 PR 上运行
+    if: ${{ github.actor == 'dependabot[bot]' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get PR Details
+        id: pr-details
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              // 从 check_suite 事件获取 PR
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                sort: 'updated',
+                direction: 'desc',
+                per_page: 10
+              });
+
+              const dependabotPr = prs.find(p => p.user.login === 'dependabot[bot]');
+              if (!dependabotPr) {
+                console.log('No Dependabot PR found');
+                return;
+              }
+
+              console.log(`Found Dependabot PR #${dependabotPr.number}`);
+              core.setOutput('pr-number', dependabotPr.number);
+            } else {
+              core.setOutput('pr-number', pr.number);
+            }
+
+      - name: Check PR Status
+        id: check-status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.pr-details.outputs.pr-number }};
+            if (!prNumber) {
+              core.setOutput('can-merge', 'false');
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            console.log('PR Status:', {
+              number: pr.number,
+              draft: pr.draft,
+              mergeable: pr.mergeable,
+              mergeable_state: pr.mergeable_state,
+              state: pr.state
+            });
+
+            // 检查是否可以合并
+            const canMerge = !pr.draft &&
+                            pr.mergeable &&
+                            pr.mergeable_state === 'clean' &&
+                            pr.state === 'open';
+
+            core.setOutput('can-merge', canMerge ? 'true' : 'false');
+            core.setOutput('pr-number', prNumber);
+
+      - name: Enable Auto Merge
+        if: ${{ steps.check-status.outputs.can-merge == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.check-status.outputs.pr-number }};
+
+            try {
+              // 启用自动合并
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                merge_method: 'squash'
+              });
+
+              console.log(`PR #${prNumber} 已自动合并`);
+            } catch (error) {
+              console.log(`无法合并 PR #${prNumber}: ${error.message}`);
+              core.setFailed(error.message);
+            }
+
+      - name: Comment on PR
+        if: ${{ always() && steps.check-status.outputs.pr-number }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.check-status.outputs.pr-number }};
+            const canMerge = '${{ steps.check-status.outputs.can-merge }}' === 'true';
+
+            if (canMerge) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: 'CI 检查全部通过，已自动合并此 PR'
+              });
+            }
