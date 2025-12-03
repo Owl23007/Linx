@@ -14,9 +14,12 @@ const CONFIG = {
   CLEAN_SECONDARY_INSTANCES: true,
 };
 
-// 模块级状态：用于跟踪清理回调是否已注册
+// ==========================================
+// 模块状态
+// ==========================================
 let cleanupRegistered = false;
 let currentLockFile = null;
+let isReleasingLock = false; // 防止重复释放
 
 // ==========================================
 // 工具函数
@@ -24,6 +27,8 @@ let currentLockFile = null;
 
 /**
  * 检查进程是否正在运行
+ * @param {number} pid - 进程ID
+ * @returns {boolean}
  */
 function isProcessRunning(pid) {
   try {
@@ -38,6 +43,8 @@ function isProcessRunning(pid) {
 
 /**
  * 确保目录存在
+ * @param {string} dirPath - 目录路径
+ * @returns {boolean} 是否成功
  */
 function ensureDir(dirPath) {
   try {
@@ -54,7 +61,9 @@ function ensureDir(dirPath) {
 }
 
 /**
- * 清空目录内容（保留目录本身）
+ * 清空目录内容
+ * @param {string} dirPath - 目录路径
+ * @returns {boolean} 是否成功
  */
 function cleanDir(dirPath) {
   try {
@@ -77,6 +86,7 @@ function cleanDir(dirPath) {
 
 /**
  * 解析基础数据目录
+ * @returns {{ baseDir: string, isPortable: boolean }}
  */
 function resolveBaseDir() {
   const exeDir = path.dirname(app.getPath('exe'));
@@ -109,60 +119,98 @@ function resolveBaseDir() {
 
 /**
  * 检查锁文件状态
+ * @param {string} lockFile - 锁文件路径
+ * @returns {{ locked: boolean, isStale: boolean, stalePid: number|null }}
  */
-function checkLock(lockFile) {
+function checkLockState(lockFile) {
   if (!fs.existsSync(lockFile)) {
-    return { locked: false, pid: null };
+    return { locked: false, isStale: false, stalePid: null };
   }
 
   try {
     const pid = parseInt(fs.readFileSync(lockFile, 'utf8'), 10);
-    if (isProcessRunning(pid)) {
-      return { locked: true, pid };
-    }
-    logger.info('APP_SETUP', `发现陈旧的锁文件 (PID: ${pid})，将覆盖`);
 
-    return { locked: false, pid };
+    if (isProcessRunning(pid)) {
+      return { locked: true, isStale: false, stalePid: null };
+    }
+
+    // 进程已不存在，锁文件是陈旧的
+    return { locked: false, isStale: true, stalePid: pid };
   } catch {
-    return { locked: false, pid: null };
+    // 读取失败，视为无效锁文件
+    return { locked: false, isStale: true, stalePid: null };
   }
 }
 
 /**
  * 尝试获取锁
+ * @param {string} lockFile - 锁文件路径
+ * @returns {{ success: boolean, isStale: boolean, stalePid: number|null }}
  */
-function acquireLock(lockFile) {
-  const { locked } = checkLock(lockFile);
-  if (locked) return false;
+function tryAcquireLock(lockFile) {
+  const state = checkLockState(lockFile);
 
+  // 已被其他活跃进程锁定
+  if (state.locked) {
+    return { success: false, isStale: false, stalePid: null };
+  }
+
+  // 尝试写入锁文件
   try {
     fs.writeFileSync(lockFile, String(process.pid), 'utf8');
     currentLockFile = lockFile;
     registerCleanup();
 
-    return true;
+    return {
+      success: true,
+      isStale: state.isStale,
+      stalePid: state.stalePid
+    };
   } catch (error) {
     logger.error('APP_SETUP', `锁操作失败: ${error.message}`);
 
-    return false;
+    return { success: false, isStale: state.isStale, stalePid: state.stalePid };
   }
 }
 
 /**
  * 释放锁
+ * @returns {boolean} 是否成功释放
  */
 function releaseLock() {
-  if (!currentLockFile) return;
+  // 防止并发重复释放
+  if (isReleasingLock || !currentLockFile) return false;
+
+  isReleasingLock = true;
 
   try {
     if (fs.existsSync(currentLockFile)) {
-      const pid = parseInt(fs.readFileSync(currentLockFile, 'utf8'), 10);
+      const content = fs.readFileSync(currentLockFile, 'utf8');
+      const pid = parseInt(content, 10);
+
+      // 仅删除属于当前进程的锁
       if (pid === process.pid) {
         fs.unlinkSync(currentLockFile);
+
+        if (typeof logger.debug === 'function') {
+          logger.debug('APP_SETUP', `锁已释放: ${currentLockFile}`);
+        } else {
+          logger.info('APP_SETUP', '应用锁已释放');
+        }
+
+        return true;
       }
     }
-  } catch {
-    // 忽略清理错误
+
+    return false;
+  } catch (error) {
+    // 静默处理清理错误，避免退出时抛出异常
+    logger.warn?.('APP_SETUP', `释放锁时出错: ${error.message}`);
+
+    return false;
+  } finally {
+    currentLockFile = null;
+    isReleasingLock = false;
   }
 }
 
@@ -172,9 +220,46 @@ function releaseLock() {
 function registerCleanup() {
   if (cleanupRegistered) return;
 
+  // 创建安全的退出处理器
+  const safeExit = (code) => {
+    releaseLock();
+    process.exit(code);
+  };
+
+  // Node.js 进程事件
   process.on('exit', releaseLock);
-  process.on('SIGINT', () => { releaseLock(); process.exit(130); });
-  process.on('SIGTERM', () => { releaseLock(); process.exit(143); });
+  process.on('SIGINT', () => safeExit(130));   // Ctrl+C
+  process.on('SIGTERM', () => safeExit(143));  // kill 命令
+  process.on('SIGHUP', () => safeExit(129));   // 终端关闭
+
+  // 未捕获异常处理（记录后退出）
+  process.on('uncaughtException', (error) => {
+    logger.error('APP_SETUP', `未捕获异常: ${error.message}`, { stack: error.stack });
+    releaseLock();
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    logger.error('APP_SETUP', `未处理的Promise拒绝: ${reason}`);
+    releaseLock();
+    process.exit(1);
+  });
+
+  // Electron 应用生命周期事件
+  app.on('before-quit', () => {
+    releaseLock();
+  });
+
+  app.on('will-quit', () => {
+    releaseLock();
+  });
+
+  // Windows 特殊处理：窗口关闭事件
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      releaseLock();
+    }
+  });
 
   cleanupRegistered = true;
 }
@@ -185,6 +270,8 @@ function registerCleanup() {
 
 /**
  * 分配可用的实例槽位
+ * @param {string} baseDir - 基础目录
+ * @returns {{ instanceId: number, instancePath: string }|null}
  */
 function allocateInstance(baseDir) {
   for (let id = 1; id <= CONFIG.MAX_INSTANCES; id++) {
@@ -193,14 +280,19 @@ function allocateInstance(baseDir) {
     if (!ensureDir(instancePath)) continue;
 
     const lockFile = path.join(instancePath, CONFIG.LOCK_FILE_NAME);
-    const { locked } = checkLock(lockFile);
+    const result = tryAcquireLock(lockFile);
 
-    // 副实例（id > 1）且未被锁定时清理旧数据
-    if (!locked && CONFIG.CLEAN_SECONDARY_INSTANCES && id > 1) {
-      cleanDir(instancePath);
+    // 记录陈旧锁日志（仅在获取锁时输出一次）
+    if (result.isStale && result.stalePid) {
+      logger.info('APP_SETUP', `发现陈旧的锁文件 (PID: ${result.stalePid})，已覆盖`);
     }
 
-    if (acquireLock(lockFile)) {
+    if (result.success) {
+      // 副实例（id > 1）清理旧数据
+      if (CONFIG.CLEAN_SECONDARY_INSTANCES && id > 1) {
+        cleanDir(instancePath);
+      }
+
       return { instanceId: id, instancePath };
     }
   }
@@ -239,3 +331,9 @@ export function initializeUserData() {
     logger.error('APP_SETUP', '初始化失败', { error: error.message });
   }
 }
+
+/**
+ * 导出手动释放应用锁
+ * @returns {boolean} 是否成功释放
+ */
+export { releaseLock };
