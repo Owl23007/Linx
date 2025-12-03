@@ -38,7 +38,7 @@ jobs:
           script: |
             const inputs = {
               prNumber: '${{ github.event.inputs.pr-number }}'.trim() || null,
-              mergeAllOpen: (${{ github.event.inputs.merge-all-open }} === true),
+              mergeAllOpen: ('${{ github.event.inputs.merge-all-open }}' === 'true'),
             };
 
             let prNumbers = [];
@@ -68,7 +68,7 @@ jobs:
                   prNumbers.push(pr.number);
                 }
               }
-              console.log(`📌 找到 ${prNumbers.length} 个开放的 Dependabot PR: #${prNumbers.join(', #')}`);
+              console.log(`📌 找到 ${prNumbers.length} 个开放的 Dependabot PR: ${prNumbers.length > 0 ? '#' + prNumbers.join(', #') : '无'}`);
             }
             // 3. 自动事件（pull_request / check_suite）
             else if (context.eventName === 'pull_request') {
@@ -97,7 +97,7 @@ jobs:
 
             if (prNumbers.length === 0) {
               console.log('ℹ️ 未找到需要处理的 Dependabot PR');
-              core.setOutput('pr-numbers', '');
+              core.setOutput('pr-numbers', '[]');
               return;
             }
 
@@ -166,7 +166,7 @@ jobs:
                 console.log(`✅ 成功合并 PR #${prNumber}`);
                 results.push({ pr: prNumber, status: 'merged' });
 
-                // 评论（可选）
+                // 评论
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
