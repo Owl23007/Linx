@@ -162,14 +162,19 @@ class ElectronApp {
     try {
       logger.info('APP_QUIT', '应用程序正在退出...');
 
+      // 停止 EasyTier 进程
+      if (this.easyTierManager) {
+        const stopped = this.easyTierManager.stop();
+        if (stopped) {
+          logger.info('EASYTIER_CLOSE', 'EasyTier 进程已停止');
+        }
+      }
+
       // 关闭数据库连接
       if (this.databaseManager) {
         await this.databaseManager.close();
         logger.info('DATABASE_CLOSE', '数据库连接已关闭');
       }
-
-      // 可以在这里添加其他清理逻辑
-      // 例如：停止 EasyTier 进程、保存用户状态等
 
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));

@@ -33,10 +33,11 @@ class EasyTierManager {
 
   async init() {
     if (!fs.existsSync(this.binPath)) {
-      logger.error('EASYTIER', `未找到可执行文件: ${this.binPath}`);
-    } else {
-      logger.info('EASYTIER', `找到可执行文件: ${this.binPath}`);
+      const error = new Error(`未找到 EasyTier 可执行文件: ${this.binPath}`);
+      logger.error('EASYTIER', error.message);
+      throw error;
     }
+    logger.info('EASYTIER', `找到可执行文件: ${this.binPath}`);
   }
 
   start(config) {

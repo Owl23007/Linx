@@ -216,49 +216,17 @@ function releaseLock() {
 
 /**
  * 注册退出时的清理逻辑
+ * 此处仅保留锁文件释放相关的最小事件监听
  */
 function registerCleanup() {
   if (cleanupRegistered) return;
 
-  // 创建安全的退出处理器
-  const safeExit = (code) => {
-    releaseLock();
-    process.exit(code);
-  };
-
-  // Node.js 进程事件
+  // 进程退出时释放锁
   process.on('exit', releaseLock);
-  process.on('SIGINT', () => safeExit(130));   // Ctrl+C
-  process.on('SIGTERM', () => safeExit(143));  // kill 命令
-  process.on('SIGHUP', () => safeExit(129));   // 终端关闭
 
-  // 未捕获异常处理（记录后退出）
-  process.on('uncaughtException', (error) => {
-    logger.error('APP_SETUP', `未捕获异常: ${error.message}`, { stack: error.stack });
-    releaseLock();
-    process.exit(1);
-  });
-
-  process.on('unhandledRejection', (reason) => {
-    logger.error('APP_SETUP', `未处理的Promise拒绝: ${reason}`);
-    releaseLock();
-    process.exit(1);
-  });
-
-  // Electron 应用生命周期事件
-  app.on('before-quit', () => {
-    releaseLock();
-  });
-
+  // Electron will-quit 事件确保锁被释放
   app.on('will-quit', () => {
     releaseLock();
-  });
-
-  // Windows 特殊处理：窗口关闭事件
-  app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-      releaseLock();
-    }
   });
 
   cleanupRegistered = true;

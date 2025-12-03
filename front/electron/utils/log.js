@@ -54,7 +54,7 @@ const LEVEL_COLORS = {
 const RESET_COLOR = '\x1b[0m';
 
 class Logger {
-  // 添加静态实例变量，确保单例
+  // 静态实例变量，全局单例
   static instance = null;
 
   constructor() {
@@ -68,7 +68,7 @@ class Logger {
     this.errorLogPath = null;
     this.currentLogPath = null;
     this.logsDir = null;
-    this.currentLevel = LOG_LEVELS.DEBUG; // 可以动态调整日志级别
+    this.currentLevel = LOG_LEVELS.DEBUG; // 动态调整日志级别
     this.init();
   }
 
@@ -91,33 +91,14 @@ class Logger {
 
     // 错误专用日志文件 (只记录 error)
     this.errorLogPath = path.join(this.logsDir, 'error.log');
-
-    // 清理旧日志文件
-    this.cleanOldLogs();
-
-    // 设置全局错误处理
-    this.setupGlobalHandlers();
+    this.setupElectronHandlers();
   }
 
   /**
-   * 设置全局错误处理器
+   * 设置 Electron 特定的错误处理器
    */
-  setupGlobalHandlers() {
-    // 处理未捕获的异常（同步错误）
-    process.on('uncaughtException', async (error, origin) => {
-      await this.error('UNCAUGHT_EXCEPTION', error, { origin });
-    });
-
-    // 处理未处理的 Promise 拒绝（异步错误）
-    process.on('unhandledRejection', async (reason, promise) => {
-      const error = reason instanceof Error ? reason : new Error(String(reason));
-      await this.error('UNHANDLED_REJECTION', error, {
-        promise: promise.toString(),
-        stack: error.stack || new Error().stack
-      });
-    });
-
-    // 处理警告
+  setupElectronHandlers() {
+    // 处理 Node.js 警告
     process.on('warning', (warning) => {
       this.warn('SYSTEM_WARNING', warning.message, {
         name: warning.name,
@@ -172,14 +153,14 @@ class Logger {
 
   /**
    * 设置日志级别
-   * @param {number} level - 日志级别（使用 LOG_LEVELS 常量）
+   * @param {number} level - 日志级别
    */
   setLevel(level) {
     this.currentLevel = level;
   }
 
   /**
-   * 获取格式化的时间戳（含毫秒）
+   * 获取格式化的时间戳
    * @returns {string} 格式化的时间戳
    */
   getTimestamp() {
@@ -191,7 +172,7 @@ class Logger {
   }
 
   /**
-   * 获取调用位置信息（文件名和行号）
+   * 获取调用位置信息
    * @returns {string} 调用位置，格式如 "setup.js:42"
    */
   getCallerLocation(skipInternal = true) {
@@ -201,7 +182,7 @@ class Logger {
       // 跳过 Error、getCallerLocation、debug/info/warn/error、以及可能的内部调用
       for (let i = 2; i < stack.length; i++) {
         const line = stack[i];
-        // 如果需要跳过 log.js 自身的调用
+        // 跳过 log.js 自身的调用
         if (skipInternal && (line.includes('utils/log.js') || line.includes('utils\\log.js'))) continue;
         // 匹配文件路径和行号
         const match = line.match(/(?:at\s+)?(?:.*?\s+\()?(.+?):(\d+)(?::\d+)?\)?$/);
@@ -237,7 +218,7 @@ class Logger {
   }
 
   /**
-   * 记录 DEBUG 级别日志（仅开发环境控制台，不保存文件）
+   * 记录 DEBUG 级别日志（仅在开发环境输出）
    * @param {string} tag - 日志标签
    * @param {string} message - 日志消息
    * @param {object} [context={}] - 额外上下文
@@ -473,7 +454,7 @@ Node.js Version: ${logInfo.nodeVersion}
     // 严重的系统级错误应该退出应用
     const fatalErrors = [
       'EACCES',  // 权限错误
-      'ENOENT',  // 文件不存在（关键文件）
+      'ENOENT',  // 文件不存在
       'EMFILE',  // 文件描述符用尽
       'ENOMEM'   // 内存不足
     ];
@@ -658,7 +639,7 @@ Node.js Version: ${logInfo.nodeVersion}
         console.log(this.formatConsoleOutput('INFO', 'Logger', `找到 ${fileInfos.length} 个时间戳日志文件`, this.getCallerLocation(false)));
       }
 
-      // 1. 删除超过指定天数的文件（基于文件名中的时间戳）
+      // 1. 删除超过指定天数的文件
       let deletedCount = 0;
       fileInfos.forEach(fileInfo => {
         if (fileInfo.timestamp < cutoffTime) {
@@ -676,7 +657,7 @@ Node.js Version: ${logInfo.nodeVersion}
         }
       });
 
-      // 2. 重新统计剩余文件（排除已删除的）
+      // 2. 重新统计剩余文件
       const remainingFiles = fileInfos.filter(fileInfo => fileInfo.timestamp >= cutoffTime);
 
       // 3. 如果文件数量超过限制，删除最旧的文件
@@ -712,5 +693,5 @@ Node.js Version: ${logInfo.nodeVersion}
 // 导出单例实例
 export const logger = new Logger();
 
-// 导出日志级别常量，方便外部使用
+// 导出日志级别常量，外部使用
 export { LOG_LEVELS };
