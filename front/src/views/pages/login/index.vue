@@ -79,7 +79,7 @@
                   </span>
                 </div>
 
-                <!-- Dropdown Menu (保持不变) -->
+                <!-- Dropdown Menu -->
                 <template #dropdown>
                   <el-dropdown-menu class="min-w-[200px]">
                     <el-dropdown-item v-for="account in savedAccounts" :key="account.user_id" :command="account">
@@ -313,22 +313,40 @@ const registerForm = ref<RegisterRequest>({
 
 // ========== 辅助函数 ==========
 function formatUrl(url: string): string {
-  let formattedUrl = url.trim();
-  if (!formattedUrl) return '';
+  if (!url) return '';
 
-  if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
-    formattedUrl = `http://${formattedUrl}`;
+  let trimmed = url.trim();
+  if (!trimmed) return '';
+
+  // 如果已经是完整 URL（含协议），直接用 URL 解析
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    try {
+      const parsed = new URL(trimmed);
+      // 如果路径已经是 /api 或 /api/xx，就不再加 /api
+      if (!parsed.pathname.startsWith('/api')) {
+        parsed.pathname = `/api${parsed.pathname === '/' ? '' : parsed.pathname}`;
+      }
+
+      return parsed.toString().replace(/\/+$/, ''); // 移除末尾多余的斜杠
+    } catch {
+      // 无效 URL，fallback 到简单处理
+      return url;
+    }
   }
 
-  if (formattedUrl.endsWith('/')) {
-    formattedUrl = formattedUrl.slice(0, -1);
-  }
+  // 无协议的情况：先补协议，再解析
+  const withProtocol = `https://${trimmed}`;
+  try {
+    const parsed = new URL(withProtocol);
+    if (!parsed.pathname.startsWith('/api')) {
+      parsed.pathname = `/api${parsed.pathname === '/' ? '' : parsed.pathname}`;
+    }
 
-  if (!formattedUrl.endsWith('/api')) {
-    formattedUrl += '/api';
+    return parsed.toString().replace(/\/+$/, '');
+  } catch {
+    // 仍无效，返回原始
+    return url;
   }
-
-  return formattedUrl;
 }
 
 // ========== 窗口操作函数 ==========
@@ -717,7 +735,6 @@ async function handleRegister(): Promise<void> {
 
 // ========== 生命周期 ==========
 onMounted(async () => {
-
   // 初始化拖动功能
   if (dragAreaRef.value) {
     const cleanup = setupDragArea(dragAreaRef.value);
