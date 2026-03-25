@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "checkJs": false
+  },
+  "include": ["electron/**/*.js", "scripts/**/*.js"],
+  "exclude": ["node_modules", "dist", "release"]
+}

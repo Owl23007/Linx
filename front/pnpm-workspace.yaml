@@ -1,5 +1,5 @@
 packages:
-  - '.'
+  - .
 
 onlyBuiltDependencies:
   - better-sqlite3
@@ -7,4 +7,6 @@ onlyBuiltDependencies:
   - electron
   - esbuild
   - keytar
+  - less
+  - sharp
   - vue-demi
