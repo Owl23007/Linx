@@ -1,5 +1,5 @@
 <template>
-  <PanelCard title="快速操作" subtitle="先把常用动作放到首页，后续再接真实房间流程。">
+  <PanelCard title="快速操作" subtitle="常用联机动作集中在这里，支持快速创建、加入、刷新和网络设置。">
     <div class="grid gap-3 md:grid-cols-2">
       <button
         v-for="action in actions"

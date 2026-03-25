@@ -22,16 +22,101 @@
 
         <main class="min-h-0 overflow-auto bg-white/14 p-2.5 sm:p-3.5 md:p-4">
           <div class="space-y-4">
-            <!--OverviewHeader :title="overviewTitle" :subtitle="overviewSubtitle" :stats="overviewStats" /-->
+            <QuickActions v-if="isHomeView" :actions="quickActions" @select="handleQuickAction" />
 
-            <QuickActions :actions="quickActions" @select="handleQuickAction" />
+            <PanelCard v-if="isRoomsView" title="房间检索" subtitle="通过关键词和状态快速定位房间。">
+              <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <el-input
+                  v-model="roomKeyword"
+                  clearable
+                  placeholder="搜索房间名 / 房间码"
+                  class="lg:max-w-sm"
+                />
+                <div class="flex flex-wrap gap-2">
+                  <el-button round :type="roomStatusFilter === 'all' ? 'primary' : 'default'" @click="roomStatusFilter = 'all'">
+                    全部
+                  </el-button>
+                  <el-button round :type="roomStatusFilter === 'ready' ? 'primary' : 'default'" @click="roomStatusFilter = 'ready'">
+                    已就绪
+                  </el-button>
+                  <el-button round :type="roomStatusFilter === 'gathering' ? 'primary' : 'default'" @click="roomStatusFilter = 'gathering'">
+                    等待中
+                  </el-button>
+                  <el-button round :type="roomStatusFilter === 'warning' ? 'primary' : 'default'" @click="roomStatusFilter = 'warning'">
+                    需处理
+                  </el-button>
+                </div>
+              </div>
+            </PanelCard>
 
-            <NetworkPanel class="2xl:hidden" :summary="networkSummary" @refresh="refreshEasyTierStatus"
-              @open-settings="handleOpenSettings" @open-diagnostics="handleOpenDiagnostics" />
+            <NetworkPanel
+              v-if="isHomeView || isRoomsView"
+              class="2xl:hidden"
+              :summary="networkSummary"
+              @refresh="refreshEasyTierStatus"
+              @open-settings="handleOpenSettings"
+              @open-diagnostics="handleOpenDiagnostics"
+            />
 
-            <RoomList :rooms="recentRooms" @copy-code="handleCopyRoomCode" @open-room="handleOpenRoom" />
+            <NetworkPanel
+              v-if="isDiagnosticsView"
+              :summary="networkSummary"
+              @refresh="refreshEasyTierStatus"
+              @open-settings="handleOpenSettings"
+              @open-diagnostics="handleOpenDiagnostics"
+            />
 
-            <PanelCard v-if="currentRoom" title="当前房间" subtitle="展示成员、房主、连接模式和我的虚拟 IP。">
+            <PanelCard v-if="isDiagnosticsView" title="连接诊断" subtitle="按顺序检查服务状态、房间状态和成员可见性。">
+              <div class="grid gap-3 md:grid-cols-2">
+                <article
+                  v-for="item in diagnosticChecks"
+                  :key="item.key"
+                  class="rounded-2xl border px-4 py-3"
+                  :class="item.state === 'ok'
+                    ? 'border-emerald-200 bg-emerald-50/60'
+                    : 'border-amber-200 bg-amber-50/70'"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-semibold text-slate-900">{{ item.title }}</p>
+                      <p class="mt-1 text-xs text-slate-600">{{ item.description }}</p>
+                    </div>
+                    <el-tag size="small" round :type="item.state === 'ok' ? 'success' : 'warning'">
+                      {{ item.state === 'ok' ? '正常' : '待处理' }}
+                    </el-tag>
+                  </div>
+                  <el-button
+                    v-if="item.actionLabel && item.actionKey"
+                    class="mt-3"
+                    size="small"
+                    round
+                    @click="handleDiagnosticAction(item.actionKey as DiagnosticActionKey)"
+                  >
+                    {{ item.actionLabel }}
+                  </el-button>
+                </article>
+              </div>
+            </PanelCard>
+
+            <RoomList
+              v-if="!isDiagnosticsView && visibleRooms.length > 0"
+              :rooms="visibleRooms"
+              @copy-code="handleCopyRoomCode"
+              @open-room="handleOpenRoom"
+            />
+
+            <PanelCard
+              v-if="!isDiagnosticsView && visibleRooms.length === 0"
+              title="房间列表"
+              subtitle="没有匹配结果，尝试清空筛选条件或创建新房间。"
+            >
+              <div class="flex flex-wrap gap-2">
+                <el-button round type="primary" @click="createRoomVisible = true">创建房间</el-button>
+                <el-button round @click="roomKeyword = ''; roomStatusFilter = 'all'">清空筛选</el-button>
+              </div>
+            </PanelCard>
+
+            <PanelCard v-if="currentRoom && !isDiagnosticsView" title="当前房间" subtitle="展示成员、房主、连接模式和我的虚拟 IP。">
               <div class="space-y-3">
                 <div class="rounded-[20px] border border-slate-200/70 bg-slate-50/80 p-4">
                   <div class="flex flex-wrap items-center justify-between gap-3">
@@ -78,16 +163,35 @@
               </div>
             </PanelCard>
 
-            <PartnerList class="2xl:hidden" :partners="partners" />
+            <PartnerList v-if="isHomeView && partners.length > 0" class="2xl:hidden" :partners="partners" />
           </div>
         </main>
 
         <aside class="hidden min-h-0 overflow-auto border-l border-slate-200/70 bg-white/40 p-3 2xl:block">
           <div class="space-y-4">
-            <NetworkPanel :summary="networkSummary" @refresh="refreshEasyTierStatus"
-              @open-settings="handleOpenSettings" @open-diagnostics="handleOpenDiagnostics" />
+            <NetworkPanel
+              v-if="!isDiagnosticsView"
+              :summary="networkSummary"
+              @refresh="refreshEasyTierStatus"
+              @open-settings="handleOpenSettings"
+              @open-diagnostics="handleOpenDiagnostics"
+            />
 
-            <PartnerList :partners="partners" />
+            <PanelCard v-if="isDiagnosticsView" title="诊断动作" subtitle="优先刷新状态，其次核对房间和网络配置。">
+              <div class="flex flex-col gap-2">
+                <el-button round type="primary" @click="refreshAll">刷新全部状态</el-button>
+                <el-button round @click="handleOpenSettings">打开网络设置</el-button>
+                <el-button round @click="handleReloadRooms">重新加载房间</el-button>
+              </div>
+            </PanelCard>
+
+            <PartnerList v-if="!isDiagnosticsView && partners.length > 0" :partners="partners" />
+
+            <PanelCard v-if="!isDiagnosticsView && partners.length === 0" title="联机成员" subtitle="当前房间暂无可展示成员，加入房间后会在这里显示。">
+              <el-button round type="primary" @click="joinRoomVisible = true">
+                加入房间
+              </el-button>
+            </PanelCard>
           </div>
         </aside>
       </div>
@@ -176,10 +280,10 @@ import TopBar from '@/views/components/top-bar.vue';
 import {
   FolderOpened,
   House,
-  Link,
   Monitor,
   Plus,
   Promotion,
+  RefreshRight,
   Setting
 } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
@@ -195,7 +299,6 @@ import UserProfileDialog from './components/user-profile-dialog.vue';
 import type {
   LobbyNavItem,
   LobbyNetworkSummary,
-  LobbyOverviewStat,
   LobbyPartnerSummary,
   LobbyQuickAction,
   LobbyRoomSummary
@@ -255,6 +358,44 @@ const activeSidebarKey = computed(() => {
   return sidebarKeyByRouteName[route.name] || 'home';
 });
 
+type LobbyViewMode = 'home' | 'rooms' | 'diagnostics';
+type RoomStatusFilter = 'all' | LobbyRoomSummary['status'];
+type DiagnosticActionKey = 'refresh' | 'open-settings' | 'reload-rooms';
+
+interface DiagnosticCheck {
+  key: string
+  title: string
+  description: string
+  state: 'ok' | 'warn'
+  actionLabel?: string
+  actionKey?: DiagnosticActionKey
+}
+
+const roomKeyword = ref('');
+const roomStatusFilter = ref<RoomStatusFilter>('all');
+const props = defineProps<{
+  view?: LobbyViewMode
+}>();
+
+const currentView = computed<LobbyViewMode>(() => {
+  if (props.view) {
+    return props.view;
+  }
+
+  if (activeSidebarKey.value === 'rooms') {
+    return 'rooms';
+  }
+  if (activeSidebarKey.value === 'diagnostics') {
+    return 'diagnostics';
+  }
+
+  return 'home';
+});
+
+const isHomeView = computed(() => currentView.value === 'home');
+const isRoomsView = computed(() => currentView.value === 'rooms');
+const isDiagnosticsView = computed(() => currentView.value === 'diagnostics');
+
 const sidebarBaseItems: Omit<LobbyNavItem, 'isActive'>[] = [
   {
     key: 'home',
@@ -307,22 +448,22 @@ const quickActions: LobbyQuickAction[] = [
   {
     key: 'create-room',
     title: '创建房间',
-    description: '新建一个联机房间，生成房间码并初始化网络配置。',
+    description: '立即创建联机房间并生成可分享的房间码。',
     icon: Plus,
     accent: 'sky'
   },
   {
     key: 'join-room',
     title: '加入房间',
-    description: '输入房间码后快速加入房间，后续接真实校验流程。',
+    description: '输入房间码快速入房，自动拉取成员和连接信息。',
     icon: Promotion,
     accent: 'emerald'
   },
   {
-    key: 'launch-game',
-    title: '启动游戏',
-    description: '预留给后续游戏预设和一键启动能力。',
-    icon: Link,
+    key: 'refresh-rooms',
+    title: '同步房间',
+    description: '拉取最新房间列表并刷新当前房间详情。',
+    icon: RefreshRight,
     accent: 'amber'
   },
   {
@@ -360,32 +501,54 @@ const recentRooms = computed<LobbyRoomSummary[]>(() => {
 
 const currentRoom = computed(() => roomStore.currentRoom);
 const currentRoomMembers = computed<RoomMemberVO[]>(() => currentRoom.value?.members || []);
-const partners = ref<LobbyPartnerSummary[]>([
-  {
-    id: 'partner-1',
-    name: 'NorthFox',
-    tag: 'NF',
-    stateLabel: '可联机',
-    latencyLabel: '延迟 28 ms · 直连',
-    isReachable: true
-  },
-  {
-    id: 'partner-2',
-    name: 'Rin',
-    tag: 'RN',
-    stateLabel: '中继中',
-    latencyLabel: '延迟 96 ms · 当前使用中继',
-    isReachable: true
-  },
-  {
-    id: 'partner-3',
-    name: 'StoneCat',
-    tag: 'SC',
-    stateLabel: '不可达',
-    latencyLabel: '最近一次连接失败，需要重新授权虚拟网卡',
-    isReachable: false
+
+const filteredRooms = computed<LobbyRoomSummary[]>(() => {
+  const keyword = roomKeyword.value.trim().toLowerCase();
+
+  return recentRooms.value.filter((room) => {
+    const matchesKeyword = !keyword
+      || room.name.toLowerCase().includes(keyword)
+      || room.code.toLowerCase().includes(keyword);
+    const matchesStatus = roomStatusFilter.value === 'all' || room.status === roomStatusFilter.value;
+
+    return matchesKeyword && matchesStatus;
+  });
+});
+
+const visibleRooms = computed<LobbyRoomSummary[]>(() => {
+  if (isHomeView.value) {
+    return recentRooms.value.slice(0, 4);
   }
-]);
+
+  return filteredRooms.value;
+});
+
+function toInitials(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return 'U';
+  }
+
+  return trimmed.slice(0, 2).toUpperCase();
+}
+
+const partners = computed<LobbyPartnerSummary[]>(() => {
+  return currentRoomMembers.value.map((member) => {
+    const mode = member.connectionMode || 'UNKNOWN';
+    const reachable = mode !== 'UNKNOWN' || !!member.virtualIp;
+
+    return {
+      id: `${member.membershipId}`,
+      name: member.displayName,
+      tag: toInitials(member.displayName),
+      stateLabel: reachable ? '在线' : '待同步',
+      latencyLabel: member.virtualIp
+        ? `虚拟 IP ${member.virtualIp} · ${mode}`
+        : `虚拟 IP 未上报 · ${mode}`,
+      isReachable: reachable
+    };
+  });
+});
 
 const displayName = computed(() => userStore.displayName || authStore.user?.nickname || authStore.user?.username || '联机玩家');
 const avatarUrl = computed(() => userStore.avatarUrl || authStore.user?.avatarImage || '');
@@ -399,33 +562,46 @@ const onlinePartnerCount = computed(() => {
   return partners.value.filter((item) => item.isReachable).length;
 });
 
-const overviewTitle = computed(() => `${displayName.value}，准备开房`);
-
-const overviewSubtitle = computed(() => {
-  if (easyTierRunning.value) {
-    return '当前设备已经进入联机待命状态。你可以直接创建房间、邀请伙伴，或者继续检查链路质量。';
-  }
-
-  return '左侧现在是固定双层侧边栏，主区只负责联机动作和内容本身，布局会更接近桌面客户端的稳定分栏。';
+const diagnosticChecks = computed<DiagnosticCheck[]>(() => {
+  return [
+    {
+      key: 'service',
+      title: '组网服务',
+      description: easyTierRunning.value ? 'EasyTier 进程运行中。' : 'EasyTier 尚未启动。',
+      state: easyTierRunning.value ? 'ok' : 'warn',
+      actionLabel: easyTierRunning.value ? '刷新状态' : '打开网络设置',
+      actionKey: easyTierRunning.value ? 'refresh' : 'open-settings'
+    },
+    {
+      key: 'rooms',
+      title: '房间同步',
+      description: recentRooms.value.length > 0
+        ? `已同步 ${recentRooms.value.length} 个房间。`
+        : '没有可用房间，建议先创建或加入。',
+      state: recentRooms.value.length > 0 ? 'ok' : 'warn',
+      actionLabel: '重新加载房间',
+      actionKey: 'reload-rooms'
+    },
+    {
+      key: 'members',
+      title: '成员可见性',
+      description: onlinePartnerCount.value > 0
+        ? `当前可见 ${onlinePartnerCount.value} 位成员。`
+        : '暂无可见成员，检查成员是否已加入同一网络。',
+      state: onlinePartnerCount.value > 0 ? 'ok' : 'warn'
+    },
+    {
+      key: 'selection',
+      title: '当前房间',
+      description: currentRoom.value
+        ? `已选择房间：${currentRoom.value.name}`
+        : '尚未选中房间，建议从房间列表打开。',
+      state: currentRoom.value ? 'ok' : 'warn',
+      actionLabel: currentRoom.value ? '刷新状态' : '重新加载房间',
+      actionKey: currentRoom.value ? 'refresh' : 'reload-rooms'
+    }
+  ];
 });
-
-const overviewStats = computed<LobbyOverviewStat[]>(() => [
-  {
-    label: '最近房间',
-    value: `${recentRooms.value.length}`,
-    helper: '可直接进入已使用过的联机房间'
-  },
-  {
-    label: '联机伙伴',
-    value: `${partners.value.filter(item => item.isReachable).length}`,
-    helper: '当前仍可建立连接的成员'
-  },
-  {
-    label: '网络状态',
-    value: easyTierRunning.value ? '在线' : '未启动',
-    helper: easyTierRunning.value ? 'EasyTier 正在运行' : '等待启动组网服务'
-  }
-]);
 
 const networkSummary = computed<LobbyNetworkSummary>(() => {
   const node = endpointLabel.value.replace(/^https?:\/\//, '').replace(/\/api$/, '');
@@ -537,10 +713,42 @@ function handleSelectNav(item: LobbyNavItem) {
   void router.push({ name: item.routeName });
 }
 
+async function handleReloadRooms() {
+  await roomStore.loadRooms();
+  if (!roomStore.currentRoom && roomStore.rooms.length > 0) {
+    await roomStore.openRoom(roomStore.rooms[0].id);
+  }
+}
+
+async function refreshAll() {
+  await Promise.all([
+    refreshEasyTierStatus(),
+    handleReloadRooms()
+  ]);
+}
+
+async function handleDiagnosticAction(actionKey: DiagnosticActionKey) {
+  switch (actionKey) {
+    case 'open-settings':
+      handleOpenSettings();
+      return;
+    case 'reload-rooms':
+      await handleReloadRooms();
+      return;
+    case 'refresh':
+    default:
+      await refreshAll();
+  }
+}
+
 function handleQuickAction(actionKey: string) {
   switch (actionKey) {
     case 'network-settings':
       handleOpenSettings();
+
+      return;
+    case 'refresh-rooms':
+      void refreshAll();
 
       return;
     case 'create-room':
@@ -551,12 +759,8 @@ function handleQuickAction(actionKey: string) {
       joinRoomVisible.value = true;
 
       return;
-    case 'launch-game':
-      ElMessage.info('启动游戏前请先定义 gameProfile。');
-
-      return;
     default:
-      ElMessage.info('该操作暂未绑定。');
+      ElMessage.info('该操作暂未绑定');
   }
 }
 

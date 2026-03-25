@@ -1,5 +1,5 @@
 <template>
-  <LobbyMainPage />
+  <LobbyMainPage view="rooms" />
 </template>
 
 <script setup lang="ts">

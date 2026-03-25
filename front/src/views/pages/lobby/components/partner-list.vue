@@ -1,5 +1,5 @@
 <template>
-  <PanelCard title="联机伙伴" subtitle="先保留轻社交视图，只展示能帮主流程的在线信息。">
+  <PanelCard title="联机成员" subtitle="展示当前房间成员的在线状态与连接信息。">
     <div class="space-y-3">
       <div
         v-for="partner in partners"

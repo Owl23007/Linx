@@ -1,5 +1,5 @@
 <template>
-  <LobbyMainPage />
+  <LobbyMainPage view="diagnostics" />
 </template>
 
 <script setup lang="ts">
