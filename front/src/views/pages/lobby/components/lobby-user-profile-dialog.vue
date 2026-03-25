@@ -1,218 +1,137 @@
 <template>
-  <el-dialog
-    :model-value="modelValue"
-    width="min(92vw, 960px)"
-    append-to-body
-    destroy-on-close
-    class="lobby-user-profile-dialog"
-    @close="handleClose"
-  >
+  <el-dialog :model-value="modelValue" width="min(92vw, 900px)" append-to-body destroy-on-close align-center
+    :lock-scroll="true"
+    class="lobby-user-profile-dialog" @close="handleClose">
     <template #header>
-      <div class="flex items-center justify-between gap-3 pr-8">
-        <div>
-          <p class="text-lg font-semibold text-slate-900">个人资料</p>
-          <p class="mt-1 text-sm text-slate-500">点击头像查看信息，并可直接修改当前账号资料。</p>
-        </div>
-        <el-tag round type="info" effect="plain">Profile</el-tag>
+      <div class="pr-8">
+        <p class="text-xl font-semibold text-slate-900">个人资料</p>
       </div>
     </template>
 
-    <div class="space-y-5" v-loading="loading">
-      <section class="overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_52%,#38bdf8_100%)] p-6 text-white shadow-[0_20px_60px_rgba(15,23,42,0.22)]">
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex items-center gap-4">
-            <el-avatar :size="76" :src="previewAvatar" class="shrink-0 border-2 border-white/20 bg-slate-900 text-2xl font-semibold">
+    <div v-loading="loading" class="profile-dialog-content grid grid-cols-1 items-start gap-4 md:grid-cols-12">
+      <section class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 md:col-span-4 lg:col-span-3">
+        <div class="flex items-center gap-3">
+          <button type="button"
+            class="group relative h-16 w-16 shrink-0 rounded-full border border-slate-200 bg-white p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-70"
+            :disabled="avatarUploading || cropSubmitting" aria-label="上传头像" @click="openAvatarFilePicker">
+            <el-avatar :size="64" :src="previewAvatar" class="bg-slate-900 text-xl font-semibold">
               {{ initials }}
             </el-avatar>
-            <div class="min-w-0">
-              <p class="truncate text-2xl font-semibold">{{ displayName }}</p>
-              <p class="mt-1 truncate text-sm text-sky-100">@{{ profile.username || 'unknown' }}</p>
-              <p class="mt-3 text-sm leading-6 text-slate-100">
-                {{ profile.signature || '还没有设置签名，可以在编辑模式里补充一句个人说明。' }}
-              </p>
+            <span
+              class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-slate-900/45 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+              <el-icon :size="24" class="white">
+                <Camera />
+              </el-icon>
+            </span>
+          </button>
+          <div class="min-w-0">
+            <p class="truncate text-lg font-semibold text-slate-900">{{ displayName }}</p>
+            <p class="mt-0.5 truncate text-sm text-slate-500">@{{ profile.username || 'unknown' }}</p>
+          </div>
+        </div>
+
+        <div class="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+          <p class="text-xs text-slate-400">签名</p>
+          <p class="mt-1 text-sm font-medium text-slate-900">{{ profile.signature || '-' }}</p>
+        </div>
+
+        <div v-if="editing" class="mt-4 space-y-3">
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-xs font-medium text-slate-500">头像</p>
+            <div class="mt-2 flex items-center justify-between gap-2">
+              <el-button size="small" plain :loading="avatarUploading || cropSubmitting"
+                @click="openAvatarFilePicker">更换</el-button>
             </div>
           </div>
 
-          <div class="flex items-center gap-2 self-start sm:self-center">
-            <el-button v-if="!editing" round type="primary" @click="startEdit">编辑资料</el-button>
-            <template v-else>
-              <el-button round @click="cancelEdit">取消</el-button>
-              <el-button round type="primary" :loading="saving" :disabled="uploadingImage" @click="saveProfile">保存修改</el-button>
-            </template>
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-xs font-medium text-slate-500">背景图</p>
+            <div class="mt-2 flex items-center justify-between gap-2">
+              <el-button size="small" plain :loading="backgroundUploading || cropSubmitting"
+                @click="openBackgroundFilePicker">更换</el-button>
+            </div>
+            <input ref="backgroundFileInputRef" type="file" class="hidden"
+              accept="image/jpeg,image/png,image/webp,image/gif" @change="handleBackgroundFileChange">
+          </div>
+        </div>
+        <input ref="avatarFileInputRef" type="file" class="hidden" accept="image/jpeg,image/png,image/webp,image/gif"
+          @change="handleAvatarFileChange">
+        <div class="mt-4 border-t border-slate-200 pt-3 text-xs text-slate-500 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span>用户 ID</span>
+            <span class="font-medium text-slate-800">{{ profile.userId ?? '-' }}</span>
           </div>
         </div>
       </section>
 
-      <div class="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-        <section class="rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-sm">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <p class="text-base font-semibold text-slate-900">资料详情</p>
-              <p class="mt-1 text-sm text-slate-500">基础身份信息与个人展示字段。</p>
-            </div>
-            <el-tag round :type="editing ? 'warning' : 'success'" effect="plain">
-              {{ editing ? '编辑中' : '只读' }}
-            </el-tag>
+      <section class="rounded-xl border border-slate-200 bg-white p-4 md:col-span-8 lg:col-span-9">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-base font-semibold text-slate-900">基本信息</p>
           </div>
-
-          <div v-if="!editing" class="mt-5 grid gap-4 sm:grid-cols-2">
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">昵称</p>
-              <p class="mt-2 break-all text-sm font-medium text-slate-900">{{ profile.nickname || '-' }}</p>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">用户名</p>
-              <p class="mt-2 break-all text-sm font-medium text-slate-900">{{ profile.username || '-' }}</p>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">邮箱</p>
-              <p class="mt-2 break-all text-sm font-medium text-slate-900">{{ profile.email || '-' }}</p>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">手机号</p>
-              <p class="mt-2 break-all text-sm font-medium text-slate-900">{{ profile.phone || '-' }}</p>
-            </div>
+          <div class="flex items-center gap-2">
+            <el-button v-if="!editing" type="primary" plain size="small" @click="startEdit">编辑资料</el-button>
+            <template v-else>
+              <el-button size="small" @click="cancelEdit">取消</el-button>
+              <el-button type="primary" size="small" :loading="saving" :disabled="uploadingImage"
+                @click="saveProfile">保存</el-button>
+            </template>
           </div>
+        </div>
 
-          <el-form
-            v-else
-            ref="formRef"
-            :model="form"
-            :rules="rules"
-            label-position="top"
-            class="mt-5"
-          >
-            <div class="grid gap-4 sm:grid-cols-2">
-              <el-form-item label="昵称" prop="nickname">
-                <el-input v-model="form.nickname" maxlength="50" clearable placeholder="请输入昵称" />
-              </el-form-item>
+        <el-form v-if="editing" ref="formRef" :model="form" :rules="rules" label-position="top" class="mt-4">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <el-form-item label="昵称" prop="nickname">
+              <el-input v-model="form.nickname" maxlength="50" clearable placeholder="请输入昵称" />
+            </el-form-item>
 
-              <el-form-item label="手机号" prop="phone">
-                <el-input v-model="form.phone" maxlength="20" clearable placeholder="请输入手机号" />
-              </el-form-item>
+            <el-form-item label="手机号" prop="phone">
+              <el-input v-model="form.phone" maxlength="20" clearable placeholder="请输入手机号" />
+            </el-form-item>
 
-              <el-form-item label="头像" class="sm:col-span-2">
-                <div class="w-full space-y-2">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <el-button plain :loading="avatarUploading || cropSubmitting" @click="openAvatarFilePicker">上传头像</el-button>
-                    <span class="text-xs text-slate-500">支持 JPG/PNG/WEBP/GIF，最大 2MB</span>
-                  </div>
-                  <p class="text-xs text-slate-500">图片会先裁剪后上传，URL 对用户不可见。</p>
-                  <input
-                    ref="avatarFileInputRef"
-                    type="file"
-                    class="hidden"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    @change="handleAvatarFileChange"
-                  >
-                </div>
-              </el-form-item>
-
-              <el-form-item label="背景图" class="sm:col-span-2">
-                <div class="w-full space-y-2">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <el-button plain :loading="backgroundUploading || cropSubmitting" @click="openBackgroundFilePicker">上传背景</el-button>
-                    <span class="text-xs text-slate-500">支持 JPG/PNG/WEBP/GIF，最大 5MB</span>
-                  </div>
-                  <p class="text-xs text-slate-500">背景图采用 3:1 裁剪，上传后自动保存到资料。</p>
-                  <input
-                    ref="backgroundFileInputRef"
-                    type="file"
-                    class="hidden"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    @change="handleBackgroundFileChange"
-                  >
-                </div>
-              </el-form-item>
-
-              <el-form-item label="个性签名" prop="signature" class="sm:col-span-2">
-                <el-input
-                  v-model="form.signature"
-                  type="textarea"
-                  :rows="4"
-                  maxlength="255"
-                  show-word-limit
-                  placeholder="介绍一下自己"
-                />
-              </el-form-item>
-            </div>
-          </el-form>
-        </section>
-
-        <section class="space-y-5">
-          <div class="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-sm">
-            <div
-              class="h-32 bg-cover bg-center"
-              :style="{ backgroundImage: previewBackground ? `url(${previewBackground})` : defaultBackground }"
-            />
-            <div class="px-5 pb-5 pt-4">
-              <p class="text-base font-semibold text-slate-900">卡片预览</p>
-              <p class="mt-1 text-sm text-slate-500">保存前会先按当前表单内容预览展示效果。</p>
-              <div class="mt-4 rounded-[22px] bg-slate-950 px-4 py-4 text-white">
-                <div class="flex items-center gap-3">
-                  <el-avatar :size="44" :src="previewAvatar" class="bg-slate-700 text-base font-semibold">
-                    {{ initials }}
-                  </el-avatar>
-                  <div class="min-w-0">
-                    <p class="truncate text-sm font-semibold">{{ displayName }}</p>
-                    <p class="mt-1 truncate text-xs text-slate-300">@{{ profile.username || 'unknown' }}</p>
-                  </div>
-                </div>
-                <p class="mt-3 text-sm leading-6 text-slate-300">{{ previewSignature }}</p>
-              </div>
-            </div>
+            <el-form-item label="个性签名" prop="signature" class="sm:col-span-2">
+              <el-input v-model="form.signature" type="textarea" :rows="4" maxlength="255" show-word-limit
+                placeholder="介绍一下自己" />
+            </el-form-item>
           </div>
+        </el-form>
 
-          <div class="rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-sm">
-            <p class="text-base font-semibold text-slate-900">账号信息</p>
-            <div class="mt-4 space-y-3 text-sm text-slate-600">
-              <div class="flex items-center justify-between gap-3">
-                <span>用户 ID</span>
-                <span class="font-medium text-slate-900">{{ profile.userId ?? '-' }}</span>
-              </div>
-              <div class="flex items-center justify-between gap-3">
-                <span>角色</span>
-                <span class="font-medium text-slate-900">{{ profile.role || '-' }}</span>
-              </div>
-              <div class="flex items-center justify-between gap-3">
-                <span>状态</span>
-                <span class="font-medium text-slate-900">{{ profile.accountStatus || profile.status || '-' }}</span>
-              </div>
-              <div class="flex items-center justify-between gap-3">
-                <span>最近更新</span>
-                <span class="font-medium text-slate-900">{{ profile.updatedAt || '-' }}</span>
-              </div>
-            </div>
+        <div v-else class="mt-4 grid gap-3 sm:grid-cols-2">
+          <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p class="text-xs text-slate-400">昵称</p>
+            <p class="mt-1 text-sm font-medium text-slate-900">{{ profile.nickname || '-' }}</p>
           </div>
-        </section>
-      </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p class="text-xs text-slate-400">用户名</p>
+            <p class="mt-1 text-sm font-medium text-slate-900">{{ profile.username || '-' }}</p>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p class="text-xs text-slate-400">邮箱</p>
+            <p class="mt-1 text-sm font-medium text-slate-900 break-all">{{ profile.email || '-' }}</p>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p class="text-xs text-slate-400">手机号</p>
+            <p class="mt-1 text-sm font-medium text-slate-900">{{ profile.phone || '-' }}</p>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 sm:col-span-2">
+            <p class="text-xs text-slate-400">个性签名</p>
+            <p class="mt-1 text-sm font-medium text-slate-900">{{ profile.signature || '-' }}</p>
+          </div>
+        </div>
+      </section>
     </div>
   </el-dialog>
 
-  <el-dialog
-    v-model="cropDialogVisible"
-    width="min(92vw, 760px)"
-    append-to-body
-    destroy-on-close
-    title="裁剪图片"
-    @closed="handleCropDialogClosed"
-  >
+  <el-dialog v-model="cropDialogVisible" width="min(92vw, 760px)" append-to-body destroy-on-close align-center :lock-scroll="true" class="profile-crop-dialog" title="裁剪图片"
+    @closed="handleCropDialogClosed">
     <div class="space-y-4">
       <div class="rounded-2xl border border-slate-200 bg-slate-950/90 p-3">
-        <div
-          ref="cropViewportRef"
-          class="relative mx-auto overflow-hidden rounded-xl bg-slate-900"
+        <div ref="cropViewportRef" class="relative mx-auto overflow-hidden rounded-xl bg-slate-900"
           :class="cropMode === 'avatar' ? 'h-[320px] w-[320px] max-w-full' : 'h-[220px] w-full max-w-[660px]'"
-          @mousedown="handleCropPointerDown"
-        >
-          <img
-            v-if="cropImageUrl"
-            ref="cropImageRef"
-            :src="cropImageUrl"
-            class="pointer-events-none absolute max-w-none select-none"
-            :style="cropImageStyle"
-            @load="handleCropImageLoaded"
-          >
+          @mousedown="handleCropPointerDown">
+          <img v-if="cropImageUrl" ref="cropImageRef" :src="cropImageUrl"
+            class="pointer-events-none absolute max-w-none select-none" :style="cropImageStyle"
+            @load="handleCropImageLoaded">
           <div class="pointer-events-none absolute inset-0 border border-white/60" />
         </div>
       </div>
@@ -223,9 +142,6 @@
         <el-button plain @click="resetCropTransform">重置</el-button>
       </div>
 
-      <p class="text-xs text-slate-500">
-        拖拽图片调整位置，头像按 1:1 裁剪，背景图按 3:1 裁剪。
-      </p>
     </div>
 
     <template #footer>
@@ -238,10 +154,11 @@
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from '@/stores/user';
+import { Camera } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
 import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue';
-import { useUserStore } from '@/stores/user';
 
 type ProfileForm = {
   nickname: string;
@@ -312,8 +229,6 @@ const rules: FormRules<ProfileForm> = {
   ],
 };
 
-const defaultBackground = 'linear-gradient(135deg, rgba(15,23,42,0.88), rgba(29,78,216,0.58), rgba(148,163,184,0.28))';
-
 const profile = computed(() => userStore.currentUser || {});
 
 const displayName = computed(() => {
@@ -323,11 +238,6 @@ const displayName = computed(() => {
 
 const initials = computed(() => displayName.value.slice(0, 1).toUpperCase() || 'L');
 const previewAvatar = computed(() => (editing.value ? form.avatarImage.trim() : '') || profile.value.avatarImage || profile.value.avatar || '');
-const previewBackground = computed(() => (editing.value ? form.backgroundImage.trim() : '') || profile.value.backgroundImage || '');
-const previewSignature = computed(() => {
-  const signature = editing.value ? form.signature.trim() : (profile.value.signature || '');
-  return signature || '还没有设置签名，可以在编辑模式里补充一句个人说明。';
-});
 const uploadingImage = computed(() => avatarUploading.value || backgroundUploading.value || cropSubmitting.value);
 
 const cropBaseScale = computed(() => {
@@ -745,3 +655,20 @@ onUnmounted(() => {
   cleanupCropImageUrl();
 });
 </script>
+
+<style scoped>
+:deep(.lobby-user-profile-dialog .el-dialog__body) {
+  overflow: hidden;
+}
+
+.profile-dialog-content {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+:deep(.profile-crop-dialog .el-dialog__body) {
+  overflow: hidden;
+}
+</style>
+

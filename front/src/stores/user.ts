@@ -35,6 +35,17 @@ function toOptionalString(value: unknown): string | undefined {
   return undefined;
 }
 
+function toDisplaySuccessMessage(message: unknown, fallback: string): string {
+  const text = toOptionalString(message);
+  const normalized = text?.toLowerCase();
+
+  if (!normalized || normalized === 'success' || normalized === 'ok') {
+    return fallback;
+  }
+
+  return text;
+}
+
 function formatFileSize(bytes: number): string {
   if (bytes >= 1024 * 1024) {
     return `${Math.round((bytes / (1024 * 1024)) * 10) / 10}MB`;
@@ -236,7 +247,6 @@ export const useUserStore = defineStore('user', () => {
       const res = await linxApi.user.updateProfile(payload);
       if (res.code === 0) {
         setCurrentUser(res.data);
-        ElMessage.success(res.message || '个人资料更新成功');
 
         return true;
       }
@@ -338,7 +348,9 @@ export const useUserStore = defineStore('user', () => {
         ? latestUser?.avatarImage || latestUser?.avatar || fallbackUrl
         : latestUser?.backgroundImage || fallbackUrl;
 
-      ElMessage.success(confirmRes.message || (imageType === 'avatar' ? '头像上传成功' : '背景图上传成功'));
+      ElMessage.success(
+        toDisplaySuccessMessage(confirmRes.message, imageType === 'avatar' ? '头像上传成功' : '背景图上传成功'),
+      );
 
       return finalUrl || null;
     } catch (error: unknown) {
