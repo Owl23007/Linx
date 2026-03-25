@@ -14,7 +14,7 @@ const routes = [
   {
     path: '/main/home',
     name: 'MainHome',
-    component: () => import('@/views/pages/lobby/index.vue'),
+    component: () => import('@/views/pages/lobby/main-home.vue'),
     meta: {
       sidebarKey: 'home',
     },
@@ -22,7 +22,7 @@ const routes = [
   {
     path: '/main/rooms',
     name: 'MainRooms',
-    component: () => import('@/views/pages/lobby/index.vue'),
+    component: () => import('@/views/pages/lobby/main-rooms.vue'),
     meta: {
       sidebarKey: 'rooms',
     },
@@ -30,7 +30,7 @@ const routes = [
   {
     path: '/main/diagnostics',
     name: 'MainDiagnostics',
-    component: () => import('@/views/pages/lobby/index.vue'),
+    component: () => import('@/views/pages/lobby/main-diagnostics.vue'),
     meta: {
       sidebarKey: 'diagnostics',
     },
