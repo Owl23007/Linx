@@ -181,6 +181,32 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  async function updateProfile(payload: {
+    nickname?: string;
+    phone?: string;
+    signature?: string;
+    avatarImage?: string;
+    backgroundImage?: string;
+  }) {
+    try {
+      const res = await linxApi.user.updateProfile(payload);
+      if (res.code === 0) {
+        setCurrentUser(res.data);
+        ElMessage.success(res.message || '个人资料更新成功');
+
+        return true;
+      }
+
+      ElMessage.error(res.message || '个人资料更新失败');
+
+      return false;
+    } catch {
+      ElMessage.error('个人资料更新失败');
+
+      return false;
+    }
+  }
+
   async function getUserById(targetUserId: number, forceRefresh = false): Promise<UserVO | undefined> {
     if (!forceRefresh && userCache.value.has(targetUserId)) {
       return userCache.value.get(targetUserId);
@@ -329,6 +355,7 @@ export const useUserStore = defineStore('user', () => {
     hydrate,
     setCurrentUser,
     loadCurrentUser,
+    updateProfile,
     getUserById,
     getUsersByIds,
     updateStatus,

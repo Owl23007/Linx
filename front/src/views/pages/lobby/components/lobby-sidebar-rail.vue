@@ -1,9 +1,15 @@
 <template>
   <aside class="flex h-full flex-col items-center justify-between bg-slate-50/90 px-2 py-3">
     <div class="flex flex-col items-center gap-3">
-      <el-avatar :size="40" :src="avatarUrl" class="bg-slate-950 text-[13px] font-semibold shadow-lg shadow-slate-300/55">
-        {{ userInitials }}
-      </el-avatar>
+      <button
+        type="button"
+        class="rounded-full transition-transform duration-200 hover:scale-[1.04] focus:outline-none focus:ring-2 focus:ring-sky-200"
+        @click="emit('open-profile')"
+      >
+        <el-avatar :size="40" :src="avatarUrl" class="bg-slate-950 text-[13px] font-semibold shadow-lg shadow-slate-300/55">
+          {{ userInitials }}
+        </el-avatar>
+      </button>
 
       <nav class="flex flex-col gap-1.5">
         <button
@@ -51,5 +57,6 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'select', item: LobbyNavItem): void
   (e: 'open-settings'): void
+  (e: 'open-profile'): void
 }>();
 </script>

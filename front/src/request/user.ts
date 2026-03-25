@@ -1,5 +1,5 @@
 import type { Result } from '@/models/common';
-import { get, post } from '../utils/http';
+import { get, post, put } from '../utils/http';
 
 const profileRouteCandidates = ['/profile'];
 const authUserInfoRouteCandidates = ['/auth/userinfo'];
@@ -54,6 +54,20 @@ export async function getCurrentUser(): Promise<Result> {
   }
 
   return get('/linx/user/me');
+}
+
+/**
+ * 更新当前登录用户资料
+ * 基于 Authorization: Bearer <token> 自动识别当前用户
+ */
+export async function updateCurrentUserProfile(data: {
+  nickname?: string;
+  phone?: string;
+  signature?: string;
+  avatarImage?: string;
+  backgroundImage?: string;
+}): Promise<Result> {
+  return put('/profile/me', data);
 }
 
 // ==================== 用户状态管理 ====================

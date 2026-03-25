@@ -21,7 +21,7 @@ export function useWebSocket() {
     // 防止重复连接
     if (connected.value || connecting.value) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line no-console
         console.log('⚠️ WebSocket 已连接或正在连接中，跳过');
       }
 
@@ -54,7 +54,7 @@ export function useWebSocket() {
       const wsUrl = cleanBaseUrl.replace(/^http/, 'ws') + `/stomp?ticket=${ticket}`;
 
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line no-console
         console.log('🔗 准备连接 WebSocket:', wsUrl.replace(/ticket=[^&]+/, 'ticket=***'));
       }
 
@@ -64,7 +64,7 @@ export function useWebSocket() {
         debug: (str) => {
           // STOMP 调试信息（开发环境）
           if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
+            // oxlint-disable-next-line no-console
             console.log('STOMP Debug:', str);
           }
         },
@@ -77,7 +77,7 @@ export function useWebSocket() {
       // 3. 连接成功回调
       client.value.onConnect = () => {
         if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
+          // oxlint-disable-next-line no-console
           console.log('✅ WebSocket 连接成功');
         }
         connected.value = true;
@@ -96,7 +96,7 @@ export function useWebSocket() {
       // 4. 连接错误回调
       client.value.onStompError = (frame) => {
         if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
+          // oxlint-disable-next-line no-console
           console.error('❌ STOMP 错误:', frame);
         }
         connected.value = false;
@@ -115,7 +115,7 @@ export function useWebSocket() {
       // 5. WebSocket 错误回调
       client.value.onWebSocketError = (event) => {
         if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
+          // oxlint-disable-next-line no-console
           console.error('❌ WebSocket 错误:', event);
         }
         connected.value = false;
@@ -132,7 +132,7 @@ export function useWebSocket() {
       // 6. 断开连接回调
       client.value.onDisconnect = () => {
         if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
+          // oxlint-disable-next-line no-console
           console.log('🔌 WebSocket 已断开');
         }
         connected.value = false;
@@ -143,7 +143,7 @@ export function useWebSocket() {
       client.value.activate();
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line no-console
         console.error('❌ 连接 WebSocket 失败:', error);
       }
       connecting.value = false;
@@ -168,7 +168,7 @@ export function useWebSocket() {
       try {
         const chatMessage: ChatMessage = JSON.parse(message.body);
         if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
+          // oxlint-disable-next-line no-console
           console.log('📨 收到私聊消息:', chatMessage);
         }
 
@@ -177,7 +177,7 @@ export function useWebSocket() {
         chatStore.addMessage(conversationId, chatMessage);
       } catch (error) {
         if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
+          // oxlint-disable-next-line no-console
           console.error('❌ 解析私聊消息失败:', error);
         }
       }
@@ -295,7 +295,7 @@ export function useWebSocket() {
    */
   async function reconnect(baseUrl: string) {
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.log('尝试重新连接 WebSocket...');
     }
 

@@ -22,7 +22,7 @@ const zIndex = props.zIndex ?? 20;
 const appTitle = import.meta.env.APP_TITLE || 'LinX';
 </script>
 
-<style scoped lang="less">
+<style scoped>
 .logo-art {
   font-family: 'Segoe Script', 'Comic Sans MS', 'Brush Script MT', cursive, sans-serif;
   font-size: 1.75rem;
@@ -41,10 +41,10 @@ const appTitle = import.meta.env.APP_TITLE || 'LinX';
   display: inline-block;
   margin: 0 auto;
   position: relative;
+}
 
-  &::before {
-    display: none;
-  }
+.logo-art::before {
+  display: none;
 }
 
 .logo-art-talk {

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative h-screen overflow-hidden bg-[linear-gradient(135deg,_#eef6ff_0%,_#f8fafc_42%,_#f6f1e8_100%)] text-slate-900">
+    class="relative h-screen overflow-hidden bg-[linear-gradient(135deg,#eef6ff_0%,#f8fafc_42%,#f6f1e8_100%)] text-slate-900">
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
       <div class="absolute left-[-12%] top-[-10%] h-72 w-72 rounded-full bg-sky-200/40 blur-3xl" />
       <div class="absolute bottom-[-18%] right-[-8%] h-80 w-80 rounded-full bg-amber-200/30 blur-3xl" />
@@ -16,7 +16,7 @@
             :endpoint-label="endpointLabel" :items="sidebarItems" :active-item="activeSidebarItem"
             :online-partners="onlinePartnerCount" :recent-room-count="recentRooms.length"
             :network-hint="sidebarNetworkHint" @select="handleSelectNav" @quick-action="handleQuickAction"
-            @open-settings="handleOpenSettings" />
+            @open-settings="handleOpenSettings" @open-profile="handleOpenProfile" />
         </div>
 
         <main class="min-h-0 overflow-auto bg-white/14 p-2.5 sm:p-3.5 md:p-4">
@@ -46,6 +46,7 @@
     </div>
 
     <EasyTierDialog v-model="settingsVisible" />
+    <LobbyUserProfileDialog v-model="profileVisible" />
   </div>
 </template>
 
@@ -74,6 +75,7 @@ import LobbyPartnerList from './components/lobby-partner-list.vue';
 import LobbyQuickActions from './components/lobby-quick-actions.vue';
 import LobbyRoomList from './components/lobby-room-list.vue';
 import LobbySidebar from './components/lobby-sidebar.vue';
+import LobbyUserProfileDialog from './components/lobby-user-profile-dialog.vue';
 import type {
   LobbyNavItem,
   LobbyNetworkSummary,
@@ -89,6 +91,7 @@ const userStore = useUserStore();
 
 const isElectronEnv = isElectron();
 const settingsVisible = ref(false);
+const profileVisible = ref(false);
 const easyTierRunning = ref(false);
 const easyTierPid = ref<number | null>(null);
 const peerCount = ref(0);
@@ -377,6 +380,10 @@ async function refreshEasyTierStatus() {
 
 function handleOpenSettings() {
   settingsVisible.value = true;
+}
+
+function handleOpenProfile() {
+  profileVisible.value = true;
 }
 
 function handleOpenDiagnostics() {

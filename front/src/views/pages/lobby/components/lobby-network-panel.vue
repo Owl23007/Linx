@@ -13,10 +13,8 @@
           <p class="mt-2 text-xl font-semibold">{{ summary.statusLabel }}</p>
           <p class="mt-2 text-sm leading-6 text-slate-300">{{ summary.statusHint }}</p>
         </div>
-        <div
-          class="rounded-full px-3 py-1 text-xs font-semibold"
-          :class="summary.running ? 'bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/20' : 'bg-white/10 text-slate-300 ring-1 ring-white/10'"
-        >
+        <div class="rounded-full px-3 py-1 text-xs font-semibold"
+          :class="summary.running ? 'bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/20' : 'bg-white/10 text-slate-300 ring-1 ring-white/10'">
           {{ summary.pidLabel }}
         </div>
       </div>
@@ -41,7 +39,7 @@
       </div>
     </div>
 
-    <div class="mt-4 rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4 text-amber-900">
+    <div class="mt-4 rounded-3xl border border-amber-200 bg-amber-50 px-4 py-4 text-amber-900">
       <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">诊断提示</p>
       <p class="mt-2 text-sm leading-6">
         {{ summary.issueLabel }}

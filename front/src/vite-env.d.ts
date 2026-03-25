@@ -1,4 +1,12 @@
-/// <reference types="vite/client" />
+/// <reference types="vite-plus/client" />
+
+declare module '*.vue' {
+  import type { DefineComponent } from 'vue';
+
+  const component: DefineComponent<Record<string, never>, Record<string, never>, any>;
+
+  export default component;
+}
 
 export interface ElectronApi {
   invoke: (channel: string, ...args: any[]) => Promise<any>;

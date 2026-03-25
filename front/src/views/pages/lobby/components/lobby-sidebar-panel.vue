@@ -53,9 +53,15 @@
 
         <div class="rounded-[22px] bg-slate-950 px-4 py-3.5 text-white">
           <div class="flex items-center gap-3">
-            <el-avatar :size="38" :src="avatarUrl" class="shrink-0 bg-slate-800 text-sm font-semibold">
-              {{ userInitials }}
-            </el-avatar>
+            <button
+              type="button"
+              class="shrink-0 rounded-full transition-transform duration-200 hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-white/60"
+              @click="emit('open-profile')"
+            >
+              <el-avatar :size="38" :src="avatarUrl" class="bg-slate-800 text-sm font-semibold">
+                {{ userInitials }}
+              </el-avatar>
+            </button>
             <div class="min-w-0">
               <p class="text-[11px] uppercase tracking-[0.18em] text-slate-400">Workspace</p>
               <p class="mt-1 truncate text-base font-semibold">{{ userName }}</p>
@@ -129,5 +135,6 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'select', item: LobbyNavItem): void
   (e: 'quick-action', actionKey: string): void
+  (e: 'open-profile'): void
 }>();
 </script>

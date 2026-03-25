@@ -8,6 +8,7 @@
         :user-initials="userInitials"
         @select="emit('select', $event)"
         @open-settings="emit('open-settings')"
+        @open-profile="emit('open-profile')"
       />
       </div>
 
@@ -23,6 +24,7 @@
         :network-hint="networkHint"
         @select="emit('select', $event)"
         @quick-action="emit('quick-action', $event)"
+        @open-profile="emit('open-profile')"
       />
     </div>
   </aside>
@@ -49,5 +51,6 @@ const emit = defineEmits<{
   (e: 'select', item: LobbyNavItem): void
   (e: 'quick-action', actionKey: string): void
   (e: 'open-settings'): void
+  (e: 'open-profile'): void
 }>();
 </script>

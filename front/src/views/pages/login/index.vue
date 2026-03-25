@@ -767,7 +767,7 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped lang="less">
+<style scoped>
 // 表单切换动画 - 向左滑动（登录->注册）
 .slide-left-enter-active,
 .slide-left-leave-active {
@@ -847,62 +847,60 @@ onUnmounted(() => {
 }
 
 // Tab 样式
-.custom-tabs {
-  .tab-list {
-    display: flex;
-    position: relative;
-    background-color: #f9fafb;
-    border-radius: 0.5rem;
-    padding: 0.25rem;
+.custom-tabs .tab-list {
+  display: flex;
+  position: relative;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+}
 
-    .tab-item {
-      flex: 1;
-      text-align: center;
-      padding: 0.5rem 0;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: #6b7280;
-      cursor: pointer;
-      border-radius: 0.375rem;
-      position: relative;
-      z-index: 10;
-      transition: color 0.2s ease;
-      user-select: none;
+.custom-tabs .tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  position: relative;
+  z-index: 10;
+  transition: color 0.2s ease;
+  user-select: none;
+}
 
-      &.active {
-        color: #ffffff;
-      }
+.custom-tabs .tab-item.active {
+  color: #ffffff;
+}
 
-      &:hover:not(.active) {
-        color: #374151;
-      }
-    }
+.custom-tabs .tab-item:hover:not(.active) {
+  color: #374151;
+}
 
-    .tab-slider {
-      position: absolute;
-      top: 0.25rem;
-      bottom: 0.25rem;
-      background: linear-gradient(to right, #3b82f6, #2563eb);
-      border-radius: 0.375rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 5;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-  }
+.custom-tabs .tab-slider {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  border-radius: 0.375rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 // 拖动区域样式
 .drag-area {
   user-select: none;
   transition: background-color 0.2s ease;
+}
 
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-  }
+.drag-area:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
 
-  &:active {
-    cursor: move;
-  }
+.drag-area:active {
+  cursor: move;
 }
 
 // 窗口控制按钮样式
@@ -918,44 +916,44 @@ onUnmounted(() => {
   justify-content: center;
   transition: all 0.2s ease;
   margin-left: 0.5vh;
+}
 
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.5);
-  }
+.window-btn:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
 
-  &.minimize-btn:hover {
-    background-color: rgba(59, 130, 246, 0.1);
-    border-color: transparent;
-  }
+.window-btn.minimize-btn:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: transparent;
+}
 
-  &.close-btn:hover {
-    background-color: #ef4444;
-    color: white;
-  }
+.window-btn.close-btn:hover {
+  background-color: #ef4444;
+  color: white;
 }
 </style>
 
-<style lang="less">
+<style>
 .round-input {
   border-radius: 0.45rem !important;
+}
 
-  .el-input-group__prepend {
-    border-radius: 0.45rem;
-    border: 0;
-    box-shadow: 0 0 0 0px;
-  }
+.round-input .el-input-group__prepend {
+  border-radius: 0.45rem;
+  border: 0;
+  box-shadow: 0 0 0 0px;
+}
 
-  .el-input__wrapper {
-    border-radius: 0.45rem;
-    border: 0;
-    box-shadow: 0 0 0 0px;
-  }
+.round-input .el-input__wrapper {
+  border-radius: 0.45rem;
+  border: 0;
+  box-shadow: 0 0 0 0px;
+}
 
-  .el-input-group__append {
-    border-radius: 0.45rem;
-    border: 0;
-    box-shadow: 0 0 0 0px;
-  }
+.round-input .el-input-group__append {
+  border-radius: 0.45rem;
+  border: 0;
+  box-shadow: 0 0 0 0px;
 }
 
 .message {
