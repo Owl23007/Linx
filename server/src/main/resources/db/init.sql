@@ -1,5 +1,7 @@
 -- Drop tables if they exist
 DROP TABLE IF EXISTS chat_messages;
+DROP TABLE IF EXISTS room_members;
+DROP TABLE IF EXISTS rooms;
 DROP TABLE IF EXISTS group_members;
 DROP TABLE IF EXISTS "groups";
 DROP TABLE IF EXISTS friendships;
@@ -39,6 +41,32 @@ CREATE TABLE "groups" (
     updated_at TIMESTAMP
 );
 
+-- Create rooms table
+CREATE TABLE rooms (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    room_code VARCHAR(32) NOT NULL UNIQUE,
+    game_name VARCHAR(255),
+    owner_id BIGINT NOT NULL,
+    status VARCHAR(50),
+    max_members INTEGER DEFAULT 8,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- Create room_members table
+CREATE TABLE room_members (
+    id BIGSERIAL PRIMARY KEY,
+    room_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    role VARCHAR(50),
+    virtual_ip VARCHAR(64),
+    connection_mode VARCHAR(50),
+    joined_at TIMESTAMP,
+    last_active_at TIMESTAMP,
+    CONSTRAINT fk_room_members_room FOREIGN KEY (room_id) REFERENCES rooms (id) ON DELETE CASCADE
+);
+
 -- Create group_members table
 CREATE TABLE group_members (
     id BIGSERIAL PRIMARY KEY,
@@ -74,6 +102,10 @@ CREATE TABLE chat_messages (
 CREATE INDEX idx_friendships_requester ON friendships(requester_id);
 CREATE INDEX idx_friendships_addressee ON friendships(addressee_id);
 CREATE INDEX idx_groups_owner ON "groups"(owner_id);
+CREATE INDEX idx_rooms_owner ON rooms(owner_id);
+CREATE INDEX idx_rooms_code ON rooms(room_code);
+CREATE INDEX idx_room_members_room ON room_members(room_id);
+CREATE INDEX idx_room_members_user ON room_members(user_id);
 CREATE INDEX idx_group_members_group ON group_members(group_id);
 CREATE INDEX idx_group_members_user ON group_members(user_id);
 CREATE INDEX idx_chat_messages_sender ON chat_messages(sender_id);

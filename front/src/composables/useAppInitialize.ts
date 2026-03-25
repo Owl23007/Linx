@@ -1,6 +1,7 @@
 import { useChatStore } from '@/stores/chat';
 import { useFriendsStore } from '@/stores/friends';
 import { useGroupsStore } from '@/stores/groups';
+import { useRoomStore } from '@/stores/room';
 import { useUserStore } from '@/stores/user';
 import { onMounted } from 'vue';
 
@@ -12,6 +13,7 @@ export function useAppInitialize() {
   const userStore = useUserStore();
   const friendsStore = useFriendsStore();
   const groupsStore = useGroupsStore();
+  const roomStore = useRoomStore();
   const chatStore = useChatStore();
 
   /**
@@ -26,6 +28,7 @@ export function useAppInitialize() {
       await Promise.all([
         friendsStore.initialize(),
         groupsStore.initialize(),
+        roomStore.initialize(),
         chatStore.initialize(),
       ]);
     } catch {
@@ -40,6 +43,7 @@ export function useAppInitialize() {
     userStore.reset();
     friendsStore.reset();
     groupsStore.reset();
+    roomStore.reset();
     chatStore.reset();
   }
 

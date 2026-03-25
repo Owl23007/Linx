@@ -31,7 +31,7 @@ export interface LobbyQuickAction {
 }
 
 export interface LobbyRoomSummary {
-  id: string
+  id: number
   name: string
   code: string
   game: string

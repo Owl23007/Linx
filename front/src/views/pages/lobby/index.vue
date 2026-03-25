@@ -31,6 +31,55 @@
 
             <LobbyRoomList :rooms="recentRooms" @copy-code="handleCopyRoomCode" @open-room="handleOpenRoom" />
 
+            <LobbyPanelCard v-if="currentRoom" title="当前房间" subtitle="展示成员、房主、连接模式和我的虚拟 IP。">
+              <div class="space-y-3">
+                <div class="rounded-[20px] border border-slate-200/70 bg-slate-50/80 p-4">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 class="text-lg font-semibold text-slate-900">{{ currentRoom.name }}</h3>
+                      <p class="mt-1 text-sm text-slate-600">
+                        房间码 {{ currentRoom.roomCode }} · 房主 {{ currentRoom.ownerName }} · 成员 {{ currentRoom.memberCount }}/{{
+                          currentRoom.maxMembers }}
+                      </p>
+                    </div>
+                    <el-tag type="info" round>
+                      {{ currentRoom.myConnectionMode || 'UNKNOWN' }}
+                    </el-tag>
+                  </div>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <el-button round @click="handleCopyRoomCodeFromCurrent">
+                      复制房间码
+                    </el-button>
+                    <el-button round type="primary" @click="handleCopyMyVirtualIp">
+                      复制我的虚拟 IP
+                    </el-button>
+                  </div>
+                </div>
+
+                <div class="space-y-2">
+                  <article
+                    v-for="member in currentRoomMembers"
+                    :key="member.membershipId"
+                    class="rounded-[18px] border border-slate-200/70 bg-white px-3 py-3"
+                  >
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p class="text-sm font-semibold text-slate-900">
+                          {{ member.displayName }}
+                        </p>
+                        <p class="text-xs text-slate-500">
+                          虚拟 IP {{ member.virtualIp || '未上报' }} · 模式 {{ member.connectionMode || 'UNKNOWN' }}
+                        </p>
+                      </div>
+                      <el-tag size="small" :type="member.role === 'OWNER' ? 'warning' : 'info'" round>
+                        {{ member.role }}
+                      </el-tag>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </LobbyPanelCard>
+
             <LobbyPartnerList class="2xl:hidden" :partners="partners" />
           </div>
         </main>
@@ -48,14 +97,67 @@
 
     <EasyTierDialog v-model="settingsVisible" />
     <LobbyUserProfileDialog v-model="profileVisible" />
+
+    <el-dialog v-model="createRoomVisible" title="创建房间" width="520px" destroy-on-close>
+      <el-form label-position="top">
+        <el-form-item label="房间名称">
+          <el-input v-model="createRoomForm.name" maxlength="32" placeholder="例如：周末联机房" />
+        </el-form-item>
+        <el-form-item label="游戏名称">
+          <el-input v-model="createRoomForm.gameName" maxlength="32" placeholder="例如：Minecraft" />
+        </el-form-item>
+        <el-form-item label="最大成员数">
+          <el-input-number v-model="createRoomForm.maxMembers" :min="2" :max="64" :step="1" class="w-full" />
+        </el-form-item>
+        <el-form-item label="我的虚拟 IP">
+          <el-input v-model="createRoomForm.virtualIp" maxlength="64" placeholder="例如：10.144.12.3" />
+        </el-form-item>
+        <el-form-item label="连接模式">
+          <el-select v-model="createRoomForm.connectionMode" class="w-full">
+            <el-option label="P2P" value="P2P" />
+            <el-option label="RELAY" value="RELAY" />
+            <el-option label="UNKNOWN" value="UNKNOWN" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createRoomVisible = false">取消</el-button>
+        <el-button type="primary" :loading="roomActionLoading" @click="handleCreateRoomSubmit">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="joinRoomVisible" title="加入房间" width="520px" destroy-on-close>
+      <el-form label-position="top">
+        <el-form-item label="房间码">
+          <el-input v-model="joinRoomForm.roomCode" maxlength="32" placeholder="例如：ABCD-9K2M" />
+        </el-form-item>
+        <el-form-item label="我的虚拟 IP">
+          <el-input v-model="joinRoomForm.virtualIp" maxlength="64" placeholder="例如：10.144.12.8" />
+        </el-form-item>
+        <el-form-item label="连接模式">
+          <el-select v-model="joinRoomForm.connectionMode" class="w-full">
+            <el-option label="P2P" value="P2P" />
+            <el-option label="RELAY" value="RELAY" />
+            <el-option label="UNKNOWN" value="UNKNOWN" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="joinRoomVisible = false">取消</el-button>
+        <el-button type="primary" :loading="roomActionLoading" @click="handleJoinRoomSubmit">加入</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { easyTierService } from '@/services/easytierService';
+import { easyTierService, type EasyTierConfig } from '@/services/easytierService';
 import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
+import { useRoomStore } from '@/stores/room';
 import { useUserStore } from '@/stores/user';
+import type { RoomMemberVO } from '@/types/room';
+import { formatRelativeTime } from '@/utils/datetime';
 import { isElectron } from '@/utils/electron';
 import EasyTierDialog from '@/views/components/easytier/easytier-dialog.vue';
 import TopBar from '@/views/components/top-bar.vue';
@@ -73,6 +175,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import LobbyNetworkPanel from './components/lobby-network-panel.vue';
 import LobbyOverviewHeader from './components/lobby-overview-header.vue';
+import LobbyPanelCard from './components/lobby-panel-card.vue';
 import LobbyPartnerList from './components/lobby-partner-list.vue';
 import LobbyQuickActions from './components/lobby-quick-actions.vue';
 import LobbyRoomList from './components/lobby-room-list.vue';
@@ -89,6 +192,7 @@ import type {
 
 const authStore = useAuthStore();
 const globalStore = useGlobalStore();
+const roomStore = useRoomStore();
 const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
@@ -96,10 +200,27 @@ const route = useRoute();
 const isElectronEnv = isElectron();
 const settingsVisible = ref(false);
 const profileVisible = ref(false);
+const createRoomVisible = ref(false);
+const joinRoomVisible = ref(false);
+const roomActionLoading = ref(false);
 const easyTierRunning = ref(false);
 const easyTierPid = ref<number | null>(null);
 const peerCount = ref(0);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
+
+const createRoomForm = ref({
+  name: '',
+  gameName: '',
+  maxMembers: 8,
+  virtualIp: '',
+  connectionMode: 'P2P'
+});
+
+const joinRoomForm = ref({
+  roomCode: '',
+  virtualIp: '',
+  connectionMode: 'P2P'
+});
 
 const sidebarKeyByRouteName: Record<string, string> = {
   MainHome: 'home',
@@ -194,45 +315,32 @@ const quickActions: LobbyQuickAction[] = [
   }
 ];
 
-const recentRooms = ref<LobbyRoomSummary[]>([
-  {
-    id: 'room-ashen',
-    name: 'Ashen Valley 联机房',
-    code: 'ASHN-72QF',
-    game: 'Minecraft',
-    mode: 'P2P 优先',
-    membersOnline: 3,
-    membersTotal: 4,
-    status: 'ready',
-    statusLabel: '联机已就绪',
-    lastActive: '12 分钟前'
-  },
-  {
-    id: 'room-rally',
-    name: 'Rally Night',
-    code: 'RLY-88DT',
-    game: 'Euro Truck',
-    mode: '中继模式',
-    membersOnline: 2,
-    membersTotal: 5,
-    status: 'gathering',
-    statusLabel: '等待成员',
-    lastActive: '35 分钟前'
-  },
-  {
-    id: 'room-expedition',
-    name: 'Expedition Squad',
-    code: 'EXP-41LK',
-    game: 'Terraria',
-    mode: '需要诊断',
-    membersOnline: 1,
-    membersTotal: 4,
-    status: 'warning',
-    statusLabel: '连接异常',
-    lastActive: '昨天'
-  }
-]);
+const recentRooms = computed<LobbyRoomSummary[]>(() => {
+  return roomStore.rooms.map((room) => {
+    const isWarning = room.status !== 'ACTIVE';
+    const roomStatus: LobbyRoomSummary['status'] = isWarning
+      ? 'warning'
+      : room.memberCount > 1
+        ? 'ready'
+        : 'gathering';
 
+    return {
+      id: room.id,
+      name: room.name,
+      code: room.roomCode,
+      game: room.gameName || 'No game profile',
+      mode: room.myConnectionMode || 'UNKNOWN',
+      membersOnline: room.memberCount,
+      membersTotal: room.maxMembers,
+      status: roomStatus,
+      statusLabel: isWarning ? 'Closed' : room.memberCount > 1 ? 'Ready' : 'Waiting',
+      lastActive: room.updatedAt ? formatRelativeTime(room.updatedAt) : 'Just now'
+    };
+  });
+});
+
+const currentRoom = computed(() => roomStore.currentRoom);
+const currentRoomMembers = computed<RoomMemberVO[]>(() => currentRoom.value?.members || []);
 const partners = ref<LobbyPartnerSummary[]>([
   {
     id: 'partner-1',
@@ -417,33 +525,152 @@ function handleQuickAction(actionKey: string) {
 
       return;
     case 'create-room':
-      ElMessage.success('主页布局已预留创建房间入口，下一步可直接接入房间表单。');
+      createRoomVisible.value = true;
 
       return;
     case 'join-room':
-      ElMessage.success('加入房间入口已预留，后续可接房间码校验与网络加入流程。');
+      joinRoomVisible.value = true;
 
       return;
     case 'launch-game':
-      ElMessage.info('一键启动游戏需要先定义 gameProfile 和启动参数。');
+      ElMessage.info('Define a gameProfile before launching a game.');
 
       return;
     default:
-      ElMessage.info('该动作暂未绑定。');
+      ElMessage.info('Action is not bound yet.');
+  }
+}
+
+async function copyText(content: string, successText: string, fallbackText: string) {
+  if (!content) {
+    ElMessage.warning(fallbackText);
+
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(content);
+    ElMessage.success(successText);
+  } catch {
+    ElMessage.warning(fallbackText);
   }
 }
 
 async function handleCopyRoomCode(room: LobbyRoomSummary) {
+  await copyText(room.code, `Room code copied: ${room.code}`, `Room code: ${room.code}`);
+}
+
+async function handleCopyRoomCodeFromCurrent() {
+  await copyText(
+    currentRoom.value?.roomCode || '',
+    `Room code copied: ${currentRoom.value?.roomCode || ''}`,
+    'Current room has no room code.'
+  );
+}
+
+async function handleCopyMyVirtualIp() {
+  await copyText(
+    currentRoom.value?.myVirtualIp || '',
+    `Virtual IP copied: ${currentRoom.value?.myVirtualIp || ''}`,
+    'Current room has no virtual IP.'
+  );
+}
+async function handleOpenRoom(room: LobbyRoomSummary) {
+  await roomStore.openRoom(room.id);
+}
+
+function buildEasyTierConfigByRoomCode(roomCode: string): EasyTierConfig {
+  const normalized = roomCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const roomKey = normalized || 'DEFAULTROOM';
+
+  return {
+    networkName: `linx-room-${roomKey}`,
+    networkSecret: `linx-room-${roomKey}`,
+    peers: [],
+    dhcp: true,
+    defaultProtocol: 'tcp',
+    rpcPort: 11010
+  };
+}
+
+async function switchEasyTierToRoom(roomCode: string): Promise<boolean> {
+  if (!isElectronEnv) {
+    return true;
+  }
+
+  const statusRes = await easyTierService.getStatus();
+  if (statusRes.success && statusRes.data.running) {
+    const stopRes = await easyTierService.stop();
+    if (!stopRes.success) {
+      ElMessage.warning(stopRes.error || 'Failed to stop current EasyTier process.');
+      return false;
+    }
+  }
+
+  const startRes = await easyTierService.start(buildEasyTierConfigByRoomCode(roomCode));
+  if (!startRes.success) {
+    ElMessage.error(startRes.error || 'Failed to start EasyTier for this room.');
+    return false;
+  }
+
+  await refreshEasyTierStatus();
+  return true;
+}
+
+async function handleCreateRoomSubmit() {
+  if (!createRoomForm.value.name.trim()) {
+    ElMessage.warning('Please enter a room name.');
+
+    return;
+  }
+
+  roomActionLoading.value = true;
   try {
-    await navigator.clipboard.writeText(room.code);
-    ElMessage.success(`已复制房间码 ${room.code}`);
-  } catch {
-    ElMessage.warning(`房间码为 ${room.code}`);
+    const room = await roomStore.createRoom({
+      name: createRoomForm.value.name.trim(),
+      gameName: createRoomForm.value.gameName.trim() || undefined,
+      maxMembers: createRoomForm.value.maxMembers,
+      virtualIp: createRoomForm.value.virtualIp.trim() || undefined,
+      connectionMode: createRoomForm.value.connectionMode
+    });
+    if (room) {
+      const switched = await switchEasyTierToRoom(room.roomCode);
+      if (!switched) {
+        ElMessage.warning('Room created, but EasyTier switch failed. Please check network settings.');
+      }
+      createRoomVisible.value = false;
+      await roomStore.openRoom(room.id);
+    }
+  } finally {
+    roomActionLoading.value = false;
   }
 }
 
-function handleOpenRoom(room: LobbyRoomSummary) {
-  ElMessage.info(`房间 "${room.name}" 的详情视图还未接入，这里先保留入口。`);
+async function handleJoinRoomSubmit() {
+  if (!joinRoomForm.value.roomCode.trim()) {
+    ElMessage.warning('Please enter a room code.');
+
+    return;
+  }
+
+  roomActionLoading.value = true;
+  try {
+    const room = await roomStore.joinRoom({
+      roomCode: joinRoomForm.value.roomCode.trim(),
+      virtualIp: joinRoomForm.value.virtualIp.trim() || undefined,
+      connectionMode: joinRoomForm.value.connectionMode
+    });
+    if (room) {
+      const switched = await switchEasyTierToRoom(room.roomCode);
+      if (!switched) {
+        ElMessage.warning('Joined room, but EasyTier switch failed. Please check network settings.');
+      }
+      joinRoomVisible.value = false;
+      await roomStore.openRoom(room.id);
+    }
+  } finally {
+    roomActionLoading.value = false;
+  }
 }
 
 onMounted(async () => {
@@ -452,6 +679,10 @@ onMounted(async () => {
   }
 
   await userStore.initialize();
+  await roomStore.loadRooms();
+  if (!roomStore.currentRoom && roomStore.rooms.length > 0) {
+    await roomStore.openRoom(roomStore.rooms[0].id);
+  }
   await refreshEasyTierStatus();
 
   if (isElectronEnv) {
@@ -468,3 +699,7 @@ onUnmounted(() => {
   }
 });
 </script>
+
+
+
+

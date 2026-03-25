@@ -42,3 +42,13 @@ html {
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* Make all Element Plus dialogs centered by default */
+.el-overlay-dialog {
+  display: flex;
+  align-items: center;
+}
+
+.el-overlay-dialog .el-dialog {
+  margin: 0 auto !important;
+}

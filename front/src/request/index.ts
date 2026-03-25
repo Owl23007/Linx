@@ -15,6 +15,7 @@ export * as friendsApi from './friends';
 
 // 导出群组相关API
 export * as groupsApi from './groups';
+export * as roomsApi from './rooms';
 
 // 导出用户相关API
 export * as userApi from './user';
@@ -26,3 +27,4 @@ const route = ref();
 export default {
   route,
 };
+

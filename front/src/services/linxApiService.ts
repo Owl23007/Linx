@@ -7,6 +7,7 @@ import * as authApi from '@/request/auth';
 import * as chatApi from '@/request/chat';
 import * as friendsApi from '@/request/friends';
 import * as groupsApi from '@/request/groups';
+import * as roomsApi from '@/request/rooms';
 import * as userApi from '@/request/user';
 
 class LinxApiService {
@@ -185,6 +186,14 @@ class LinxApiService {
      * 搜索群组
      */
     search: groupsApi.searchGroups,
+  };
+
+  // ==================== 房间相关 ====================
+  rooms = {
+    create: roomsApi.createRoom,
+    join: roomsApi.joinRoom,
+    getMine: roomsApi.getMyRooms,
+    getDetails: roomsApi.getRoomDetails,
   };
 
   // ==================== 聊天相关 ====================
