@@ -1,5 +1,5 @@
 <template>
-  <LobbyPanelCard title="快速操作" subtitle="先把常用动作放到首页，后续再接真实房间流程。">
+  <PanelCard title="快速操作" subtitle="先把常用动作放到首页，后续再接真实房间流程。">
     <div class="grid gap-3 md:grid-cols-2">
       <button
         v-for="action in actions"
@@ -31,12 +31,12 @@
         </p>
       </button>
     </div>
-  </LobbyPanelCard>
+  </PanelCard>
 </template>
 
 <script setup lang="ts">
 import type { LobbyQuickAction } from '../types';
-import LobbyPanelCard from './lobby-panel-card.vue';
+import PanelCard from './panel-card.vue';
 
 defineProps<{
   actions: LobbyQuickAction[]

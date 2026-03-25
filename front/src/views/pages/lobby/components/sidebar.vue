@@ -2,7 +2,7 @@
   <aside class="h-full overflow-hidden">
     <div class="grid h-full grid-cols-[60px_minmax(0,1fr)]">
       <div class="border-r border-slate-200/70">
-      <LobbySidebarRail
+      <SidebarRail
         :items="items"
         :avatar-url="avatarUrl"
         :user-initials="userInitials"
@@ -12,7 +12,7 @@
       />
       </div>
 
-      <LobbySidebarPanel
+      <SidebarPanel
         :items="items"
         :active-item="activeItem"
         :user-name="userName"
@@ -32,8 +32,8 @@
 
 <script setup lang="ts">
 import type { LobbyNavItem } from '../types';
-import LobbySidebarPanel from './lobby-sidebar-panel.vue';
-import LobbySidebarRail from './lobby-sidebar-rail.vue';
+import SidebarPanel from './sidebar-panel.vue';
+import SidebarRail from './sidebar-rail.vue';
 
 defineProps<{
   userName: string

@@ -1,5 +1,5 @@
 <template>
-  <LobbyPanelCard title="联机伙伴" subtitle="先保留轻社交视图，只展示能帮主流程的在线信息。">
+  <PanelCard title="联机伙伴" subtitle="先保留轻社交视图，只展示能帮主流程的在线信息。">
     <div class="space-y-3">
       <div
         v-for="partner in partners"
@@ -28,12 +28,12 @@
         </div>
       </div>
     </div>
-  </LobbyPanelCard>
+  </PanelCard>
 </template>
 
 <script setup lang="ts">
 import type { LobbyPartnerSummary } from '../types';
-import LobbyPanelCard from './lobby-panel-card.vue';
+import PanelCard from './panel-card.vue';
 
 defineProps<{
   partners: LobbyPartnerSummary[]

@@ -13,7 +13,7 @@
       <div
         class="grid h-full overflow-hidden border-b border-slate-200/70 bg-white/56 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl grid-cols-[252px_minmax(0,1fr)] sm:grid-cols-[284px_minmax(0,1fr)] 2xl:grid-cols-[284px_minmax(0,1fr)_320px]">
         <div class="min-h-0 border-r border-slate-200/70 bg-white/72">
-          <LobbySidebar :user-name="displayName" :avatar-url="avatarUrl" :user-initials="userInitials"
+          <Sidebar :user-name="displayName" :avatar-url="avatarUrl" :user-initials="userInitials"
             :endpoint-label="endpointLabel" :items="sidebarItems" :active-item="activeSidebarItem"
             :online-partners="onlinePartnerCount" :recent-room-count="recentRooms.length"
             :network-hint="sidebarNetworkHint" @select="handleSelectNav" @quick-action="handleQuickAction"
@@ -22,16 +22,16 @@
 
         <main class="min-h-0 overflow-auto bg-white/14 p-2.5 sm:p-3.5 md:p-4">
           <div class="space-y-4">
-            <!--LobbyOverviewHeader :title="overviewTitle" :subtitle="overviewSubtitle" :stats="overviewStats" /-->
+            <!--OverviewHeader :title="overviewTitle" :subtitle="overviewSubtitle" :stats="overviewStats" /-->
 
-            <LobbyQuickActions :actions="quickActions" @select="handleQuickAction" />
+            <QuickActions :actions="quickActions" @select="handleQuickAction" />
 
-            <LobbyNetworkPanel class="2xl:hidden" :summary="networkSummary" @refresh="refreshEasyTierStatus"
+            <NetworkPanel class="2xl:hidden" :summary="networkSummary" @refresh="refreshEasyTierStatus"
               @open-settings="handleOpenSettings" @open-diagnostics="handleOpenDiagnostics" />
 
-            <LobbyRoomList :rooms="recentRooms" @copy-code="handleCopyRoomCode" @open-room="handleOpenRoom" />
+            <RoomList :rooms="recentRooms" @copy-code="handleCopyRoomCode" @open-room="handleOpenRoom" />
 
-            <LobbyPanelCard v-if="currentRoom" title="当前房间" subtitle="展示成员、房主、连接模式和我的虚拟 IP。">
+            <PanelCard v-if="currentRoom" title="当前房间" subtitle="展示成员、房主、连接模式和我的虚拟 IP。">
               <div class="space-y-3">
                 <div class="rounded-[20px] border border-slate-200/70 bg-slate-50/80 p-4">
                   <div class="flex flex-wrap items-center justify-between gap-3">
@@ -76,25 +76,25 @@
                   </article>
                 </div>
               </div>
-            </LobbyPanelCard>
+            </PanelCard>
 
-            <LobbyPartnerList class="2xl:hidden" :partners="partners" />
+            <PartnerList class="2xl:hidden" :partners="partners" />
           </div>
         </main>
 
         <aside class="hidden min-h-0 overflow-auto border-l border-slate-200/70 bg-white/40 p-3 2xl:block">
           <div class="space-y-4">
-            <LobbyNetworkPanel :summary="networkSummary" @refresh="refreshEasyTierStatus"
+            <NetworkPanel :summary="networkSummary" @refresh="refreshEasyTierStatus"
               @open-settings="handleOpenSettings" @open-diagnostics="handleOpenDiagnostics" />
 
-            <LobbyPartnerList :partners="partners" />
+            <PartnerList :partners="partners" />
           </div>
         </aside>
       </div>
     </div>
 
     <EasyTierDialog v-model="settingsVisible" />
-    <LobbyUserProfileDialog v-model="profileVisible" />
+    <UserProfileDialog v-model="profileVisible" />
 
     <el-dialog v-model="createRoomVisible" title="创建房间" width="520px" destroy-on-close>
       <el-form label-position="top">
@@ -185,13 +185,13 @@ import {
 import { ElMessage } from 'element-plus';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import LobbyNetworkPanel from './components/lobby-network-panel.vue';
-import LobbyPanelCard from './components/lobby-panel-card.vue';
-import LobbyPartnerList from './components/lobby-partner-list.vue';
-import LobbyQuickActions from './components/lobby-quick-actions.vue';
-import LobbyRoomList from './components/lobby-room-list.vue';
-import LobbySidebar from './components/lobby-sidebar.vue';
-import LobbyUserProfileDialog from './components/lobby-user-profile-dialog.vue';
+import NetworkPanel from './components/network-panel.vue';
+import PanelCard from './components/panel-card.vue';
+import PartnerList from './components/partner-list.vue';
+import QuickActions from './components/quick-actions.vue';
+import RoomList from './components/room-list.vue';
+import Sidebar from './components/sidebar.vue';
+import UserProfileDialog from './components/user-profile-dialog.vue';
 import type {
   LobbyNavItem,
   LobbyNetworkSummary,

@@ -1,5 +1,5 @@
 <template>
-  <LobbyPanelCard title="网络状态" subtitle="右侧集中展示当前设备的联机状态和诊断入口。">
+  <PanelCard title="网络状态" subtitle="右侧集中展示当前设备的联机状态和诊断入口。">
     <template #action>
       <el-button link type="primary" @click="emit('refresh')">
         刷新
@@ -53,12 +53,12 @@
         </el-button>
       </div>
     </div>
-  </LobbyPanelCard>
+  </PanelCard>
 </template>
 
 <script setup lang="ts">
 import type { LobbyNetworkSummary } from '../types';
-import LobbyPanelCard from './lobby-panel-card.vue';
+import PanelCard from './panel-card.vue';
 
 defineProps<{
   summary: LobbyNetworkSummary

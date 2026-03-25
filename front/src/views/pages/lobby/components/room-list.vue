@@ -1,5 +1,5 @@
 <template>
-  <LobbyPanelCard title="最近房间" subtitle="房间是联机容器，列表优先展示状态、成员和房间码。">
+  <PanelCard title="最近房间" subtitle="房间是联机容器，列表优先展示状态、成员和房间码。">
     <div class="space-y-3">
       <article
         v-for="room in rooms"
@@ -41,12 +41,12 @@
         </div>
       </article>
     </div>
-  </LobbyPanelCard>
+  </PanelCard>
 </template>
 
 <script setup lang="ts">
 import type { LobbyRoomSummary } from '../types';
-import LobbyPanelCard from './lobby-panel-card.vue';
+import PanelCard from './panel-card.vue';
 
 defineProps<{
   rooms: LobbyRoomSummary[]
