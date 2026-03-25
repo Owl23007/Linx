@@ -168,17 +168,9 @@
     <EasyTierDialog v-model="settingsVisible" />
     <UserProfileDialog v-model="profileVisible" />
 
-    <CreateRoomDialog
-      v-model="createRoomVisible"
-      :loading="roomActionLoading"
-      @submit="handleCreateRoomSubmit"
-    />
+    <CreateRoomDialog v-model="createRoomVisible" :loading="roomActionLoading" @submit="handleCreateRoomSubmit" />
 
-    <JoinRoomDialog
-      v-model="joinRoomVisible"
-      :loading="roomActionLoading"
-      @submit="handleJoinRoomSubmit"
-    />
+    <JoinRoomDialog v-model="joinRoomVisible" :loading="roomActionLoading" @submit="handleJoinRoomSubmit" />
   </div>
 </template>
 
@@ -344,14 +336,14 @@ const quickActions: LobbyQuickAction[] = [
   {
     key: 'create-room',
     title: '创建房间',
-    description: '立即创建联机房间并生成可分享的房间码。',
+    description: '立即创建联机房间并生成房间码。',
     icon: Plus,
     accent: 'sky'
   },
   {
     key: 'join-room',
     title: '加入房间',
-    description: '输入房间码快速入房，自动拉取成员和连接信息。',
+    description: '输入房间码快速入房，自动拉取连接信息。',
     icon: Promotion,
     accent: 'emerald'
   },
@@ -365,7 +357,7 @@ const quickActions: LobbyQuickAction[] = [
   {
     key: 'network-settings',
     title: '网络设置',
-    description: '查看 EasyTier 参数、节点状态和调试入口。',
+    description: '查看 EasyTier 参数、节点状态。',
     icon: Setting,
     accent: 'rose'
   }

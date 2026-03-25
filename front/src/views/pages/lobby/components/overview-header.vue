@@ -16,7 +16,7 @@
 
       <div class="grid gap-3 sm:grid-cols-3">
         <div v-for="stat in stats" :key="stat.label"
-          class="min-w-[148px] rounded-2xl border border-white/80 bg-white/78 px-4 py-4 shadow-sm backdrop-blur">
+          class="min-w-37 rounded-2xl border border-white/80 bg-white/78 px-4 py-4 shadow-sm backdrop-blur">
           <p class="text-xs uppercase tracking-[0.18em] text-slate-400">{{ stat.label }}</p>
           <p class="mt-2 text-2xl font-semibold text-slate-900">{{ stat.value }}</p>
           <p class="mt-1 text-xs text-slate-500">{{ stat.helper }}</p>

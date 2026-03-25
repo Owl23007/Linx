@@ -1,28 +1,30 @@
 <template>
   <PanelCard borderless>
-    <div class="grid gap-3 md:grid-cols-2">
+    <div class="grid gap-2.5 md:grid-cols-2">
       <button v-for="action in displayActions" :key="action.key" type="button"
-        class="group rounded-[24px] border border-slate-200/70 px-4 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+        class="group rounded-2xl border border-slate-200/70 px-3.5 py-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
         :class="getActionClasses(action.accent)" @click="emit('select', action.key)">
-        <div class="flex items-start justify-between gap-3">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg"
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
             :class="getIconClasses(action.accent)">
-            <el-icon :size="20">
+            <el-icon :size="18">
               <component :is="action.icon" />
             </el-icon>
           </div>
           <span
-            class="rounded-full border border-white/80 bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            class="rounded-full border border-white/80 bg-white/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
             Action
           </span>
         </div>
 
-        <h3 class="mt-4 text-base font-semibold text-slate-900">
-          {{ action.title }}
-        </h3>
-        <p class="mt-2 text-sm leading-6 text-slate-600">
-          {{ action.description }}
-        </p>
+        <div class="mt-2.5 flex items-start justify-between gap-2.5">
+          <h3 class="shrink-0 text-[15px] font-semibold text-slate-900">
+            {{ action.title }}
+          </h3>
+          <p class="max-w-[68%] text-right text-[13px] leading-5 text-slate-600">
+            {{ action.description }}
+          </p>
+        </div>
       </button>
     </div>
   </PanelCard>
