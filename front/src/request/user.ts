@@ -5,6 +5,23 @@ const profileRouteCandidates = ['/profile'];
 const authUserInfoRouteCandidates = ['/auth/userinfo'];
 const linxUserRouteCandidates = ['/linx/user', '/user'];
 
+export interface CreateProfileImageUploadPayload {
+  filename: string;
+  contentType: string;
+  fileSize: number;
+}
+
+export interface ProfileImageUploadUrlVO {
+  objectName: string;
+  uploadUrl: string;
+  publicUrl: string;
+  method: string;
+  contentType: string;
+  expireInSeconds: number;
+  expireAt: number;
+  headers?: Record<string, string>;
+}
+
 // ==================== 用户信息查询 ====================
 
 /**
@@ -68,6 +85,26 @@ export async function updateCurrentUserProfile(data: {
   backgroundImage?: string;
 }): Promise<Result> {
   return put('/profile/me', data);
+}
+
+export function createCurrentUserAvatarUploadUrl(
+  data: CreateProfileImageUploadPayload,
+): Promise<Result<ProfileImageUploadUrlVO>> {
+  return post('/profile/me/avatar/upload-url', data);
+}
+
+export function confirmCurrentUserAvatarUpload(objectName: string): Promise<Result> {
+  return post('/profile/me/avatar/confirm', { objectName });
+}
+
+export function createCurrentUserBackgroundUploadUrl(
+  data: CreateProfileImageUploadPayload,
+): Promise<Result<ProfileImageUploadUrlVO>> {
+  return post('/profile/me/background/upload-url', data);
+}
+
+export function confirmCurrentUserBackgroundUpload(objectName: string): Promise<Result> {
+  return post('/profile/me/background/confirm', { objectName });
 }
 
 // ==================== 用户状态管理 ====================

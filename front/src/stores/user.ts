@@ -1,6 +1,8 @@
 import type { UserInfo } from '@/models/auth';
+import type { CreateProfileImageUploadPayload, ProfileImageUploadUrlVO } from '@/request/user';
 import linxApi from '@/services/linxApiService';
 import type { UserStatus, UserVO } from '@/types/user';
+import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
@@ -8,6 +10,16 @@ import { useAuthStore } from './auth';
 
 const USER_STORAGE_KEY = 'userProfile';
 const LEGACY_USER_STORAGE_KEY = 'user';
+const AVATAR_MAX_SIZE_BYTES = 2 * 1024 * 1024;
+const BACKGROUND_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_PROFILE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const PROFILE_IMAGE_EXTENSION_MAP: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
 
 function toOptionalString(value: unknown): string | undefined {
   if (typeof value === 'string') {
@@ -21,6 +33,38 @@ function toOptionalString(value: unknown): string | undefined {
   }
 
   return undefined;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    return `${Math.round((bytes / (1024 * 1024)) * 10) / 10}MB`;
+  }
+
+  if (bytes >= 1024) {
+    return `${Math.round((bytes / 1024) * 10) / 10}KB`;
+  }
+
+  return `${bytes}B`;
+}
+
+function resolveProfileImageContentType(file: File): string | null {
+  const normalizedType = toOptionalString(file.type)?.toLowerCase();
+
+  if (normalizedType && ALLOWED_PROFILE_IMAGE_TYPES.has(normalizedType)) {
+    return normalizedType;
+  }
+
+  const dotIndex = file.name.lastIndexOf('.');
+  if (dotIndex === -1) {
+    return null;
+  }
+
+  const extension = file.name.slice(dotIndex + 1).trim().toLowerCase();
+  if (!extension) {
+    return null;
+  }
+
+  return PROFILE_IMAGE_EXTENSION_MAP[extension] || null;
 }
 
 function normalizePresenceStatus(status: unknown): UserStatus | undefined {
@@ -207,6 +251,117 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  async function uploadProfileImage(file: File, imageType: 'avatar' | 'background'): Promise<string | null> {
+    const contentType = resolveProfileImageContentType(file);
+
+    if (!contentType) {
+      ElMessage.error('仅支持 JPG、PNG、WEBP、GIF 图片');
+
+      return null;
+    }
+
+    const maxSizeBytes = imageType === 'avatar' ? AVATAR_MAX_SIZE_BYTES : BACKGROUND_MAX_SIZE_BYTES;
+    if (file.size > maxSizeBytes) {
+      const label = imageType === 'avatar' ? '头像' : '背景图';
+      ElMessage.error(`${label}大小不能超过 ${formatFileSize(maxSizeBytes)}`);
+
+      return null;
+    }
+
+    const payload: CreateProfileImageUploadPayload = {
+      filename: file.name || `${imageType}.jpg`,
+      contentType,
+      fileSize: file.size,
+    };
+
+    try {
+      const createRes = imageType === 'avatar'
+        ? await linxApi.user.createAvatarUploadUrl(payload)
+        : await linxApi.user.createBackgroundUploadUrl(payload);
+
+      if (createRes.code !== 0) {
+        ElMessage.error(createRes.message || '生成上传地址失败');
+
+        return null;
+      }
+
+      const uploadInfo = createRes.data as ProfileImageUploadUrlVO | undefined;
+      const uploadUrl = toOptionalString(uploadInfo?.uploadUrl);
+      const objectName = toOptionalString(uploadInfo?.objectName);
+      const publicUrl = toOptionalString(uploadInfo?.publicUrl);
+      const method = toOptionalString(uploadInfo?.method)?.toUpperCase() || 'PUT';
+
+      if (!uploadUrl || !objectName) {
+        ElMessage.error('上传地址响应缺少必要字段');
+
+        return null;
+      }
+
+      if (method !== 'PUT') {
+        ElMessage.error(`暂不支持 ${method} 上传方式`);
+
+        return null;
+      }
+
+      const uploadContentType = toOptionalString(uploadInfo?.contentType) || contentType;
+      const uploadHeaders: Record<string, string> = {};
+      if (uploadInfo?.headers) {
+        for (const [headerName, headerValue] of Object.entries(uploadInfo.headers)) {
+          const normalizedValue = toOptionalString(headerValue);
+          if (normalizedValue) {
+            uploadHeaders[headerName] = normalizedValue;
+          }
+        }
+      }
+      uploadHeaders['Content-Type'] = uploadContentType;
+
+      await axios.request({
+        url: uploadUrl,
+        method: 'PUT',
+        headers: uploadHeaders,
+        data: file,
+      });
+
+      const confirmRes = imageType === 'avatar'
+        ? await linxApi.user.confirmAvatarUpload(objectName)
+        : await linxApi.user.confirmBackgroundUpload(objectName);
+
+      if (confirmRes.code !== 0) {
+        ElMessage.error(confirmRes.message || '确认上传失败');
+
+        return null;
+      }
+
+      const latestUser = setCurrentUser(confirmRes.data);
+      const fallbackUrl = publicUrl || '';
+      const finalUrl = imageType === 'avatar'
+        ? latestUser?.avatarImage || latestUser?.avatar || fallbackUrl
+        : latestUser?.backgroundImage || fallbackUrl;
+
+      ElMessage.success(confirmRes.message || (imageType === 'avatar' ? '头像上传成功' : '背景图上传成功'));
+
+      return finalUrl || null;
+    } catch (error: unknown) {
+      let errorMessage = '';
+      if (axios.isAxiosError(error)) {
+        const responseData = error.response?.data as { message?: unknown } | undefined;
+        errorMessage = toOptionalString(responseData?.message) || '';
+      }
+
+      ElMessage.error(errorMessage || '上传图片失败');
+
+      return null;
+    }
+  }
+
+  async function uploadAvatar(file: File): Promise<string | null> {
+    return uploadProfileImage(file, 'avatar');
+  }
+
+  async function uploadBackground(file: File): Promise<string | null> {
+    return uploadProfileImage(file, 'background');
+  }
+
   async function getUserById(targetUserId: number, forceRefresh = false): Promise<UserVO | undefined> {
     if (!forceRefresh && userCache.value.has(targetUserId)) {
       return userCache.value.get(targetUserId);
@@ -356,6 +511,8 @@ export const useUserStore = defineStore('user', () => {
     setCurrentUser,
     loadCurrentUser,
     updateProfile,
+    uploadAvatar,
+    uploadBackground,
     getUserById,
     getUsersByIds,
     updateStatus,

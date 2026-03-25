@@ -61,6 +61,26 @@ class LinxApiService {
     updateProfile: userApi.updateCurrentUserProfile,
 
     /**
+     * 创建头像上传直链
+     */
+    createAvatarUploadUrl: userApi.createCurrentUserAvatarUploadUrl,
+
+    /**
+     * 确认头像上传
+     */
+    confirmAvatarUpload: userApi.confirmCurrentUserAvatarUpload,
+
+    /**
+     * 创建背景图上传直链
+     */
+    createBackgroundUploadUrl: userApi.createCurrentUserBackgroundUploadUrl,
+
+    /**
+     * 确认背景图上传
+     */
+    confirmBackgroundUpload: userApi.confirmCurrentUserBackgroundUpload,
+
+    /**
      * 更新用户状态
      */
     updateStatus: userApi.updateUserStatus,
