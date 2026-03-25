@@ -129,8 +129,8 @@ class Logger {
         });
       });
 
-      webContents.on('unresponsive', async () => {
-        await this.warn('WEB_CONTENTS_UNRESPONSIVE', 'WebContents became unresponsive', {
+      webContents.on('unresponsive', () => {
+        this.warn('WEB_CONTENTS_UNRESPONSIVE', 'WebContents became unresponsive', {
           webContentsId: webContents.id,
           url: webContents.getURL()
         });
@@ -143,8 +143,8 @@ class Logger {
     });
 
     // 证书错误
-    app.on('certificate-error', async (event, webContents, url, error, certificate) => {
-      await this.warn('CERTIFICATE_ERROR', `Certificate error: ${error}`, {
+    app.on('certificate-error', (event, webContents, url, error, certificate) => {
+      this.warn('CERTIFICATE_ERROR', `Certificate error: ${error}`, {
         url,
         certificate: certificate.subject
       });
@@ -301,7 +301,7 @@ class Logger {
       if (context.stack) {
         errObj.stack = context.stack;
       } else if (Error.captureStackTrace) {
-        Error.captureStackTrace(errObj, this.error);
+        Error.captureStackTrace(errObj);
       }
     }
 

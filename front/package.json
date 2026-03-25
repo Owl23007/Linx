@@ -18,7 +18,7 @@
     "url": "https://github.com/Owl23007/Linx.git"
   },
   "scripts": {
-    "postinstall": "electron-builder install-app-deps && node scripts/download-easytier.js",
+    "postinstall": "electron-builder install-app-deps && npm run download:easytier",
     "download:easytier": "node scripts/download-easytier.js",
     "dev": "vp dev --host",
     "electron": "cross-env NODE_ENV=development electron .",
@@ -114,6 +114,11 @@
       "createStartMenuShortcut": true,
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico"
+    }
+  },
+  "pnpm": {
+    "overrides": {
+      "node-gyp": "12.2.0"
     }
   },
   "packageManager": "pnpm@10.33.0"

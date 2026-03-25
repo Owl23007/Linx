@@ -768,13 +768,13 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-// 表单切换动画 - 向左滑动（登录->注册）
+/* 表单切换动画 - 向左滑动（登录->注册） */
 .slide-left-enter-active,
 .slide-left-leave-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-// 表单切换动画 - 向右滑动（注册->登录）
+/* 表单切换动画 - 向右滑动（注册->登录） */
 .slide-right-enter-active,
 .slide-right-leave-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -836,7 +836,7 @@ onUnmounted(() => {
   transform: translateX(0);
 }
 
-// 表单容器
+/* 表单容器 */
 .form-container {
   position: relative;
   min-height: 200px;
@@ -846,7 +846,7 @@ onUnmounted(() => {
   width: 100%;
 }
 
-// Tab 样式
+/* Tab 样式 */
 .custom-tabs .tab-list {
   display: flex;
   position: relative;
@@ -889,7 +889,7 @@ onUnmounted(() => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-// 拖动区域样式
+/* 拖动区域样式 */
 .drag-area {
   user-select: none;
   transition: background-color 0.2s ease;
@@ -903,7 +903,7 @@ onUnmounted(() => {
   cursor: move;
 }
 
-// 窗口控制按钮样式
+/* 窗口控制按钮样式 */
 .window-btn {
   background-color: transparent;
   border: 1px solid transparent;
