@@ -1,6 +1,6 @@
 <template>
   <header v-if="isElectronEnv"
-    class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-50 bg-white/92 backdrop-blur-sm">
+    class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-50 bg-white/92 backdrop-blur-sm border-b border-slate-200/70">
     <!-- 左侧：Logo/标题 -->
     <div class="flex items-center no-drag ml-2">
       <Title :size="0.8" />

@@ -9,8 +9,31 @@ const routes = [
   },
   {
     path: '/main',
-    name: 'Main',
+    redirect: { name: 'MainHome' },
+  },
+  {
+    path: '/main/home',
+    name: 'MainHome',
     component: () => import('@/views/pages/lobby/index.vue'),
+    meta: {
+      sidebarKey: 'home',
+    },
+  },
+  {
+    path: '/main/rooms',
+    name: 'MainRooms',
+    component: () => import('@/views/pages/lobby/index.vue'),
+    meta: {
+      sidebarKey: 'rooms',
+    },
+  },
+  {
+    path: '/main/diagnostics',
+    name: 'MainDiagnostics',
+    component: () => import('@/views/pages/lobby/index.vue'),
+    meta: {
+      sidebarKey: 'diagnostics',
+    },
   },
   {
     path: '/',

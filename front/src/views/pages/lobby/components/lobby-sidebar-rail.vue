@@ -20,10 +20,10 @@
           :class="item.isActive ? 'bg-sky-600 text-white shadow-lg shadow-sky-200/80' : 'bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-100 hover:text-slate-900'"
           @click="emit('select', item)"
         >
-          <el-icon :size="17">
+          <el-icon :size="18">
             <component :is="item.icon" />
           </el-icon>
-          <span v-if="item.badge" class="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+          <span v-if="item.badge" class="absolute -right-2 -top-2 rounded-full bg-rose-500 px-1.5 py-0.5 text-[8px] font-semibold leading-none text-white">
             {{ item.badge }}
           </span>
         </button>

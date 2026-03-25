@@ -8,7 +8,8 @@
 
     <TopBar @open-settings="handleOpenSettings" />
 
-    <div class="relative h-full px-0 pb-0 pt-0" :style="{ paddingTop: isElectronEnv ? '48px' : '0px' }">
+    <div class="relative h-full px-0 pb-0 pt-0" :class="{ 'border-t border-slate-200/70': !isElectronEnv }"
+      :style="{ paddingTop: isElectronEnv ? '48px' : '0px' }">
       <div
         class="grid h-full overflow-hidden border-b border-slate-200/70 bg-white/56 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl grid-cols-[252px_minmax(0,1fr)] sm:grid-cols-[284px_minmax(0,1fr)] 2xl:grid-cols-[284px_minmax(0,1fr)_320px]">
         <div class="min-h-0 border-r border-slate-200/70 bg-white/72">
@@ -59,16 +60,17 @@ import { isElectron } from '@/utils/electron';
 import EasyTierDialog from '@/views/components/easytier/easytier-dialog.vue';
 import TopBar from '@/views/components/top-bar.vue';
 import {
-  DataAnalysis,
   FolderOpened,
+  House,
   Link,
-  Operation,
+  Monitor,
   Plus,
   Promotion,
   Setting
 } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import LobbyNetworkPanel from './components/lobby-network-panel.vue';
 import LobbyOverviewHeader from './components/lobby-overview-header.vue';
 import LobbyPartnerList from './components/lobby-partner-list.vue';
@@ -88,6 +90,8 @@ import type {
 const authStore = useAuthStore();
 const globalStore = useGlobalStore();
 const userStore = useUserStore();
+const router = useRouter();
+const route = useRoute();
 
 const isElectronEnv = isElectron();
 const settingsVisible = ref(false);
@@ -97,33 +101,42 @@ const easyTierPid = ref<number | null>(null);
 const peerCount = ref(0);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
-const activeSidebarKey = ref('home');
+const sidebarKeyByRouteName: Record<string, string> = {
+  MainHome: 'home',
+  MainRooms: 'rooms',
+  MainDiagnostics: 'diagnostics'
+};
+
+const activeSidebarKey = computed(() => {
+  if (typeof route.name !== 'string') {
+    return 'home';
+  }
+
+  return sidebarKeyByRouteName[route.name] || 'home';
+});
 
 const sidebarBaseItems: Omit<LobbyNavItem, 'isActive'>[] = [
   {
     key: 'home',
+    routeName: 'MainHome',
     label: '联机首页',
     description: '创建房间、加入房间和查看主状态。',
-    icon: Operation,
+    icon: House,
     badge: 'Now'
   },
   {
     key: 'rooms',
+    routeName: 'MainRooms',
     label: '房间列表',
     description: '管理最近房间和常用联机入口。',
     icon: FolderOpened
   },
   {
     key: 'diagnostics',
+    routeName: 'MainDiagnostics',
     label: '连接诊断',
     description: '快速定位虚拟网络、权限和中继问题。',
-    icon: DataAnalysis
-  },
-  {
-    key: 'settings',
-    label: '网络设置',
-    description: '打开 EasyTier 配置与服务状态面板。',
-    icon: Setting
+    icon: Monitor
   }
 ];
 
@@ -143,9 +156,10 @@ const activeSidebarItem = computed<LobbyNavItem>(() => {
 
   return {
     key: 'home',
+    routeName: 'MainHome',
     label: '联机首页',
     description: '创建房间、加入房间和查看主状态。',
-    icon: Operation,
+    icon: House,
     badge: 'Now',
     isActive: true
   };
@@ -387,25 +401,15 @@ function handleOpenProfile() {
 }
 
 function handleOpenDiagnostics() {
-  ElMessage.info('诊断抽屉还未接入，这里先保留为主流程入口。');
+  void router.push({ name: 'MainDiagnostics' });
 }
 
 function handleSelectNav(item: LobbyNavItem) {
-  activeSidebarKey.value = item.key;
-
-  if (item.key === 'settings') {
-    handleOpenSettings();
-
+  if (route.name === item.routeName) {
     return;
   }
 
-  if (item.key === 'diagnostics') {
-    handleOpenDiagnostics();
-
-    return;
-  }
-
-  ElMessage.info(`${item.label} 模块已完成布局，后续再接入真实路由。`);
+  void router.push({ name: item.routeName });
 }
 
 function handleQuickAction(actionKey: string) {

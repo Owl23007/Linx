@@ -2,6 +2,7 @@ import type { Component } from 'vue';
 
 export interface LobbyNavItem {
   key: string
+  routeName: string
   label: string
   description: string
   icon: Component
