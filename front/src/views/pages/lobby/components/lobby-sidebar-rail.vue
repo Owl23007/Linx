@@ -3,7 +3,7 @@
     <div class="flex flex-col items-center gap-3">
       <button
         type="button"
-        class="rounded-full transition-transform duration-200 hover:scale-[1.04] focus:outline-none focus:ring-2 focus:ring-sky-200"
+        class="flex h-11 w-11 items-center justify-center rounded-full p-0 leading-none transition-transform duration-200 hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
         @click="emit('open-profile')"
       >
         <el-avatar :size="40" :src="avatarUrl" class="bg-slate-950 text-[13px] font-semibold shadow-lg shadow-slate-300/55">

@@ -121,8 +121,7 @@ const sidebarBaseItems: Omit<LobbyNavItem, 'isActive'>[] = [
     routeName: 'MainHome',
     label: '联机首页',
     description: '创建房间、加入房间和查看主状态。',
-    icon: House,
-    badge: 'Now'
+    icon: House
   },
   {
     key: 'rooms',
@@ -160,7 +159,6 @@ const activeSidebarItem = computed<LobbyNavItem>(() => {
     label: '联机首页',
     description: '创建房间、加入房间和查看主状态。',
     icon: House,
-    badge: 'Now',
     isActive: true
   };
 });
