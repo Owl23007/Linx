@@ -1,5 +1,47 @@
-# Vue 3 + TypeScript + Vite
+# Linx Frontend
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+`front/` 是 Linx 的桌面客户端，基于 Vue 3 + TypeScript + Vite + Electron。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## 当前职责
+
+- 登录与账号切换
+- 桌面窗口能力
+- EasyTier 本地组网能力接入
+- 联机首页、房间页和诊断入口的主要承载层
+
+## 启动方式
+
+```bash
+npm install
+npm run electron:dev
+```
+
+如果只需要下载 EasyTier：
+
+```bash
+npm run download:easytier
+```
+
+## 关键目录
+
+- `src/views/pages/login/`: 登录与注册页
+- `src/views/pages/lobby/`: 当前主页面入口，后续应演进为联机首页
+- `src/views/components/easytier/`: EasyTier 相关 UI
+- `src/services/easytierService.ts`: 前端到 Electron 的 EasyTier 调用封装
+- `electron/managers/easytier.js`: EasyTier 子进程管理
+- `electron/ipc/easytierHandler.js`: EasyTier IPC 暴露
+
+## 当前前端问题
+
+- `lobby/index.vue` 仍是占位页
+- 还没有 `connectionStore` / `roomStore` / `diagnosisStore`
+- 仍保留较多聊天域命名
+
+## 设计文档
+
+- [产品定位](../doc/PRODUCT_DIRECTION.md)
+- [信息架构](../doc/INFORMATION_ARCHITECTURE.md)
+- [交互文案规范](../doc/UX_COPY_GUIDE.md)
+- [架构基线](../doc/ARCHITECTURE_BASELINE.md)
+
+后续新增联机功能时，优先遵循 `doc/` 下的文档，而不是继续沿用默认 Vue 模板说明。

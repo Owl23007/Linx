@@ -22,8 +22,15 @@ export interface LoginResponse {
 /**
  * 用户信息
  */
-export interface UserInfo extends LoginResponse {
+export interface UserInfo {
+  userId?: number;
   username?: string;
+  nickname?: string;
   email?: string;
+  phone?: string;
+  signature?: string;
+  avatarImage?: string;
+  backgroundImage?: string;
+  status?: string;
   role?: string;
 }

@@ -78,6 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = null;
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userProfile');
       localStorage.removeItem('user');
       loading.value = false;
     }
@@ -85,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function initAuth() {
     const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    const savedUser = localStorage.getItem('userProfile') || localStorage.getItem('user');
 
     if (savedToken && savedUser) {
       token.value = savedToken;

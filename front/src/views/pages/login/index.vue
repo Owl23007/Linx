@@ -263,6 +263,7 @@ import { getUserInfo } from '@/request/auth';
 import authService from '@/services/authService';
 import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
+import { useUserStore } from '@/stores/user';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
 import icons from '@/views/components/icons';
@@ -284,6 +285,7 @@ const tabs = [
 
 // ========== 状态管理 ==========
 const authStore = useAuthStore();
+const userStore = useUserStore();
 
 // 页面状态
 const savedAccounts = ref<any[]>([]);
@@ -457,8 +459,7 @@ async function handleAccountLogin(account: any) {
         const userRes = await getUserInfo();
         if (userRes.code === 0) {
           const userInfo = userRes.data;
-          authStore.user = userInfo;
-          localStorage.setItem('user', JSON.stringify(userInfo));
+          userStore.setCurrentUser(userInfo);
 
           if (isElectron()) {
             await authService.saveAccount({
@@ -542,15 +543,19 @@ async function performLogin(): Promise<boolean> {
       // 获取用户信息并保存账号
       try {
         const userRes = await getUserInfo();
-        if (userRes.code === 0 && isElectron()) {
+        if (userRes.code === 0) {
           const userInfo = userRes.data;
-          await authService.saveAccount({
-            server_url: formattedUrl,
-            username: userInfo.username,
-            nickname: userInfo.nickname || userInfo.username,
-            avatar_url: userInfo.avatarImage || '',
-            refresh_token: res.data.refreshToken
-          });
+          userStore.setCurrentUser(userInfo);
+
+          if (isElectron()) {
+            await authService.saveAccount({
+              server_url: formattedUrl,
+              username: userInfo.username,
+              nickname: userInfo.nickname || userInfo.username,
+              avatar_url: userInfo.avatarImage || '',
+              refresh_token: res.data.refreshToken
+            });
+          }
         }
       } catch {
         // 无操作
