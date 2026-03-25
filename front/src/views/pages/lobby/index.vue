@@ -705,9 +705,9 @@ function buildEasyTierConfig(
   };
 }
 
-function buildEasyTierConfigFromRoom(room: RoomVO): EasyTierConfig | null {
+function buildEasyTierConfigFromRoom(room: RoomVO, networkSecretInput?: string): EasyTierConfig | null {
   const networkName = room.networkName?.trim() || '';
-  const networkSecret = room.networkSecret?.trim() || '';
+  const networkSecret = (networkSecretInput || '').trim();
   const relayAddresses = (room.relayAddresses || []).map((item) => item.trim()).filter(Boolean);
 
   if (!networkName || !networkSecret || relayAddresses.length === 0) {
@@ -748,14 +748,13 @@ async function handleCreateRoomSubmit(payload: CreateRoomSubmitPayload) {
       name: payload.name,
       gameName: payload.gameName,
       maxMembers: payload.maxMembers,
-      networkName: payload.name,
       networkSecret: payload.roomPassword,
       relayAddresses: payload.relayAddresses,
       virtualIp: payload.virtualIp,
       connectionMode: 'P2P'
     });
     if (room) {
-      const easyTierConfig = buildEasyTierConfigFromRoom(room);
+      const easyTierConfig = buildEasyTierConfigFromRoom(room, payload.roomPassword);
       if (easyTierConfig) {
         const switched = await switchEasyTierNetwork(easyTierConfig);
         if (!switched) {
@@ -789,7 +788,7 @@ async function handleJoinRoomSubmit(payload: JoinRoomSubmitPayload) {
           ElMessage.warning('?????,? EasyTier ????,????????');
         }
       } else {
-        ElMessage.error('????????????,?????? EasyTier?');
+        ElMessage.warning('??????,?????? EasyTier ???????');
       }
 
       joinRoomVisible.value = false;

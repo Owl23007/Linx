@@ -6,7 +6,6 @@ export interface CreateRoomDto {
   name: string;
   gameName?: string;
   maxMembers?: number;
-  networkName: string;
   networkSecret: string;
   relayAddresses: string[];
   virtualIp?: string;
@@ -36,7 +35,6 @@ export interface RoomVO {
   roomCode: string;
   gameName?: string;
   networkName?: string;
-  networkSecret?: string;
   relayAddresses?: string[];
   status: RoomStatus;
   ownerId: number;

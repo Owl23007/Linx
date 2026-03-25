@@ -47,7 +47,7 @@ CREATE TABLE rooms (
     name VARCHAR(255) NOT NULL,
     room_code VARCHAR(32) NOT NULL UNIQUE,
     game_name VARCHAR(255),
-    network_name VARCHAR(255) NOT NULL,
+    network_name VARCHAR(255) NOT NULL UNIQUE,
     network_secret VARCHAR(255) NOT NULL,
     relay_addresses TEXT NOT NULL,
     owner_id BIGINT NOT NULL,

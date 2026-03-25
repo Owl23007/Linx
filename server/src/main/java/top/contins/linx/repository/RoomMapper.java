@@ -15,6 +15,9 @@ public interface RoomMapper extends BaseMapper<Room> {
     @Select("SELECT * FROM rooms WHERE room_code = #{roomCode} LIMIT 1")
     Room findByRoomCode(@Param("roomCode") String roomCode);
 
+    @Select("SELECT * FROM rooms WHERE network_name = #{networkName} LIMIT 1")
+    Room findByNetworkName(@Param("networkName") String networkName);
+
     @Select("SELECT r.* FROM rooms r " +
             "JOIN room_members rm ON r.id = rm.room_id " +
             "WHERE rm.user_id = #{userId} AND r.status = #{status} " +
@@ -24,4 +27,3 @@ public interface RoomMapper extends BaseMapper<Room> {
     @Select("SELECT COUNT(*) FROM room_members WHERE room_id = #{roomId}")
     long countMembersByRoomId(@Param("roomId") Long roomId);
 }
-

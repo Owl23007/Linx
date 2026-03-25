@@ -20,7 +20,6 @@ public class RoomVO {
     private String roomCode;
     private String gameName;
     private String networkName;
-    private String networkSecret;
     private List<String> relayAddresses;
     private RoomStatus status;
     private Long ownerId;
