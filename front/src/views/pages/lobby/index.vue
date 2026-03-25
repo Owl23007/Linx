@@ -26,56 +26,40 @@
 
             <PanelCard v-if="isRoomsView" title="房间检索" subtitle="通过关键词和状态快速定位房间。">
               <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <el-input
-                  v-model="roomKeyword"
-                  clearable
-                  placeholder="搜索房间名 / 房间码"
-                  class="lg:max-w-sm"
-                />
+                <el-input v-model="roomKeyword" clearable placeholder="搜索房间名 / 房间码" class="lg:max-w-sm" />
                 <div class="flex flex-wrap gap-2">
-                  <el-button round :type="roomStatusFilter === 'all' ? 'primary' : 'default'" @click="roomStatusFilter = 'all'">
+                  <el-button round :type="roomStatusFilter === 'all' ? 'primary' : 'default'"
+                    @click="roomStatusFilter = 'all'">
                     全部
                   </el-button>
-                  <el-button round :type="roomStatusFilter === 'ready' ? 'primary' : 'default'" @click="roomStatusFilter = 'ready'">
+                  <el-button round :type="roomStatusFilter === 'ready' ? 'primary' : 'default'"
+                    @click="roomStatusFilter = 'ready'">
                     已就绪
                   </el-button>
-                  <el-button round :type="roomStatusFilter === 'gathering' ? 'primary' : 'default'" @click="roomStatusFilter = 'gathering'">
+                  <el-button round :type="roomStatusFilter === 'gathering' ? 'primary' : 'default'"
+                    @click="roomStatusFilter = 'gathering'">
                     等待中
                   </el-button>
-                  <el-button round :type="roomStatusFilter === 'warning' ? 'primary' : 'default'" @click="roomStatusFilter = 'warning'">
+                  <el-button round :type="roomStatusFilter === 'warning' ? 'primary' : 'default'"
+                    @click="roomStatusFilter = 'warning'">
                     需处理
                   </el-button>
                 </div>
               </div>
             </PanelCard>
 
-            <NetworkPanel
-              v-if="isHomeView || isRoomsView"
-              class="2xl:hidden"
-              :summary="networkSummary"
-              @refresh="refreshEasyTierStatus"
-              @open-settings="handleOpenSettings"
-              @open-diagnostics="handleOpenDiagnostics"
-            />
+            <NetworkPanel v-if="isHomeView || isRoomsView" class="2xl:hidden" :summary="networkSummary"
+              @refresh="refreshEasyTierStatus" @open-settings="handleOpenSettings"
+              @open-diagnostics="handleOpenDiagnostics" />
 
-            <NetworkPanel
-              v-if="isDiagnosticsView"
-              :summary="networkSummary"
-              @refresh="refreshEasyTierStatus"
-              @open-settings="handleOpenSettings"
-              @open-diagnostics="handleOpenDiagnostics"
-            />
+            <NetworkPanel v-if="isDiagnosticsView" :summary="networkSummary" @refresh="refreshEasyTierStatus"
+              @open-settings="handleOpenSettings" @open-diagnostics="handleOpenDiagnostics" />
 
             <PanelCard v-if="isDiagnosticsView" title="连接诊断" subtitle="按顺序检查服务状态、房间状态和成员可见性。">
               <div class="grid gap-3 md:grid-cols-2">
-                <article
-                  v-for="item in diagnosticChecks"
-                  :key="item.key"
-                  class="rounded-2xl border px-4 py-3"
-                  :class="item.state === 'ok'
-                    ? 'border-emerald-200 bg-emerald-50/60'
-                    : 'border-amber-200 bg-amber-50/70'"
-                >
+                <article v-for="item in diagnosticChecks" :key="item.key" class="rounded-2xl border px-4 py-3" :class="item.state === 'ok'
+                  ? 'border-emerald-200 bg-emerald-50/60'
+                  : 'border-amber-200 bg-amber-50/70'">
                   <div class="flex items-start justify-between gap-3">
                     <div>
                       <p class="text-sm font-semibold text-slate-900">{{ item.title }}</p>
@@ -85,31 +69,19 @@
                       {{ item.state === 'ok' ? '正常' : '待处理' }}
                     </el-tag>
                   </div>
-                  <el-button
-                    v-if="item.actionLabel && item.actionKey"
-                    class="mt-3"
-                    size="small"
-                    round
-                    @click="handleDiagnosticAction(item.actionKey as DiagnosticActionKey)"
-                  >
+                  <el-button v-if="item.actionLabel && item.actionKey" class="mt-3" size="small" round
+                    @click="handleDiagnosticAction(item.actionKey as DiagnosticActionKey)">
                     {{ item.actionLabel }}
                   </el-button>
                 </article>
               </div>
             </PanelCard>
 
-            <RoomList
-              v-if="!isDiagnosticsView && visibleRooms.length > 0"
-              :rooms="visibleRooms"
-              @copy-code="handleCopyRoomCode"
-              @open-room="handleOpenRoom"
-            />
+            <RoomList v-if="!isDiagnosticsView && visibleRooms.length > 0" :rooms="visibleRooms"
+              @copy-code="handleCopyRoomCode" @open-room="handleOpenRoom" />
 
-            <PanelCard
-              v-if="!isDiagnosticsView && visibleRooms.length === 0"
-              title="房间列表"
-              subtitle="没有匹配结果，尝试清空筛选条件或创建新房间。"
-            >
+            <PanelCard v-if="!isDiagnosticsView && visibleRooms.length === 0" title="房间列表"
+              subtitle="没有匹配结果，尝试清空筛选条件或创建新房间。">
               <div class="flex flex-wrap gap-2">
                 <el-button round type="primary" @click="createRoomVisible = true">创建房间</el-button>
                 <el-button round @click="roomKeyword = ''; roomStatusFilter = 'all'">清空筛选</el-button>
@@ -169,13 +141,8 @@
 
         <aside class="hidden min-h-0 overflow-auto border-l border-slate-200/70 bg-white/40 p-3 2xl:block">
           <div class="space-y-4">
-            <NetworkPanel
-              v-if="!isDiagnosticsView"
-              :summary="networkSummary"
-              @refresh="refreshEasyTierStatus"
-              @open-settings="handleOpenSettings"
-              @open-diagnostics="handleOpenDiagnostics"
-            />
+            <NetworkPanel v-if="!isDiagnosticsView" :summary="networkSummary" @refresh="refreshEasyTierStatus"
+              @open-settings="handleOpenSettings" @open-diagnostics="handleOpenDiagnostics" />
 
             <PanelCard v-if="isDiagnosticsView" title="诊断动作" subtitle="优先刷新状态，其次核对房间和网络配置。">
               <div class="flex flex-col gap-2">
@@ -187,7 +154,8 @@
 
             <PartnerList v-if="!isDiagnosticsView && partners.length > 0" :partners="partners" />
 
-            <PanelCard v-if="!isDiagnosticsView && partners.length === 0" title="联机成员" subtitle="当前房间暂无可展示成员，加入房间后会在这里显示。">
+            <PanelCard v-if="!isDiagnosticsView && partners.length === 0" title="联机成员"
+              subtitle="当前房间暂无可展示成员，加入房间后会在这里显示。">
               <el-button round type="primary" @click="joinRoomVisible = true">
                 加入房间
               </el-button>
@@ -200,69 +168,17 @@
     <EasyTierDialog v-model="settingsVisible" />
     <UserProfileDialog v-model="profileVisible" />
 
-    <el-dialog v-model="createRoomVisible" title="创建房间" width="520px" destroy-on-close>
-      <el-form label-position="top">
-        <el-form-item label="房间名">
-          <el-input v-model="createRoomForm.name" maxlength="32" placeholder="例如：周末联机房" />
-        </el-form-item>
-        <el-form-item label="房间密码（EasyTier 密钥）">
-          <el-input v-model="createRoomForm.roomPassword" maxlength="64" show-password placeholder="请输入房间密码" />
-        </el-form-item>
-        <el-form-item label="中继地址">
-          <el-select v-model="createRoomForm.relayPreset" class="w-full">
-            <el-option label="使用 woyioii 中继" value="woyioii" />
-            <el-option label="使用 EasyTier 社区中继" value="official" />
-            <el-option label="同时使用两者" value="both" />
-            <el-option label="自定义中继" value="custom" />
-          </el-select>
-        </el-form-item>
-        <el-form-item v-if="createRoomForm.relayPreset === 'custom'" label="自定义中继地址">
-          <el-input v-model="createRoomForm.customRelayAddress" maxlength="128" placeholder="tcp://host:11010" />
-        </el-form-item>
-        <el-form-item label="游戏名称">
-          <el-input v-model="createRoomForm.gameName" maxlength="32" placeholder="例如：Minecraft" />
-        </el-form-item>
-        <el-form-item label="最大成员数">
-          <el-input-number v-model="createRoomForm.maxMembers" :min="2" :max="64" :step="1" class="w-full" />
-        </el-form-item>
-        <el-form-item label="我的虚拟 IP">
-          <el-input v-model="createRoomForm.virtualIp" maxlength="64" placeholder="例如：10.144.12.3" />
-        </el-form-item>
-        <el-form-item label="连接模式">
-          <el-select v-model="createRoomForm.connectionMode" class="w-full">
-            <el-option label="P2P" value="P2P" />
-            <el-option label="RELAY" value="RELAY" />
-            <el-option label="UNKNOWN" value="UNKNOWN" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createRoomVisible = false">取消</el-button>
-        <el-button type="primary" :loading="roomActionLoading" @click="handleCreateRoomSubmit">创建</el-button>
-      </template>
-    </el-dialog>
+    <CreateRoomDialog
+      v-model="createRoomVisible"
+      :loading="roomActionLoading"
+      @submit="handleCreateRoomSubmit"
+    />
 
-    <el-dialog v-model="joinRoomVisible" title="加入房间" width="520px" destroy-on-close>
-      <el-form label-position="top">
-        <el-form-item label="房间码">
-          <el-input v-model="joinRoomForm.roomCode" maxlength="32" placeholder="例如：ABCD-9K2M" />
-        </el-form-item>
-        <el-form-item label="我的虚拟 IP">
-          <el-input v-model="joinRoomForm.virtualIp" maxlength="64" placeholder="例如：10.144.12.8" />
-        </el-form-item>
-        <el-form-item label="连接模式">
-          <el-select v-model="joinRoomForm.connectionMode" class="w-full">
-            <el-option label="P2P" value="P2P" />
-            <el-option label="RELAY" value="RELAY" />
-            <el-option label="UNKNOWN" value="UNKNOWN" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="joinRoomVisible = false">取消</el-button>
-        <el-button type="primary" :loading="roomActionLoading" @click="handleJoinRoomSubmit">加入</el-button>
-      </template>
-    </el-dialog>
+    <JoinRoomDialog
+      v-model="joinRoomVisible"
+      :loading="roomActionLoading"
+      @submit="handleJoinRoomSubmit"
+    />
   </div>
 </template>
 
@@ -289,6 +205,8 @@ import {
 import { ElMessage } from 'element-plus';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import CreateRoomDialog, { type CreateRoomSubmitPayload } from './components/create-room-dialog.vue';
+import JoinRoomDialog, { type JoinRoomSubmitPayload } from './components/join-room-dialog.vue';
 import NetworkPanel from './components/network-panel.vue';
 import PanelCard from './components/panel-card.vue';
 import PartnerList from './components/partner-list.vue';
@@ -321,28 +239,6 @@ const easyTierRunning = ref(false);
 const easyTierPid = ref<number | null>(null);
 const peerCount = ref(0);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
-
-const EASYTIER_RELAY_WOYIOII = 'tcp://www.woyioii.cn:11010';
-const EASYTIER_RELAY_OFFICIAL = 'tcp://public.easytier.top:11010';
-
-type RelayPreset = 'woyioii' | 'official' | 'both' | 'custom';
-
-const createRoomForm = ref({
-  name: '',
-  roomPassword: '',
-  relayPreset: 'both' as RelayPreset,
-  customRelayAddress: '',
-  gameName: '',
-  maxMembers: 8,
-  virtualIp: '',
-  connectionMode: 'P2P'
-});
-
-const joinRoomForm = ref({
-  roomCode: '',
-  virtualIp: '',
-  connectionMode: 'P2P'
-});
 
 const sidebarKeyByRouteName: Record<string, string> = {
   MainHome: 'home',
@@ -802,38 +698,6 @@ async function handleOpenRoom(room: LobbyRoomSummary) {
   await roomStore.openRoom(room.id);
 }
 
-function normalizeRelayAddress(address: string): string {
-  const trimmed = address.trim();
-  if (!trimmed) {
-    return '';
-  }
-
-  if (trimmed.includes('://')) {
-    return trimmed;
-  }
-
-  return `tcp://${trimmed}`;
-}
-
-function resolveRelayAddresses(preset: RelayPreset, customAddress: string): string[] {
-  const addresses: string[] = [];
-
-  if (preset === 'woyioii' || preset === 'both') {
-    addresses.push(EASYTIER_RELAY_WOYIOII);
-  }
-  if (preset === 'official' || preset === 'both') {
-    addresses.push(EASYTIER_RELAY_OFFICIAL);
-  }
-  if (preset === 'custom') {
-    const custom = normalizeRelayAddress(customAddress);
-    if (custom) {
-      addresses.push(custom);
-    }
-  }
-
-  return Array.from(new Set(addresses));
-}
-
 function buildEasyTierConfig(
   networkName: string,
   networkSecret: string,
@@ -885,39 +749,18 @@ async function switchEasyTierNetwork(config: EasyTierConfig): Promise<boolean> {
   return true;
 }
 
-async function handleCreateRoomSubmit() {
-  if (!createRoomForm.value.name.trim()) {
-    ElMessage.warning('???????');
-
-    return;
-  }
-  if (!createRoomForm.value.roomPassword.trim()) {
-    ElMessage.warning('????????');
-
-    return;
-  }
-
-  const relayAddresses = resolveRelayAddresses(
-    createRoomForm.value.relayPreset,
-    createRoomForm.value.customRelayAddress
-  );
-  if (relayAddresses.length === 0) {
-    ElMessage.warning('????????????');
-
-    return;
-  }
-
+async function handleCreateRoomSubmit(payload: CreateRoomSubmitPayload) {
   roomActionLoading.value = true;
   try {
     const room = await roomStore.createRoom({
-      name: createRoomForm.value.name.trim(),
-      gameName: createRoomForm.value.gameName.trim() || undefined,
-      maxMembers: createRoomForm.value.maxMembers,
-      networkName: createRoomForm.value.name.trim(),
-      networkSecret: createRoomForm.value.roomPassword.trim(),
-      relayAddresses,
-      virtualIp: createRoomForm.value.virtualIp.trim() || undefined,
-      connectionMode: createRoomForm.value.connectionMode
+      name: payload.name,
+      gameName: payload.gameName,
+      maxMembers: payload.maxMembers,
+      networkName: payload.name,
+      networkSecret: payload.roomPassword,
+      relayAddresses: payload.relayAddresses,
+      virtualIp: payload.virtualIp,
+      connectionMode: 'P2P'
     });
     if (room) {
       const easyTierConfig = buildEasyTierConfigFromRoom(room);
@@ -938,19 +781,13 @@ async function handleCreateRoomSubmit() {
   }
 }
 
-async function handleJoinRoomSubmit() {
-  if (!joinRoomForm.value.roomCode.trim()) {
-    ElMessage.warning('???????');
-
-    return;
-  }
-
+async function handleJoinRoomSubmit(payload: JoinRoomSubmitPayload) {
   roomActionLoading.value = true;
   try {
     const room = await roomStore.joinRoom({
-      roomCode: joinRoomForm.value.roomCode.trim(),
-      virtualIp: joinRoomForm.value.virtualIp.trim() || undefined,
-      connectionMode: joinRoomForm.value.connectionMode
+      roomCode: payload.roomCode,
+      virtualIp: payload.virtualIp,
+      connectionMode: 'P2P'
     });
     if (room) {
       const easyTierConfig = buildEasyTierConfigFromRoom(room);
@@ -996,4 +833,3 @@ onUnmounted(() => {
   }
 });
 </script>
-
