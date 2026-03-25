@@ -263,6 +263,7 @@ import { getUserInfo } from '@/request/auth';
 import authService from '@/services/authService';
 import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
+import { useUserStore } from '@/stores/user';
 import dragSetup from '@/utils/drag';
 import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
 import icons from '@/views/components/icons';
@@ -284,6 +285,7 @@ const tabs = [
 
 // ========== 状态管理 ==========
 const authStore = useAuthStore();
+const userStore = useUserStore();
 
 // 页面状态
 const savedAccounts = ref<any[]>([]);
@@ -457,8 +459,7 @@ async function handleAccountLogin(account: any) {
         const userRes = await getUserInfo();
         if (userRes.code === 0) {
           const userInfo = userRes.data;
-          authStore.user = userInfo;
-          localStorage.setItem('user', JSON.stringify(userInfo));
+          userStore.setCurrentUser(userInfo);
 
           if (isElectron()) {
             await authService.saveAccount({
@@ -542,15 +543,19 @@ async function performLogin(): Promise<boolean> {
       // 获取用户信息并保存账号
       try {
         const userRes = await getUserInfo();
-        if (userRes.code === 0 && isElectron()) {
+        if (userRes.code === 0) {
           const userInfo = userRes.data;
-          await authService.saveAccount({
-            server_url: formattedUrl,
-            username: userInfo.username,
-            nickname: userInfo.nickname || userInfo.username,
-            avatar_url: userInfo.avatarImage || '',
-            refresh_token: res.data.refreshToken
-          });
+          userStore.setCurrentUser(userInfo);
+
+          if (isElectron()) {
+            await authService.saveAccount({
+              server_url: formattedUrl,
+              username: userInfo.username,
+              nickname: userInfo.nickname || userInfo.username,
+              avatar_url: userInfo.avatarImage || '',
+              refresh_token: res.data.refreshToken
+            });
+          }
         }
       } catch {
         // 无操作
@@ -762,14 +767,14 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped lang="less">
-// 表单切换动画 - 向左滑动（登录->注册）
+<style scoped>
+/* 表单切换动画 - 向左滑动（登录->注册） */
 .slide-left-enter-active,
 .slide-left-leave-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-// 表单切换动画 - 向右滑动（注册->登录）
+/* 表单切换动画 - 向右滑动（注册->登录） */
 .slide-right-enter-active,
 .slide-right-leave-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -831,7 +836,7 @@ onUnmounted(() => {
   transform: translateX(0);
 }
 
-// 表单容器
+/* 表单容器 */
 .form-container {
   position: relative;
   min-height: 200px;
@@ -841,66 +846,64 @@ onUnmounted(() => {
   width: 100%;
 }
 
-// Tab 样式
-.custom-tabs {
-  .tab-list {
-    display: flex;
-    position: relative;
-    background-color: #f9fafb;
-    border-radius: 0.5rem;
-    padding: 0.25rem;
-
-    .tab-item {
-      flex: 1;
-      text-align: center;
-      padding: 0.5rem 0;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: #6b7280;
-      cursor: pointer;
-      border-radius: 0.375rem;
-      position: relative;
-      z-index: 10;
-      transition: color 0.2s ease;
-      user-select: none;
-
-      &.active {
-        color: #ffffff;
-      }
-
-      &:hover:not(.active) {
-        color: #374151;
-      }
-    }
-
-    .tab-slider {
-      position: absolute;
-      top: 0.25rem;
-      bottom: 0.25rem;
-      background: linear-gradient(to right, #3b82f6, #2563eb);
-      border-radius: 0.375rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 5;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-  }
+/* Tab 样式 */
+.custom-tabs .tab-list {
+  display: flex;
+  position: relative;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 0.25rem;
 }
 
-// 拖动区域样式
+.custom-tabs .tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  position: relative;
+  z-index: 10;
+  transition: color 0.2s ease;
+  user-select: none;
+}
+
+.custom-tabs .tab-item.active {
+  color: #ffffff;
+}
+
+.custom-tabs .tab-item:hover:not(.active) {
+  color: #374151;
+}
+
+.custom-tabs .tab-slider {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  border-radius: 0.375rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 拖动区域样式 */
 .drag-area {
   user-select: none;
   transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-  }
-
-  &:active {
-    cursor: move;
-  }
 }
 
-// 窗口控制按钮样式
+.drag-area:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.drag-area:active {
+  cursor: move;
+}
+
+/* 窗口控制按钮样式 */
 .window-btn {
   background-color: transparent;
   border: 1px solid transparent;
@@ -913,44 +916,44 @@ onUnmounted(() => {
   justify-content: center;
   transition: all 0.2s ease;
   margin-left: 0.5vh;
+}
 
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.5);
-  }
+.window-btn:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
 
-  &.minimize-btn:hover {
-    background-color: rgba(59, 130, 246, 0.1);
-    border-color: transparent;
-  }
+.window-btn.minimize-btn:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: transparent;
+}
 
-  &.close-btn:hover {
-    background-color: #ef4444;
-    color: white;
-  }
+.window-btn.close-btn:hover {
+  background-color: #ef4444;
+  color: white;
 }
 </style>
 
-<style lang="less">
+<style>
 .round-input {
   border-radius: 0.45rem !important;
+}
 
-  .el-input-group__prepend {
-    border-radius: 0.45rem;
-    border: 0;
-    box-shadow: 0 0 0 0px;
-  }
+.round-input .el-input-group__prepend {
+  border-radius: 0.45rem;
+  border: 0;
+  box-shadow: 0 0 0 0px;
+}
 
-  .el-input__wrapper {
-    border-radius: 0.45rem;
-    border: 0;
-    box-shadow: 0 0 0 0px;
-  }
+.round-input .el-input__wrapper {
+  border-radius: 0.45rem;
+  border: 0;
+  box-shadow: 0 0 0 0px;
+}
 
-  .el-input-group__append {
-    border-radius: 0.45rem;
-    border: 0;
-    box-shadow: 0 0 0 0px;
-  }
+.round-input .el-input-group__append {
+  border-radius: 0.45rem;
+  border: 0;
+  box-shadow: 0 0 0 0px;
 }
 
 .message {

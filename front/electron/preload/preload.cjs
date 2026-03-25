@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld('electronApi', {
 
   // 监听主进程消息
   on: (channel, callback) => {
-    const subscription = (event, ...args) => callback(...args);
+    const subscription = (_event, ...args) => callback(...args);
     ipcRenderer.on(channel, subscription);
 
     return () => ipcRenderer.removeListener(channel, subscription);

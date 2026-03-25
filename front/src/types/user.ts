@@ -9,12 +9,21 @@ export type UserStatus = 'ONLINE' | 'OFFLINE' | 'AWAY' | 'DND' | 'HIDDEN';
  * 用户信息
  */
 export interface UserVO {
-  userId: number;
-  username: string;
+  userId?: number;
+  id?: number;
+  username?: string;
   nickname?: string;
   avatar?: string;
-  status: UserStatus;
+  avatarImage?: string;
+  email?: string;
+  phone?: string;
+  signature?: string;
+  backgroundImage?: string;
+  role?: string;
+  status?: UserStatus;
+  accountStatus?: string;
   lastSeenAt?: string;
+  updatedAt?: string;
   createdAt?: string;
 }
 

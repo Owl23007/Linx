@@ -5,9 +5,11 @@
     "install-hooks": "node scripts/install-hooks.js",
     "install-hooks-ps1": "powershell -ExecutionPolicy Bypass -File scripts/install-hooks.ps1",
     "install-hooks-bash": "bash scripts/install-hooks.sh",
-    "setup": "npm install && npm run install-hooks"
+    "setup": "npm install && npm run install-hooks",
+    "test:linx-api": "node scripts/test-linx-api.js"
   },
   "workspaces": [
     "front"
-  ]
+  ],
+  "packageManager": "pnpm@10.33.0"
 }

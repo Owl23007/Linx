@@ -56,6 +56,11 @@ class LinxApiService {
     getCurrent: userApi.getCurrentUser,
 
     /**
+     * 更新当前用户资料
+     */
+    updateProfile: userApi.updateCurrentUserProfile,
+
+    /**
      * 更新用户状态
      */
     updateStatus: userApi.updateUserStatus,

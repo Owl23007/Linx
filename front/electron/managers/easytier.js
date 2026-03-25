@@ -34,7 +34,7 @@ class EasyTierManager {
   async init() {
     if (!fs.existsSync(this.binPath)) {
       const error = new Error(`未找到 EasyTier 可执行文件: ${this.binPath}`);
-      logger.error('EASYTIER', error.message);
+      void logger.error('EASYTIER', error.message);
       throw error;
     }
     logger.info('EASYTIER', `找到可执行文件: ${this.binPath}`);
@@ -181,7 +181,7 @@ class EasyTierManager {
       });
 
       this.process.stderr.on('data', (data) => {
-        logger.error('EASYTIER_STDERR', data.toString().trim());
+        void logger.error('EASYTIER_STDERR', data.toString().trim());
       });
 
       this.process.on('close', (code) => {
@@ -191,7 +191,7 @@ class EasyTierManager {
 
       return true;
     } catch (e) {
-      logger.error('EASYTIER', `启动进程失败: ${e.message}`);
+      void logger.error('EASYTIER', `启动进程失败: ${e.message}`);
       throw e;
     }
   }
