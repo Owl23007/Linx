@@ -25,7 +25,7 @@ npm run download:easytier
 ## 关键目录
 
 - `src/views/pages/login/`: 登录与注册页
-- `src/views/pages/lobby/`: 当前主页面入口，后续应演进为联机首页
+- `src/views/pages/lobby/`: 联机主页面入口（已接入创建/加入房间、最近房间、成员信息、网络状态）
 - `src/views/components/easytier/`: EasyTier 相关 UI
 - `src/services/easytierService.ts`: 前端到 Electron 的 EasyTier 调用封装
 - `electron/managers/easytier.js`: EasyTier 子进程管理
@@ -33,8 +33,8 @@ npm run download:easytier
 
 ## 当前前端问题
 
-- `lobby/index.vue` 仍是占位页
-- 还没有 `connectionStore` / `roomStore` / `diagnosisStore`
+- 还没有 `connectionStore` / `diagnosisStore`
+- `MainHome` / `MainRooms` / `MainDiagnostics` 仍复用同一个页面，后续需要拆分
 - 仍保留较多聊天域命名
 
 ## 设计文档

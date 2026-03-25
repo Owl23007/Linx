@@ -103,6 +103,6 @@ Linx 是一个面向小团队和朋友联机的桌面组网客户端。它的职
 
 - 前端存在 `chat`、`friend`、`group` 类型与 store
 - 后端存在 `ChatController`、`GroupController`、`FriendshipController`
-- 主页面 `front/src/views/pages/lobby/index.vue` 仍是占位页
+- 主页面 `front/src/views/pages/lobby/index.vue` 已接入房间主链路，但仍需继续拆分独立路由视图与状态中心
 
 这不是问题本身，但后续新增能力应优先围绕 `room` 和 `connection` 建模，避免继续投资在 IM 语义上。

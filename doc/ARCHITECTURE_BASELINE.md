@@ -23,9 +23,9 @@
 
 不足：
 
-- `lobby/index.vue` 仍是占位页
+- `MainHome` / `MainRooms` / `MainDiagnostics` 仍复用同一视图，信息架构尚未彻底拆分
 - 没有统一连接状态中心
-- 没有房间模型和房间页面
+- `connection` / `diagnosis` 状态还未完全收敛到独立 store
 - 类型和 store 仍偏向 `chat / friend / group`
 
 ### Electron
@@ -119,13 +119,13 @@
 
 ## 当前风险
 
-- 页面主入口已经切到 `/main`，但内容仍为空壳，容易让项目看起来“功能断层”
+- `/main` 已接入真实房间链路，但三条子路由仍复用单页，后续扩展容易耦合
 - `chat`、`group`、`friend` 命名继续扩散，会抬高后续迁移成本
 - 连接失败还没有统一诊断出口，用户体验会直接卡死在“失败但不知道为什么”
 
 ## 当前优先实现建议
 
-1. 把 `lobby/index.vue` 改成联机首页
-2. 抽 `connectionStore`
-3. 引入最小 `room` 实体
-4. 在房间视图中前置诊断入口
+1. 抽 `connectionStore` 并统一连接状态来源
+2. 新增 `diagnosisStore`，把失败原因和修复动作结构化
+3. 将 `MainHome` / `MainRooms` / `MainDiagnostics` 拆为独立视图
+4. 持续收敛 `chat / group / friend` 命名到 `room / connection / diagnosis`
