@@ -22,7 +22,7 @@
 
         <main class="min-h-0 overflow-auto bg-white/14 p-2.5 sm:p-3.5 md:p-4">
           <div class="space-y-4">
-            <LobbyOverviewHeader :title="overviewTitle" :subtitle="overviewSubtitle" :stats="overviewStats" />
+            <!--LobbyOverviewHeader :title="overviewTitle" :subtitle="overviewSubtitle" :stats="overviewStats" /-->
 
             <LobbyQuickActions :actions="quickActions" @select="handleQuickAction" />
 
@@ -38,7 +38,8 @@
                     <div>
                       <h3 class="text-lg font-semibold text-slate-900">{{ currentRoom.name }}</h3>
                       <p class="mt-1 text-sm text-slate-600">
-                        房间码 {{ currentRoom.roomCode }} · 房主 {{ currentRoom.ownerName }} · 成员 {{ currentRoom.memberCount }}/{{
+                        房间码 {{ currentRoom.roomCode }} · 房主 {{ currentRoom.ownerName }} · 成员 {{ currentRoom.memberCount
+                        }}/{{
                           currentRoom.maxMembers }}
                       </p>
                     </div>
@@ -57,11 +58,8 @@
                 </div>
 
                 <div class="space-y-2">
-                  <article
-                    v-for="member in currentRoomMembers"
-                    :key="member.membershipId"
-                    class="rounded-[18px] border border-slate-200/70 bg-white px-3 py-3"
-                  >
+                  <article v-for="member in currentRoomMembers" :key="member.membershipId"
+                    class="rounded-[18px] border border-slate-200/70 bg-white px-3 py-3">
                     <div class="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p class="text-sm font-semibold text-slate-900">
@@ -100,8 +98,22 @@
 
     <el-dialog v-model="createRoomVisible" title="创建房间" width="520px" destroy-on-close>
       <el-form label-position="top">
-        <el-form-item label="房间名称">
+        <el-form-item label="房间名">
           <el-input v-model="createRoomForm.name" maxlength="32" placeholder="例如：周末联机房" />
+        </el-form-item>
+        <el-form-item label="房间密码（EasyTier 密钥）">
+          <el-input v-model="createRoomForm.roomPassword" maxlength="64" show-password placeholder="请输入房间密码" />
+        </el-form-item>
+        <el-form-item label="中继地址">
+          <el-select v-model="createRoomForm.relayPreset" class="w-full">
+            <el-option label="使用 woyioii 中继" value="woyioii" />
+            <el-option label="使用 EasyTier 社区中继" value="official" />
+            <el-option label="同时使用两者" value="both" />
+            <el-option label="自定义中继" value="custom" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="createRoomForm.relayPreset === 'custom'" label="自定义中继地址">
+          <el-input v-model="createRoomForm.customRelayAddress" maxlength="128" placeholder="tcp://host:11010" />
         </el-form-item>
         <el-form-item label="游戏名称">
           <el-input v-model="createRoomForm.gameName" maxlength="32" placeholder="例如：Minecraft" />
@@ -156,7 +168,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
 import { useRoomStore } from '@/stores/room';
 import { useUserStore } from '@/stores/user';
-import type { RoomMemberVO } from '@/types/room';
+import type { RoomMemberVO, RoomVO } from '@/types/room';
 import { formatRelativeTime } from '@/utils/datetime';
 import { isElectron } from '@/utils/electron';
 import EasyTierDialog from '@/views/components/easytier/easytier-dialog.vue';
@@ -174,7 +186,6 @@ import { ElMessage } from 'element-plus';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import LobbyNetworkPanel from './components/lobby-network-panel.vue';
-import LobbyOverviewHeader from './components/lobby-overview-header.vue';
 import LobbyPanelCard from './components/lobby-panel-card.vue';
 import LobbyPartnerList from './components/lobby-partner-list.vue';
 import LobbyQuickActions from './components/lobby-quick-actions.vue';
@@ -208,8 +219,16 @@ const easyTierPid = ref<number | null>(null);
 const peerCount = ref(0);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
+const EASYTIER_RELAY_WOYIOII = 'tcp://www.woyioii.cn:11010';
+const EASYTIER_RELAY_OFFICIAL = 'tcp://public.easytier.top:11010';
+
+type RelayPreset = 'woyioii' | 'official' | 'both' | 'custom';
+
 const createRoomForm = ref({
   name: '',
+  roomPassword: '',
+  relayPreset: 'both' as RelayPreset,
+  customRelayAddress: '',
   gameName: '',
   maxMembers: 8,
   virtualIp: '',
@@ -328,13 +347,13 @@ const recentRooms = computed<LobbyRoomSummary[]>(() => {
       id: room.id,
       name: room.name,
       code: room.roomCode,
-      game: room.gameName || 'No game profile',
+      game: room.gameName || '未设置游戏',
       mode: room.myConnectionMode || 'UNKNOWN',
       membersOnline: room.memberCount,
       membersTotal: room.maxMembers,
       status: roomStatus,
-      statusLabel: isWarning ? 'Closed' : room.memberCount > 1 ? 'Ready' : 'Waiting',
-      lastActive: room.updatedAt ? formatRelativeTime(room.updatedAt) : 'Just now'
+      statusLabel: isWarning ? '已关闭' : room.memberCount > 1 ? '已就绪' : '等待中',
+      lastActive: room.updatedAt ? formatRelativeTime(room.updatedAt) : '刚刚'
     };
   });
 });
@@ -533,11 +552,11 @@ function handleQuickAction(actionKey: string) {
 
       return;
     case 'launch-game':
-      ElMessage.info('Define a gameProfile before launching a game.');
+      ElMessage.info('启动游戏前请先定义 gameProfile。');
 
       return;
     default:
-      ElMessage.info('Action is not bound yet.');
+      ElMessage.info('该操作暂未绑定。');
   }
 }
 
@@ -557,43 +576,88 @@ async function copyText(content: string, successText: string, fallbackText: stri
 }
 
 async function handleCopyRoomCode(room: LobbyRoomSummary) {
-  await copyText(room.code, `Room code copied: ${room.code}`, `Room code: ${room.code}`);
+  await copyText(room.code, `已复制房间码：${room.code}`, `房间码：${room.code}`);
 }
 
 async function handleCopyRoomCodeFromCurrent() {
   await copyText(
     currentRoom.value?.roomCode || '',
-    `Room code copied: ${currentRoom.value?.roomCode || ''}`,
-    'Current room has no room code.'
+    `已复制房间码：${currentRoom.value?.roomCode || ''}`,
+    '当前房间没有可复制的房间码。'
   );
 }
 
 async function handleCopyMyVirtualIp() {
   await copyText(
     currentRoom.value?.myVirtualIp || '',
-    `Virtual IP copied: ${currentRoom.value?.myVirtualIp || ''}`,
-    'Current room has no virtual IP.'
+    `已复制虚拟 IP：${currentRoom.value?.myVirtualIp || ''}`,
+    '当前房间没有可复制的虚拟 IP。'
   );
 }
 async function handleOpenRoom(room: LobbyRoomSummary) {
   await roomStore.openRoom(room.id);
 }
 
-function buildEasyTierConfigByRoomCode(roomCode: string): EasyTierConfig {
-  const normalized = roomCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const roomKey = normalized || 'DEFAULTROOM';
+function normalizeRelayAddress(address: string): string {
+  const trimmed = address.trim();
+  if (!trimmed) {
+    return '';
+  }
 
+  if (trimmed.includes('://')) {
+    return trimmed;
+  }
+
+  return `tcp://${trimmed}`;
+}
+
+function resolveRelayAddresses(preset: RelayPreset, customAddress: string): string[] {
+  const addresses: string[] = [];
+
+  if (preset === 'woyioii' || preset === 'both') {
+    addresses.push(EASYTIER_RELAY_WOYIOII);
+  }
+  if (preset === 'official' || preset === 'both') {
+    addresses.push(EASYTIER_RELAY_OFFICIAL);
+  }
+  if (preset === 'custom') {
+    const custom = normalizeRelayAddress(customAddress);
+    if (custom) {
+      addresses.push(custom);
+    }
+  }
+
+  return Array.from(new Set(addresses));
+}
+
+function buildEasyTierConfig(
+  networkName: string,
+  networkSecret: string,
+  relayAddresses: string[]
+): EasyTierConfig {
   return {
-    networkName: `linx-room-${roomKey}`,
-    networkSecret: `linx-room-${roomKey}`,
-    peers: [],
+    networkName,
+    networkSecret,
+    peers: relayAddresses,
     dhcp: true,
     defaultProtocol: 'tcp',
     rpcPort: 11010
   };
 }
 
-async function switchEasyTierToRoom(roomCode: string): Promise<boolean> {
+function buildEasyTierConfigFromRoom(room: RoomVO): EasyTierConfig | null {
+  const networkName = room.networkName?.trim() || '';
+  const networkSecret = room.networkSecret?.trim() || '';
+  const relayAddresses = (room.relayAddresses || []).map((item) => item.trim()).filter(Boolean);
+
+  if (!networkName || !networkSecret || relayAddresses.length === 0) {
+    return null;
+  }
+
+  return buildEasyTierConfig(networkName, networkSecret, relayAddresses);
+}
+
+async function switchEasyTierNetwork(config: EasyTierConfig): Promise<boolean> {
   if (!isElectronEnv) {
     return true;
   }
@@ -602,14 +666,14 @@ async function switchEasyTierToRoom(roomCode: string): Promise<boolean> {
   if (statusRes.success && statusRes.data.running) {
     const stopRes = await easyTierService.stop();
     if (!stopRes.success) {
-      ElMessage.warning(stopRes.error || 'Failed to stop current EasyTier process.');
+      ElMessage.warning(stopRes.error || '???? EasyTier ?????');
       return false;
     }
   }
 
-  const startRes = await easyTierService.start(buildEasyTierConfigByRoomCode(roomCode));
+  const startRes = await easyTierService.start(config);
   if (!startRes.success) {
-    ElMessage.error(startRes.error || 'Failed to start EasyTier for this room.');
+    ElMessage.error(startRes.error || '?? EasyTier ???');
     return false;
   }
 
@@ -619,7 +683,22 @@ async function switchEasyTierToRoom(roomCode: string): Promise<boolean> {
 
 async function handleCreateRoomSubmit() {
   if (!createRoomForm.value.name.trim()) {
-    ElMessage.warning('Please enter a room name.');
+    ElMessage.warning('???????');
+
+    return;
+  }
+  if (!createRoomForm.value.roomPassword.trim()) {
+    ElMessage.warning('????????');
+
+    return;
+  }
+
+  const relayAddresses = resolveRelayAddresses(
+    createRoomForm.value.relayPreset,
+    createRoomForm.value.customRelayAddress
+  );
+  if (relayAddresses.length === 0) {
+    ElMessage.warning('????????????');
 
     return;
   }
@@ -630,14 +709,23 @@ async function handleCreateRoomSubmit() {
       name: createRoomForm.value.name.trim(),
       gameName: createRoomForm.value.gameName.trim() || undefined,
       maxMembers: createRoomForm.value.maxMembers,
+      networkName: createRoomForm.value.name.trim(),
+      networkSecret: createRoomForm.value.roomPassword.trim(),
+      relayAddresses,
       virtualIp: createRoomForm.value.virtualIp.trim() || undefined,
       connectionMode: createRoomForm.value.connectionMode
     });
     if (room) {
-      const switched = await switchEasyTierToRoom(room.roomCode);
-      if (!switched) {
-        ElMessage.warning('Room created, but EasyTier switch failed. Please check network settings.');
+      const easyTierConfig = buildEasyTierConfigFromRoom(room);
+      if (easyTierConfig) {
+        const switched = await switchEasyTierNetwork(easyTierConfig);
+        if (!switched) {
+          ElMessage.warning('?????,? EasyTier ????,????????');
+        }
+      } else {
+        ElMessage.warning('?????,????????');
       }
+
       createRoomVisible.value = false;
       await roomStore.openRoom(room.id);
     }
@@ -648,7 +736,7 @@ async function handleCreateRoomSubmit() {
 
 async function handleJoinRoomSubmit() {
   if (!joinRoomForm.value.roomCode.trim()) {
-    ElMessage.warning('Please enter a room code.');
+    ElMessage.warning('???????');
 
     return;
   }
@@ -661,10 +749,16 @@ async function handleJoinRoomSubmit() {
       connectionMode: joinRoomForm.value.connectionMode
     });
     if (room) {
-      const switched = await switchEasyTierToRoom(room.roomCode);
-      if (!switched) {
-        ElMessage.warning('Joined room, but EasyTier switch failed. Please check network settings.');
+      const easyTierConfig = buildEasyTierConfigFromRoom(room);
+      if (easyTierConfig) {
+        const switched = await switchEasyTierNetwork(easyTierConfig);
+        if (!switched) {
+          ElMessage.warning('?????,? EasyTier ????,????????');
+        }
+      } else {
+        ElMessage.error('????????????,?????? EasyTier?');
       }
+
       joinRoomVisible.value = false;
       await roomStore.openRoom(room.id);
     }
@@ -672,7 +766,6 @@ async function handleJoinRoomSubmit() {
     roomActionLoading.value = false;
   }
 }
-
 onMounted(async () => {
   if (!authStore.user || !authStore.token) {
     authStore.initAuth();
@@ -699,7 +792,4 @@ onUnmounted(() => {
   }
 });
 </script>
-
-
-
 

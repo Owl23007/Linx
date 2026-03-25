@@ -32,6 +32,15 @@ public class Room {
     @TableField("game_name")
     private String gameName;
 
+    @TableField("network_name")
+    private String networkName;
+
+    @TableField("network_secret")
+    private String networkSecret;
+
+    @TableField("relay_addresses")
+    private String relayAddresses;
+
     @TableField("owner_id")
     private Long ownerId;
 
@@ -47,4 +56,3 @@ public class Room {
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }
-

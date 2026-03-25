@@ -6,6 +6,9 @@ export interface CreateRoomDto {
   name: string;
   gameName?: string;
   maxMembers?: number;
+  networkName: string;
+  networkSecret: string;
+  relayAddresses: string[];
   virtualIp?: string;
   connectionMode?: string;
 }
@@ -32,6 +35,9 @@ export interface RoomVO {
   name: string;
   roomCode: string;
   gameName?: string;
+  networkName?: string;
+  networkSecret?: string;
+  relayAddresses?: string[];
   status: RoomStatus;
   ownerId: number;
   ownerName: string;
@@ -44,4 +50,3 @@ export interface RoomVO {
   updatedAt?: string;
   members?: RoomMemberVO[];
 }
-

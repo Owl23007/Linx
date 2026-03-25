@@ -17,6 +17,8 @@ import top.contins.linx.repository.RoomMemberMapper;
 import top.contins.linx.repository.UserMapper;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 public class RoomService {
 
     private static final String ROOM_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final String RELAY_SEPARATOR = ";";
 
     private final RoomMapper roomMapper;
     private final RoomMemberMapper roomMemberMapper;
@@ -42,7 +45,22 @@ public class RoomService {
     public RoomVO createRoom(Long creatorId, CreateRoomDto dto) {
         String roomName = sanitizeText(dto.getName());
         if (roomName == null || roomName.isBlank()) {
-            throw new RuntimeException("房间名称不能为空");
+            throw new RuntimeException("????????");
+        }
+
+        String networkName = sanitizeText(dto.getNetworkName());
+        if (networkName == null || networkName.isBlank()) {
+            throw new RuntimeException("?????????");
+        }
+
+        String networkSecret = sanitizeText(dto.getNetworkSecret());
+        if (networkSecret == null || networkSecret.isBlank()) {
+            throw new RuntimeException("????????");
+        }
+
+        List<String> relayAddresses = normalizeRelayAddresses(dto.getRelayAddresses());
+        if (relayAddresses.isEmpty()) {
+            throw new RuntimeException("??????????");
         }
 
         String roomCode = generateUniqueRoomCode();
@@ -50,6 +68,9 @@ public class RoomService {
                 .name(roomName)
                 .roomCode(roomCode)
                 .gameName(sanitizeText(dto.getGameName()))
+                .networkName(networkName)
+                .networkSecret(networkSecret)
+                .relayAddresses(serializeRelayAddresses(relayAddresses))
                 .ownerId(creatorId)
                 .status(RoomStatus.ACTIVE)
                 .maxMembers(normalizeMaxMembers(dto.getMaxMembers()))
@@ -75,16 +96,16 @@ public class RoomService {
     public RoomVO joinRoom(Long userId, JoinRoomDto dto) {
         String normalizedCode = normalizeRoomCode(dto.getRoomCode());
         if (normalizedCode == null || normalizedCode.isBlank()) {
-            throw new RuntimeException("房间码不能为空");
+            throw new RuntimeException("???????");
         }
 
         Room room = roomMapper.findByRoomCode(normalizedCode);
         if (room == null) {
-            throw new RuntimeException("房间不存在");
+            throw new RuntimeException("?????");
         }
 
         if (room.getStatus() != RoomStatus.ACTIVE) {
-            throw new RuntimeException("房间已不可用");
+            throw new RuntimeException("??????");
         }
 
         RoomMember existingMember = roomMemberMapper.findByRoomIdAndUserId(room.getId(), userId);
@@ -99,7 +120,7 @@ public class RoomService {
 
         long memberCount = roomMemberMapper.countByRoomId(room.getId());
         if (memberCount >= room.getMaxMembers()) {
-            throw new RuntimeException("房间成员已满");
+            throw new RuntimeException("??????");
         }
 
         RoomMember roomMember = RoomMember.builder()
@@ -129,11 +150,11 @@ public class RoomService {
     public RoomVO getRoomDetails(Long roomId, Long requesterId) {
         Room room = roomMapper.selectById(roomId);
         if (room == null) {
-            throw new RuntimeException("房间不存在");
+            throw new RuntimeException("?????");
         }
 
         if (!roomMemberMapper.existsByRoomIdAndUserId(roomId, requesterId)) {
-            throw new RuntimeException("你不是房间成员，无权查看房间详情");
+            throw new RuntimeException("???????,????????");
         }
 
         return buildRoomVO(room, requesterId, true);
@@ -142,7 +163,7 @@ public class RoomService {
     private RoomVO buildRoomVO(Room room, Long requesterId, boolean includeMembers) {
         RoomMember myMember = roomMemberMapper.findByRoomIdAndUserId(room.getId(), requesterId);
         if (myMember == null) {
-            throw new RuntimeException("你不是房间成员");
+            throw new RuntimeException("???????");
         }
 
         User owner = userMapper.selectById(room.getOwnerId());
@@ -153,9 +174,12 @@ public class RoomService {
                 .name(room.getName())
                 .roomCode(room.getRoomCode())
                 .gameName(room.getGameName())
+                .networkName(room.getNetworkName())
+                .networkSecret(room.getNetworkSecret())
+                .relayAddresses(deserializeRelayAddresses(room.getRelayAddresses()))
                 .status(room.getStatus())
                 .ownerId(room.getOwnerId())
-                .ownerName(owner != null ? "用户" + owner.getId() : "未知用户")
+                .ownerName(owner != null ? "??" + owner.getId() : "????")
                 .maxMembers(room.getMaxMembers())
                 .memberCount((int) memberCount)
                 .myRole(myMember.getRole())
@@ -181,7 +205,7 @@ public class RoomService {
         return RoomMemberVO.builder()
                 .membershipId(member.getId())
                 .userId(member.getUserId())
-                .displayName(user != null ? "用户" + user.getId() : "未知用户")
+                .displayName(user != null ? "??" + user.getId() : "????")
                 .role(member.getRole())
                 .virtualIp(member.getVirtualIp())
                 .connectionMode(member.getConnectionMode())
@@ -227,6 +251,41 @@ public class RoomService {
         return normalized.toUpperCase().replace(" ", "");
     }
 
+    private List<String> normalizeRelayAddresses(List<String> relayAddresses) {
+        if (relayAddresses == null || relayAddresses.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return relayAddresses.stream()
+                .map(this::sanitizeText)
+                .filter(item -> item != null && !item.isBlank())
+                .map(this::normalizeRelayAddress)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private String normalizeRelayAddress(String address) {
+        if (address.contains("://")) {
+            return address;
+        }
+        return "tcp://" + address;
+    }
+
+    private String serializeRelayAddresses(List<String> relayAddresses) {
+        return String.join(RELAY_SEPARATOR, relayAddresses);
+    }
+
+    private List<String> deserializeRelayAddresses(String relayAddressesRaw) {
+        if (relayAddressesRaw == null || relayAddressesRaw.isBlank()) {
+            return new ArrayList<>();
+        }
+
+        return Arrays.stream(relayAddressesRaw.split(RELAY_SEPARATOR))
+                .map(this::sanitizeText)
+                .filter(item -> item != null && !item.isBlank())
+                .collect(Collectors.toList());
+    }
+
     private String generateUniqueRoomCode() {
         for (int i = 0; i < 20; i++) {
             String candidate = generateRoomCode();
@@ -234,7 +293,7 @@ public class RoomService {
                 return candidate;
             }
         }
-        throw new RuntimeException("生成房间码失败，请重试");
+        throw new RuntimeException("???????,???");
     }
 
     private String generateRoomCode() {
@@ -247,4 +306,3 @@ public class RoomService {
         return first + "-" + second;
     }
 }
-

@@ -19,6 +19,9 @@ public class RoomVO {
     private String name;
     private String roomCode;
     private String gameName;
+    private String networkName;
+    private String networkSecret;
+    private List<String> relayAddresses;
     private RoomStatus status;
     private Long ownerId;
     private String ownerName;
@@ -31,4 +34,3 @@ public class RoomVO {
     private LocalDateTime updatedAt;
     private List<RoomMemberVO> members;
 }
-
