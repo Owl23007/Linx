@@ -1,24 +1,18 @@
 <template>
-  <PanelCard title="快速操作" subtitle="常用联机动作集中在这里，支持快速创建、加入、刷新和网络设置。">
+  <PanelCard borderless>
     <div class="grid gap-3 md:grid-cols-2">
-      <button
-        v-for="action in actions"
-        :key="action.key"
-        type="button"
+      <button v-for="action in displayActions" :key="action.key" type="button"
         class="group rounded-[24px] border border-slate-200/70 px-4 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-        :class="getActionClasses(action.accent)"
-        @click="emit('select', action.key)"
-      >
+        :class="getActionClasses(action.accent)" @click="emit('select', action.key)">
         <div class="flex items-start justify-between gap-3">
-          <div
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg"
-            :class="getIconClasses(action.accent)"
-          >
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg"
+            :class="getIconClasses(action.accent)">
             <el-icon :size="20">
               <component :is="action.icon" />
             </el-icon>
           </div>
-          <span class="rounded-full border border-white/80 bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <span
+            class="rounded-full border border-white/80 bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
             Action
           </span>
         </div>
@@ -35,16 +29,19 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { LobbyQuickAction } from '../types';
 import PanelCard from './panel-card.vue';
 
-defineProps<{
+const props = defineProps<{
   actions: LobbyQuickAction[]
 }>();
 
 const emit = defineEmits<{
   (e: 'select', actionKey: string): void
 }>();
+
+const displayActions = computed(() => props.actions.slice(0, 4));
 
 function getActionClasses(accent: LobbyQuickAction['accent']) {
   switch (accent) {
