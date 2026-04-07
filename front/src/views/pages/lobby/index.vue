@@ -11,12 +11,13 @@
     <div class="relative h-full px-0 pb-0 pt-0" :class="{ 'border-t border-slate-200/70': !isElectronEnv }"
       :style="{ paddingTop: isElectronEnv ? '48px' : '0px' }">
       <div
-        class="grid h-full overflow-hidden border-b border-slate-200/70 bg-white/56 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl grid-cols-[252px_minmax(0,1fr)] sm:grid-cols-[284px_minmax(0,1fr)] 2xl:grid-cols-[284px_minmax(0,1fr)_320px]">
+        class="grid h-full overflow-hidden border-b border-slate-200/70 bg-white/56 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl"
+        :class="shellGridClass">
         <div class="min-h-0 border-r border-slate-200/70 bg-white/72">
           <Sidebar :user-name="displayName" :avatar-url="avatarUrl" :user-initials="userInitials"
             :endpoint-label="endpointLabel" :items="sidebarItems" :active-item="activeSidebarItem"
             :online-partners="onlinePartnerCount" :recent-room-count="recentRooms.length"
-            :network-hint="sidebarNetworkHint" @select="handleSelectNav" @quick-action="handleQuickAction"
+            :network-hint="sidebarNetworkHint" :hide-panel="hideSidebarPanel" @select="handleSelectNav" @quick-action="handleQuickAction"
             @open-settings="handleOpenSettings" @open-profile="handleOpenProfile" />
         </div>
 
@@ -283,6 +284,14 @@ const currentView = computed<LobbyViewMode>(() => {
 const isHomeView = computed(() => currentView.value === 'home');
 const isRoomsView = computed(() => currentView.value === 'rooms');
 const isDiagnosticsView = computed(() => currentView.value === 'diagnostics');
+const hideSidebarPanel = true;
+const shellGridClass = computed(() => {
+  if (hideSidebarPanel) {
+    return 'grid-cols-[60px_minmax(0,1fr)] 2xl:grid-cols-[60px_minmax(0,1fr)_320px]';
+  }
+
+  return 'grid-cols-[252px_minmax(0,1fr)] sm:grid-cols-[284px_minmax(0,1fr)] 2xl:grid-cols-[284px_minmax(0,1fr)_320px]';
+});
 
 const sidebarBaseItems: Omit<LobbyNavItem, 'isActive'>[] = [
   {
@@ -726,14 +735,14 @@ async function switchEasyTierNetwork(config: EasyTierConfig): Promise<boolean> {
   if (statusRes.success && statusRes.data.running) {
     const stopRes = await easyTierService.stop();
     if (!stopRes.success) {
-      ElMessage.warning(stopRes.error || '???? EasyTier ?????');
+      ElMessage.warning(stopRes.error || '停止 EasyTier 失败');
       return false;
     }
   }
 
   const startRes = await easyTierService.start(config);
   if (!startRes.success) {
-    ElMessage.error(startRes.error || '?? EasyTier ???');
+    ElMessage.error(startRes.error || '启动 EasyTier 失败');
     return false;
   }
 
@@ -758,10 +767,10 @@ async function handleCreateRoomSubmit(payload: CreateRoomSubmitPayload) {
       if (easyTierConfig) {
         const switched = await switchEasyTierNetwork(easyTierConfig);
         if (!switched) {
-          ElMessage.warning('?????,? EasyTier ????,????????');
+          ElMessage.warning('房间已创建，但切换 EasyTier 网络失败，请检查网络设置');
         }
       } else {
-        ElMessage.warning('?????,????????');
+        ElMessage.warning('房间已创建，但缺少组网信息');
       }
 
       createRoomVisible.value = false;
@@ -785,10 +794,10 @@ async function handleJoinRoomSubmit(payload: JoinRoomSubmitPayload) {
       if (easyTierConfig) {
         const switched = await switchEasyTierNetwork(easyTierConfig);
         if (!switched) {
-          ElMessage.warning('?????,? EasyTier ????,????????');
+          ElMessage.warning('已加入房间，但切换 EasyTier 网络失败，请检查网络设置');
         }
       } else {
-        ElMessage.warning('??????,?????? EasyTier ???????');
+        ElMessage.warning('已加入房间，但缺少必要的 EasyTier 配置');
       }
 
       joinRoomVisible.value = false;

@@ -4,9 +4,11 @@
 
     <!-- 拖动区域和顶部操作按钮 -->
     <div v-if="isElectron()" class="fixed top-0 left-0 right-0 h-12 flex justify-between items-center px-3 z-30">
-      <div ref="dragAreaRef" class="flex-1 h-full drag-area" />
+      <div ref="dragAreaRef" class="flex-1 h-full drag-area flex items-center px-2">
+        <span v-if="proxyPanelVisible" class="drag-area-title">配置网络代理</span>
+      </div>
       <div class="flex">
-        <el-button size="small" class="window-btn minimize-btn" @click="handleTest">
+        <el-button size="small" class="window-btn minimize-btn" @click="handleOpenProxyDialog">
           <el-icon :size="16">
             <Setting />
           </el-icon>
@@ -25,13 +27,13 @@
     </div>
 
     <!-- 标题图标 -->
-    <div v-if="!(isElectron() && activeTab === 'register')"
+    <div v-if="!proxyPanelVisible && !(isElectron() && activeTab === 'register')"
       class="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
       <Title :size="isElectron() ? 1 : 1.5" />
     </div>
 
     <!-- Tab 区域 -->
-    <div :class="[
+    <div v-if="!proxyPanelVisible" :class="[
       { 'scale-120 top-40': !isElectron() },
       { 'tab-shift-up': isElectron() && activeTab === 'register' },
       { 'tab-shift-down': isElectron() && activeTab === 'login' }
@@ -48,7 +50,8 @@
     </div>
 
     <!-- 表单内容区域 -->
-    <div :class="{ 'w-120': !isElectron() }" class="w-70 max-w-sm absolute mt-3 px-4 py-4 overflow-hidden">
+    <div v-if="!proxyPanelVisible" :class="{ 'w-120': !isElectron() }"
+      class="w-70 max-w-sm absolute mt-3 px-4 py-4 overflow-hidden">
       <div class="form-container relative">
         <Transition :name="transitionName" mode="out-in">
           <!-- 登录表单 -->
@@ -235,7 +238,8 @@
     </div>
 
     <!-- 底部按钮区域 -->
-    <div :class="{ 'bottom-25 scale-125': !isElectron() }" class="px-4 pb-4 overflow-hidden absolute bottom-0 w-55">
+    <div v-if="!proxyPanelVisible" :class="{ 'bottom-25 scale-125': !isElectron() }"
+      class="px-4 pb-4 overflow-hidden absolute bottom-0 w-55">
       <el-form-item v-if="activeTab === 'login' && showAccountView" class="mb-4">
         <el-button type="primary" size="large" class="w-full rounded-lg!" :loading="loading"
           @click="handleAccountLogin(currentAccount)">
@@ -253,6 +257,68 @@
         </el-button>
       </el-form-item>
     </div>
+
+    <Transition name="slide-up-fade">
+      <div v-if="proxyPanelVisible" class="absolute left-0 right-0 bottom-0 top-12 z-20 px-3 pb-3 pt-2">
+        <div class="h-full w-full flex flex-col overflow-hidden bg-transparent">
+          <div class="flex-1 overflow-y-auto px-3 py-2 proxy-scroll">
+            <el-form label-position="top" :model="proxyForm" class="compact-form">
+              <el-form-item label="协议类型" class="mb-2">
+                <el-select v-model="proxyForm.protocol" class="w-full proxy-field" size="small">
+                  <el-option label="无" value="none" />
+                  <el-option label="HTTP" value="http" />
+                  <el-option label="HTTPS" value="https" />
+                  <el-option label="SOCKS5" value="socks5" />
+                </el-select>
+              </el-form-item>
+
+              <template v-if="proxyForm.protocol !== 'none'">
+                <el-form-item label="代理地址" class="mb-2">
+                  <el-input v-model="proxyForm.host" placeholder="例如：127.0.0.1" size="small" clearable
+                    class="proxy-field" />
+                </el-form-item>
+
+                <el-form-item label="端口" class="mb-2">
+                  <el-input v-model="proxyForm.port" placeholder="例如：7890" size="small" clearable class="proxy-field" />
+                </el-form-item>
+
+                <button type="button" class="proxy-advanced-toggle mt-1"
+                  @click="proxyAdvancedVisible = !proxyAdvancedVisible">
+                  <span class="proxy-advanced-label">高级</span>
+                  <span class="proxy-advanced-divider" />
+                  <el-icon :class="['proxy-advanced-arrow', { 'is-open': proxyAdvancedVisible }]">
+                    <ArrowDown />
+                  </el-icon>
+                </button>
+
+                <div v-if="proxyAdvancedVisible" class="pt-2">
+                  <el-form-item label="用户名（可选）" class="mb-2">
+                    <el-input v-model="proxyForm.username" placeholder="代理认证用户名" size="small" clearable
+                      class="proxy-field" />
+                  </el-form-item>
+
+                  <el-form-item label="密码（可选）" class="mb-2">
+                    <el-input v-model="proxyForm.password" type="password" show-password placeholder="代理认证密码"
+                      size="small" clearable class="proxy-field" />
+                  </el-form-item>
+
+                  <el-form-item label="绕过规则（可选）" class="mb-0">
+                    <el-input v-model="proxyForm.bypass" placeholder="默认 <local>，可用逗号分隔多个规则" size="small" clearable
+                      class="proxy-field" />
+                  </el-form-item>
+                </div>
+              </template>
+            </el-form>
+          </div>
+
+          <div class="px-3 py-2 flex gap-0.5 justify-end">
+            <el-button class="proxy-action-btn" @click="handleCloseProxyPanel">取消</el-button>
+            <el-button type="primary" class="proxy-action-btn" :loading="proxySaving"
+              @click="handleSaveProxyConfig">保存</el-button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -265,7 +331,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
 import { useUserStore } from '@/stores/user';
 import dragSetup from '@/utils/drag';
-import { closeWindow, isElectron, minimizeWindow } from '@/utils/electron';
+import { closeWindow, getNetworkProxy, isElectron, minimizeWindow, setNetworkProxy } from '@/utils/electron';
 import icons from '@/views/components/icons';
 import { ArrowDown, ArrowLeft, Close, Key, Lock, Message, Minus, Plus, Refresh, Setting, User } from '@element-plus/icons-vue';
 import { type FormInstance, type FormRules, ElMessage, ElMessageBox } from 'element-plus';
@@ -298,6 +364,21 @@ const error = ref<string>('');
 const serverUrl = ref(''); // 默认服务器地址
 const captchaImage = ref<string>('');
 const captchaId = ref<string>('');
+const proxyPanelVisible = ref(false);
+const proxySaving = ref(false);
+const proxyAdvancedVisible = ref(false);
+
+const defaultProxyForm = {
+  enabled: false,
+  protocol: 'none' as 'none' | 'http' | 'https' | 'socks5',
+  host: '',
+  port: '',
+  username: '',
+  password: '',
+  bypass: '<local>'
+};
+
+const proxyForm = ref({ ...defaultProxyForm });
 
 // 表单数据
 const loginForm = ref<LoginRequest>({
@@ -358,6 +439,18 @@ function handleCloseWindow() {
 
 function handleMinimizeWindow() {
   minimizeWindow();
+}
+
+function handleOpenProxyDialog() {
+  proxyPanelVisible.value = !proxyPanelVisible.value;
+  if (!proxyPanelVisible.value) {
+    proxyAdvancedVisible.value = false;
+  }
+}
+
+function handleCloseProxyPanel() {
+  proxyPanelVisible.value = false;
+  proxyAdvancedVisible.value = false;
 }
 
 function setupDragArea(element: HTMLElement) {
@@ -719,11 +812,43 @@ async function handleLogin(): Promise<void> {
   }
 }
 
-async function handleTest(): Promise<void> {
-  if (isElectron()) {
-    await authService.switchToMainWindow();
+async function handleSaveProxyConfig(): Promise<void> {
+  if (!isElectron()) {
+    ElMessage.warning('仅桌面端支持网络代理配置');
+
+    return;
   }
-  router.push('/main');
+
+  const proxyEnabled = proxyForm.value.protocol !== 'none';
+  if (proxyEnabled && (!proxyForm.value.host.trim() || !proxyForm.value.port.trim())) {
+    ElMessage.warning('请填写完整的代理地址和端口');
+
+    return;
+  }
+
+  proxySaving.value = true;
+  try {
+    const payload = {
+      ...proxyForm.value,
+      enabled: proxyEnabled,
+      host: proxyForm.value.host.trim(),
+      port: proxyForm.value.port.trim(),
+      username: proxyForm.value.username.trim(),
+      password: proxyForm.value.password.trim(),
+      bypass: proxyForm.value.bypass.trim() || '<local>'
+    };
+    const res = await setNetworkProxy(payload);
+    if (!res.success) {
+      throw new Error(res.error || '代理设置失败');
+    }
+
+    localStorage.setItem('linx.proxy.config', JSON.stringify(payload));
+    proxyPanelVisible.value = false;
+  } catch (err: any) {
+    ElMessage.error(err?.message || '保存代理配置失败');
+  } finally {
+    proxySaving.value = false;
+  }
 }
 
 async function handleRegister(): Promise<void> {
@@ -753,6 +878,32 @@ onMounted(async () => {
 
   // 设置默认服务器地址
   serverUrl.value = import.meta.env.VITE_DEFAULT_BASE_URL || 'http://localhost:8081';
+
+  if (isElectron()) {
+    const cachedProxy = localStorage.getItem('linx.proxy.config');
+    if (cachedProxy) {
+      try {
+        const parsed = JSON.parse(cachedProxy);
+        proxyForm.value = {
+          ...defaultProxyForm,
+          ...parsed,
+          protocol: parsed.enabled ? (parsed.protocol || 'http') : 'none'
+        };
+        await setNetworkProxy(proxyForm.value);
+      } catch {
+        // 忽略无效缓存
+      }
+    } else {
+      const proxyRes = await getNetworkProxy();
+      if (proxyRes.success && proxyRes.data) {
+        proxyForm.value = {
+          ...defaultProxyForm,
+          ...proxyRes.data,
+          protocol: proxyRes.data.enabled ? (proxyRes.data.protocol || 'http') : 'none'
+        };
+      }
+    }
+  }
 
   // 加载已保存的账号
   await loadSavedAccounts();
@@ -895,8 +1046,115 @@ onUnmounted(() => {
   transition: background-color 0.2s ease;
 }
 
+.drag-area-title {
+  font-size: 13px;
+  color: rgba(51, 65, 85, 0.82);
+  letter-spacing: 0.2px;
+}
+
 .drag-area:hover {
   background-color: rgba(255, 255, 255, 0.05);
+}
+
+.slide-up-fade-enter-active,
+.slide-up-fade-leave-active {
+  transition: all 0.22s ease;
+}
+
+.slide-up-fade-enter-from,
+.slide-up-fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+:deep(.compact-form .el-form-item__label) {
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.proxy-advanced-toggle {
+  width: 100%;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #334155;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.proxy-advanced-label {
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.proxy-advanced-divider {
+  flex: 1;
+  height: 1px;
+  margin: 0 10px;
+  transition: background-color 0.2s ease;
+  background: rgba(148, 163, 184, 0.45);
+}
+
+.proxy-advanced-arrow {
+  color: #64748b;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.proxy-advanced-toggle:hover .proxy-advanced-divider {
+  background: rgba(59, 130, 246, 0.45);
+}
+
+.proxy-advanced-toggle:hover .proxy-advanced-label {
+  color: #60a5fa;
+}
+
+.proxy-advanced-toggle:hover .proxy-advanced-arrow {
+  color: #60a5fa;
+}
+
+.proxy-advanced-arrow.is-open {
+  transform: rotate(180deg);
+}
+
+:deep(.proxy-field .el-input__wrapper),
+:deep(.proxy-field .el-select__wrapper) {
+  border-radius: 8px;
+  min-height: 34px;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.32) inset;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+:deep(.proxy-action-btn) {
+  height: 36px;
+  min-width: 72px;
+  border-radius: 12px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+.proxy-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.65) transparent;
+}
+
+.proxy-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.proxy-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.proxy-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.65);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .drag-area:active {

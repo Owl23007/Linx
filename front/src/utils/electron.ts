@@ -34,6 +34,16 @@ export interface IpcPaginatedResponse<T = any> extends IpcResponse<T> {
   pagination?: PaginationInfo
 }
 
+export interface NetworkProxyConfig {
+  enabled: boolean
+  protocol: 'none' | 'http' | 'https' | 'socks5'
+  host: string
+  port: string
+  username?: string
+  password?: string
+  bypass?: string
+}
+
 /**
  * 获取 Electron API 对象
  */
@@ -217,4 +227,18 @@ export async function getWindowMaximized(): Promise<boolean> {
  */
 export function onWindowMaximizedStateChanged(callback: (isMaximized: boolean) => void): (() => void) | undefined {
   return onIpc('window-maximized-state-changed', callback);
+}
+
+/**
+ * 配置 Electron 网络代理
+ */
+export async function setNetworkProxy(config: NetworkProxyConfig): Promise<IpcResponse<NetworkProxyConfig>> {
+  return invokeIpc<NetworkProxyConfig>('network:set-proxy', config);
+}
+
+/**
+ * 获取当前 Electron 网络代理配置
+ */
+export async function getNetworkProxy(): Promise<IpcResponse<NetworkProxyConfig>> {
+  return invokeIpc<NetworkProxyConfig>('network:get-proxy');
 }

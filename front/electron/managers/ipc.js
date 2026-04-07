@@ -1,5 +1,6 @@
 import { setupDragHandlers } from '../ipc/dragHandler.js';
 import { setupEasyTierHandlers } from '../ipc/easytierHandler.js';
+import { setupNetworkHandlers } from '../ipc/networkHandler.js';
 import { setupUserHandlers } from '../ipc/userHandler.js';
 import { setupWindowHandlers } from '../ipc/windowsHandler.js';
 
@@ -18,6 +19,7 @@ class IpcManager {
     setupDragHandlers();
     setupUserHandlers(this.databaseManager);
     setupEasyTierHandlers(this.easyTierManager);
+    setupNetworkHandlers();
   }
 }
 
