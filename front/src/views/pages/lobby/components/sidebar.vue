@@ -3,14 +3,15 @@
     <div class="grid h-full" :class="hidePanel ? 'grid-cols-[60px]' : 'grid-cols-[60px_minmax(0,1fr)]'">
       <div class="border-r border-slate-200/70">
         <SidebarRail :items="items" :avatar-url="avatarUrl" :user-initials="userInitials"
-          @select="emit('select', $event)" @open-settings="emit('open-settings')"
+          :settings-active="settingsActive" @select="emit('select', $event)" @open-settings="emit('open-settings')"
           @open-profile="emit('open-profile')" />
       </div>
 
-      <SidebarPanel v-if="!hidePanel" :items="items" :active-item="activeItem" :user-name="userName" :avatar-url="avatarUrl"
-        :user-initials="userInitials" :endpoint-label="endpointLabel" :online-partners="onlinePartners"
-        :recent-room-count="recentRoomCount" :network-hint="networkHint" @select="emit('select', $event)"
-        @quick-action="emit('quick-action', $event)" @open-profile="emit('open-profile')" />
+      <SidebarPanel v-if="!hidePanel" :items="items" :active-item="activeItem" :user-name="userName"
+        :avatar-url="avatarUrl" :user-initials="userInitials" :endpoint-label="endpointLabel"
+        :online-partners="onlinePartners" :recent-room-count="recentRoomCount" :network-hint="networkHint"
+        @select="emit('select', $event)" @quick-action="emit('quick-action', $event)"
+        @open-profile="emit('open-profile')" />
     </div>
   </aside>
 </template>
@@ -31,6 +32,7 @@ defineProps<{
   recentRoomCount: number
   networkHint: string
   hidePanel?: boolean
+  settingsActive?: boolean
 }>();
 
 const emit = defineEmits<{

@@ -36,6 +36,14 @@ const routes = [
     },
   },
   {
+    path: '/main/easytier',
+    name: 'MainEasyTier',
+    component: () => import('@/views/pages/lobby/main-easytier.vue'),
+    meta: {
+      sidebarKey: 'home',
+    },
+  },
+  {
     path: '/',
     redirect: '/login',
   },

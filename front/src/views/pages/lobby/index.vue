@@ -6,7 +6,7 @@
       <div class="absolute bottom-[-18%] right-[-8%] h-80 w-80 rounded-full bg-amber-200/30 blur-3xl" />
     </div>
 
-    <TopBar @open-settings="handleOpenSettings" />
+    <TopBar />
 
     <div class="relative h-full px-0 pb-0 pt-0" :class="{ 'border-t border-slate-200/70': !isElectronEnv }"
       :style="{ paddingTop: isElectronEnv ? '48px' : '0px' }">
@@ -17,15 +17,20 @@
           <Sidebar :user-name="displayName" :avatar-url="avatarUrl" :user-initials="userInitials"
             :endpoint-label="endpointLabel" :items="sidebarItems" :active-item="activeSidebarItem"
             :online-partners="onlinePartnerCount" :recent-room-count="recentRooms.length"
-            :network-hint="sidebarNetworkHint" :hide-panel="hideSidebarPanel" @select="handleSelectNav" @quick-action="handleQuickAction"
-            @open-settings="handleOpenSettings" @open-profile="handleOpenProfile" />
+            :network-hint="sidebarNetworkHint" :hide-panel="hideSidebarPanel" :settings-active="isEasyTierView"
+            @select="handleSelectNav" @quick-action="handleQuickAction" @open-settings="handleOpenSettings"
+            @open-profile="handleOpenProfile" />
         </div>
 
         <main class="min-h-0 overflow-auto bg-white/14 p-2.5 sm:p-3.5 md:p-4">
           <div class="space-y-4">
-            <QuickActions v-if="isHomeView" :actions="quickActions" @select="handleQuickAction" />
+            <PanelCard v-if="isEasyTierView" title="EasyTier 设置" subtitle="在主界面内调整组网参数，无需弹窗。">
+              <EasyTierPanel />
+            </PanelCard>
 
-            <PanelCard v-if="isRoomsView" title="房间检索" subtitle="通过关键词和状态快速定位房间。">
+            <QuickActions v-if="isHomeView && !isEasyTierView" :actions="quickActions" @select="handleQuickAction" />
+
+            <PanelCard v-if="isRoomsView && !isEasyTierView" title="房间检索" subtitle="通过关键词和状态快速定位房间。">
               <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <el-input v-model="roomKeyword" clearable placeholder="搜索房间名 / 房间码" class="lg:max-w-sm" />
                 <div class="flex flex-wrap gap-2">
@@ -49,14 +54,15 @@
               </div>
             </PanelCard>
 
-            <NetworkPanel v-if="isHomeView || isRoomsView" class="2xl:hidden" :summary="networkSummary"
+            <NetworkPanel v-if="(isHomeView || isRoomsView) && !isEasyTierView" class="2xl:hidden"
+              :summary="networkSummary" @refresh="refreshEasyTierStatus" @open-settings="handleOpenSettings"
+              @open-diagnostics="handleOpenDiagnostics" />
+
+            <NetworkPanel v-if="isDiagnosticsView && !isEasyTierView" :summary="networkSummary"
               @refresh="refreshEasyTierStatus" @open-settings="handleOpenSettings"
               @open-diagnostics="handleOpenDiagnostics" />
 
-            <NetworkPanel v-if="isDiagnosticsView" :summary="networkSummary" @refresh="refreshEasyTierStatus"
-              @open-settings="handleOpenSettings" @open-diagnostics="handleOpenDiagnostics" />
-
-            <PanelCard v-if="isDiagnosticsView" title="连接诊断" subtitle="按顺序检查服务状态、房间状态和成员可见性。">
+            <PanelCard v-if="isDiagnosticsView && !isEasyTierView" title="连接诊断" subtitle="按顺序检查服务状态、房间状态和成员可见性。">
               <div class="grid gap-3 md:grid-cols-2">
                 <article v-for="item in diagnosticChecks" :key="item.key" class="rounded-2xl border px-4 py-3" :class="item.state === 'ok'
                   ? 'border-emerald-200 bg-emerald-50/60'
@@ -78,10 +84,10 @@
               </div>
             </PanelCard>
 
-            <RoomList v-if="!isDiagnosticsView && visibleRooms.length > 0" :rooms="visibleRooms"
+            <RoomList v-if="!isDiagnosticsView && !isEasyTierView && visibleRooms.length > 0" :rooms="visibleRooms"
               @copy-code="handleCopyRoomCode" @open-room="handleOpenRoom" />
 
-            <PanelCard v-if="!isDiagnosticsView && visibleRooms.length === 0" title="房间列表"
+            <PanelCard v-if="!isDiagnosticsView && !isEasyTierView && visibleRooms.length === 0" title="房间列表"
               subtitle="没有匹配结果，尝试清空筛选条件或创建新房间。">
               <div class="flex flex-wrap gap-2">
                 <el-button round type="primary" @click="createRoomVisible = true">创建房间</el-button>
@@ -89,7 +95,8 @@
               </div>
             </PanelCard>
 
-            <PanelCard v-if="currentRoom && !isDiagnosticsView" title="当前房间" subtitle="展示成员、房主、连接模式和我的虚拟 IP。">
+            <PanelCard v-if="currentRoom && !isDiagnosticsView && !isEasyTierView" title="当前房间"
+              subtitle="展示成员、房主、连接模式和我的虚拟 IP。">
               <div class="space-y-3">
                 <div class="rounded-[20px] border border-slate-200/70 bg-slate-50/80 p-4">
                   <div class="flex flex-wrap items-center justify-between gap-3">
@@ -136,11 +143,13 @@
               </div>
             </PanelCard>
 
-            <PartnerList v-if="isHomeView && partners.length > 0" class="2xl:hidden" :partners="partners" />
+            <PartnerList v-if="isHomeView && !isEasyTierView && partners.length > 0" class="2xl:hidden"
+              :partners="partners" />
           </div>
         </main>
 
-        <aside class="hidden min-h-0 overflow-auto border-l border-slate-200/70 bg-white/40 p-3 2xl:block">
+        <aside v-if="!isEasyTierView"
+          class="hidden min-h-0 overflow-auto border-l border-slate-200/70 bg-white/40 p-3 2xl:block">
           <div class="space-y-4">
             <NetworkPanel v-if="!isDiagnosticsView" :summary="networkSummary" @refresh="refreshEasyTierStatus"
               @open-settings="handleOpenSettings" @open-diagnostics="handleOpenDiagnostics" />
@@ -166,7 +175,6 @@
       </div>
     </div>
 
-    <EasyTierDialog v-model="settingsVisible" />
     <UserProfileDialog v-model="profileVisible" />
 
     <CreateRoomDialog v-model="createRoomVisible" :loading="roomActionLoading" @submit="handleCreateRoomSubmit" />
@@ -184,7 +192,7 @@ import { useUserStore } from '@/stores/user';
 import type { RoomMemberVO, RoomVO } from '@/types/room';
 import { formatRelativeTime } from '@/utils/datetime';
 import { isElectron } from '@/utils/electron';
-import EasyTierDialog from '@/views/components/easytier/easytier-dialog.vue';
+import EasyTierPanel from '@/views/components/easytier/easytier-panel.vue';
 import TopBar from '@/views/components/top-bar.vue';
 import {
   FolderOpened,
@@ -223,7 +231,6 @@ const router = useRouter();
 const route = useRoute();
 
 const isElectronEnv = isElectron();
-const settingsVisible = ref(false);
 const profileVisible = ref(false);
 const createRoomVisible = ref(false);
 const joinRoomVisible = ref(false);
@@ -236,7 +243,8 @@ let refreshTimer: ReturnType<typeof setInterval> | null = null;
 const sidebarKeyByRouteName: Record<string, string> = {
   MainHome: 'home',
   MainRooms: 'rooms',
-  MainDiagnostics: 'diagnostics'
+  MainDiagnostics: 'diagnostics',
+  MainEasyTier: 'settings'
 };
 
 const activeSidebarKey = computed(() => {
@@ -284,6 +292,7 @@ const currentView = computed<LobbyViewMode>(() => {
 const isHomeView = computed(() => currentView.value === 'home');
 const isRoomsView = computed(() => currentView.value === 'rooms');
 const isDiagnosticsView = computed(() => currentView.value === 'diagnostics');
+const isEasyTierView = computed(() => route.name === 'MainEasyTier');
 const hideSidebarPanel = true;
 const shellGridClass = computed(() => {
   if (hideSidebarPanel) {
@@ -591,7 +600,11 @@ async function refreshEasyTierStatus() {
 }
 
 function handleOpenSettings() {
-  settingsVisible.value = true;
+  if (route.name === 'MainEasyTier') {
+    return;
+  }
+
+  void router.push({ name: 'MainEasyTier' });
 }
 
 function handleOpenProfile() {

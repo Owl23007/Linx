@@ -9,11 +9,6 @@
     <div class="flex-1 h-full drag-area" />
 
     <div class="flex shrink-0 no-drag items-center">
-      <el-button size="small" class="window-btn minimize-btn" @click="emit('open-settings')">
-        <el-icon :size="16">
-          <Setting />
-        </el-icon>
-      </el-button>
       <el-button size="small" class="window-btn minimize-btn" @click="handleMinimizeWindow">
         <el-icon :size="16">
           <Minus />
@@ -39,16 +34,11 @@ import { closeWindow, getWindowMaximized, isElectron, maximizeWindow, minimizeWi
 import icons from '@/views/components/icons';
 import {
   Close,
-  Minus,
-  Setting
+  Minus
 } from '@element-plus/icons-vue';
 import { onMounted, onUnmounted, ref } from 'vue';
 
 const { Fullscreen, FullscreenExit, Title } = icons;
-
-const emit = defineEmits<{
-  (e: 'open-settings'): void
-}>();
 
 const isElectronEnv = isElectron();
 const isMaximized = ref(false);

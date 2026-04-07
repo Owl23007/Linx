@@ -1,26 +1,31 @@
 <template>
-  <div class="p-4 max-w-3xl mx-auto">
-    <el-card class="shadow-md">
+  <div class="et-wrap">
+    <el-card class="et-card" shadow="never">
       <template #header>
-        <div class="flex justify-between items-center">
-          <div class="flex items-center gap-2">
-            <el-icon class="text-blue-500">
-              <Connection />
-            </el-icon>
-            <span class="text-lg font-bold text-gray-700">EasyTier 组网</span>
+        <div class="et-header">
+          <div class="et-title-group">
+            <div class="et-title-row">
+              <el-icon class="et-title-icon">
+                <Connection />
+              </el-icon>
+              <span class="et-title">EasyTier 组网</span>
+            </div>
+            <p class="et-subtitle">配置节点连接参数并快速启动虚拟网络</p>
           </div>
-          <el-tag v-if="status.running" type="success" effect="dark" round>
-            运行中 (PID: {{ status.pid }})
+          <el-tag v-if="status.running" type="success" effect="light" round class="et-status-tag">
+            运行中 · PID {{ status.pid }}
           </el-tag>
-          <el-tag v-else type="info" effect="plain" round>已停止</el-tag>
+          <el-tag v-else type="info" effect="light" round class="et-status-tag">
+            已停止
+          </el-tag>
         </div>
       </template>
 
-      <div v-if="status.running" class="flex flex-col items-center justify-center py-8 space-y-4">
+      <div v-if="status.running" class="et-running-panel">
         <el-result icon="success" title="服务运行正常" sub-title="EasyTier 虚拟网络已连接">
           <template #extra>
-            <div class="flex gap-4">
-              <el-button type="primary" @click="showPeers" plain>查看房间成员</el-button>
+            <div class="et-running-actions">
+              <el-button type="primary" @click="showPeers">查看房间成员</el-button>
               <el-button type="danger" @click="stop" :loading="loading" plain>停止服务</el-button>
             </div>
           </template>
@@ -28,46 +33,55 @@
       </div>
 
       <div v-else>
-        <el-form :model="config" label-width="140px" class="max-w-2xl mx-auto">
-          <el-form-item label="网络名称">
-            <el-input v-model="config.networkName" placeholder="请输入网络名称" clearable />
-          </el-form-item>
-          <el-form-item label="网络密钥">
-            <el-input v-model="config.networkSecret" type="password" show-password placeholder="请输入网络密钥" />
-          </el-form-item>
-          <el-form-item label="服务器地址 (Peers)" required>
-            <el-input v-model="peersInput" placeholder="请输入服务器地址，例如: tcp://1.2.3.4:11010" type="textarea" :rows="2" />
-            <div class="text-xs text-gray-400 mt-1">多个地址请用逗号分隔</div>
-          </el-form-item>
-          <el-collapse class="mb-6">
-            <el-collapse-item title="高级设置" name="1">
-              <div class="p-4 bg-gray-50">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <el-form :model="config" label-position="top" class="et-form">
+          <section class="et-section">
+            <h4 class="et-section-title">基础配置</h4>
+            <div class="et-grid et-grid-basic">
+              <el-form-item label="网络名称">
+                <el-input v-model="config.networkName" placeholder="例如：team-devnet" clearable />
+              </el-form-item>
+              <el-form-item label="网络密钥">
+                <el-input v-model="config.networkSecret" type="password" show-password placeholder="请输入网络密钥"
+                  clearable />
+              </el-form-item>
+            </div>
+
+            <el-form-item label="服务器地址 (Peers)" required>
+              <el-input v-model="peersInput" placeholder="例如：tcp://1.2.3.4:11010" type="textarea" :rows="2"
+                resize="none" />
+              <div class="et-help">多个地址请用英文逗号分隔</div>
+            </el-form-item>
+          </section>
+
+          <el-collapse v-model="advancedActive" class="et-collapse">
+            <el-collapse-item title="高级设置" name="advanced">
+              <section class="et-section et-section-advanced">
+                <div class="et-grid et-grid-advanced">
                   <el-form-item label="主机名">
-                    <el-input v-model="config.hostname" placeholder="Hostname" />
+                    <el-input v-model="config.hostname" placeholder="例如：client-node-a" clearable />
                   </el-form-item>
                   <el-form-item label="IPv4 (CIDR)">
-                    <el-input v-model="config.ipv4" placeholder="例如: 10.144.144.1/24" />
+                    <el-input v-model="config.ipv4" placeholder="例如：10.144.144.1/24" clearable />
                   </el-form-item>
                   <el-form-item label="监听地址">
-                    <el-input v-model="listenersInput" placeholder="例如: tcp://0.0.0.0:11010" />
+                    <el-input v-model="listenersInput" placeholder="例如：tcp://0.0.0.0:11010" clearable />
                   </el-form-item>
                   <el-form-item label="RPC 端口">
                     <el-input-number v-model="config.rpcPort" :min="1" :max="65535" controls-position="right"
                       class="w-full" />
                   </el-form-item>
                   <el-form-item label="设备名称">
-                    <el-input v-model="config.devName" placeholder="例如: tun0" />
+                    <el-input v-model="config.devName" placeholder="例如：tun0" clearable />
                   </el-form-item>
                   <el-form-item label="默认协议">
-                    <el-select v-model="config.defaultProtocol" placeholder="选择协议">
+                    <el-select v-model="config.defaultProtocol" placeholder="选择协议" class="w-full">
                       <el-option label="TCP" value="tcp" />
                       <el-option label="UDP" value="udp" />
                       <el-option label="WSS" value="wss" />
                     </el-select>
                   </el-form-item>
                   <el-form-item label="日志等级">
-                    <el-select v-model="config.fileLogLevel" placeholder="选择等级">
+                    <el-select v-model="config.fileLogLevel" placeholder="选择等级" class="w-full">
                       <el-option label="Error" value="error" />
                       <el-option label="Warn" value="warn" />
                       <el-option label="Info" value="info" />
@@ -76,13 +90,12 @@
                     </el-select>
                   </el-form-item>
                   <el-form-item label="日志目录">
-                    <el-input v-model="config.fileLogDir" placeholder="easytier/logs/" />
+                    <el-input v-model="config.fileLogDir" placeholder="easytier/logs/" clearable />
                   </el-form-item>
                 </div>
 
                 <el-divider content-position="left">功能开关</el-divider>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                <div class="et-switches">
                   <el-checkbox v-model="config.dhcp" label="启用 DHCP" />
                   <el-checkbox v-model="config.multiThread" label="多线程模式" />
                   <el-checkbox v-model="config.latencyFirst" label="低延迟优先" />
@@ -95,25 +108,24 @@
                   <el-checkbox v-model="config.disableIpv6" label="禁用 IPv6" />
                   <el-checkbox v-model="config.noTun" label="无 TUN 模式" />
                 </div>
-              </div>
+              </section>
             </el-collapse-item>
           </el-collapse>
 
-          <div class="flex justify-center pt-4">
-            <el-button type="primary" size="large" @click="start" :loading="loading" class="w-full md:w-auto px-12">
+          <div class="et-footer-actions">
+            <el-button type="primary" size="large" @click="start" :loading="loading" class="et-start-btn">
               启动服务
             </el-button>
           </div>
         </el-form>
       </div>
 
-      <div v-if="error" class="mt-6">
+      <div v-if="error" class="et-error-wrap">
         <el-alert :title="error" type="error" show-icon :closable="false" />
       </div>
     </el-card>
 
-    <!-- Peers Dialog -->
-    <el-dialog v-model="peersVisible" title="房间成员列表" width="900px" append-to-body>
+    <el-dialog v-model="peersVisible" title="房间成员列表" width="min(900px, 92vw)" append-to-body>
       <el-table :data="peersList" stripe style="width: 100%" v-loading="peersLoading">
         <el-table-column prop="peer_id" label="Peer ID" width="120" />
         <el-table-column prop="ipv4" label="IPv4" width="140" />
@@ -142,7 +154,7 @@
 import { easyTierService, type EasyTierConfig, type EasyTierStatus } from '@/services/easytierService';
 import { Connection } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, onUnmounted, reactive, ref } from 'vue';
 
 const status = ref<EasyTierStatus>({ running: false, pid: null });
 const loading = ref(false);
@@ -173,10 +185,12 @@ const config = reactive<EasyTierConfig>({
 const peersInput = ref('');
 const listenersInput = ref('');
 const error = ref('');
+const advancedActive = ref<string[]>([]);
 
 const peersVisible = ref(false);
 const peersLoading = ref(false);
 const peersList = ref<any[]>([]);
+let statusTimer: ReturnType<typeof setInterval> | null = null;
 
 const updateStatus = async () => {
   const res = await easyTierService.getStatus();
@@ -189,7 +203,15 @@ const start = async () => {
   error.value = '';
   loading.value = true;
   try {
-    config.peers = peersInput.value.split(',').map(p => p.trim()).filter(p => p);
+    const peers = peersInput.value.split(',').map(p => p.trim()).filter(p => p);
+    if (peers.length === 0) {
+      ElMessage.warning('请至少填写一个服务器地址');
+      loading.value = false;
+
+      return;
+    }
+
+    config.peers = peers;
     config.listeners = listenersInput.value.split(',').map(l => l.trim()).filter(l => l);
 
     // 使用 JSON.parse(JSON.stringify()) 去除 Vue 的 Proxy 包装，防止 IPC 克隆错误
@@ -258,15 +280,191 @@ const getLatencyClass = (latency: number) => {
 
 onMounted(() => {
   updateStatus();
-  // Poll status every 5 seconds
-  setInterval(updateStatus, 5000);
+  statusTimer = setInterval(updateStatus, 5000);
+});
+
+onUnmounted(() => {
+  if (statusTimer) {
+    clearInterval(statusTimer);
+    statusTimer = null;
+  }
 });
 </script>
 
 <style scoped>
-/* Tailwind handles most styles, but we can add custom overrides here if needed */
+.et-wrap {
+  padding: 16px;
+}
+
+.et-card {
+  border: 1px solid #dfe6f2;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.et-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.et-title-group {
+  min-width: 0;
+}
+
+.et-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.et-title-icon {
+  color: #3b82f6;
+}
+
+.et-title {
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.et-subtitle {
+  margin-top: 4px;
+  margin-bottom: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.et-status-tag {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.et-running-panel {
+  padding: 10px 0 2px;
+}
+
+.et-running-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.et-form {
+  padding-top: 4px;
+}
+
+.et-section {
+  border: 1px solid #e7edf6;
+  border-radius: 10px;
+  padding: 14px 14px 6px;
+  background: #f9fbff;
+}
+
+.et-section-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.et-section-advanced {
+  margin-top: 10px;
+}
+
+.et-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.et-grid-basic {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.et-grid-advanced {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.et-help {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #8b97aa;
+}
+
+.et-collapse {
+  margin-top: 12px;
+}
+
+.et-switches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 12px;
+}
+
+.et-footer-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 14px;
+}
+
+.et-start-btn {
+  min-width: 180px;
+}
+
+.et-error-wrap {
+  margin-top: 14px;
+}
+
+@media (max-width: 768px) {
+  .et-wrap {
+    padding: 12px;
+  }
+
+  .et-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .et-title {
+    font-size: 24px;
+  }
+
+  .et-grid-basic,
+  .et-grid-advanced,
+  .et-switches {
+    grid-template-columns: 1fr;
+  }
+
+  .et-start-btn {
+    width: 100%;
+  }
+}
+
+:deep(.el-card__header) {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e7edf6;
+}
+
+:deep(.el-card__body) {
+  padding: 14px 16px 16px;
+}
+
 :deep(.el-collapse-item__header) {
-  padding-left: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: #374151;
+  background: #ffffff;
+  border-radius: 8px;
+  padding-left: 10px;
+}
+
+:deep(.el-collapse-item__content) {
+  padding-bottom: 0;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 10px;
 }
 </style>
