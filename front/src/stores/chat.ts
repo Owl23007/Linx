@@ -94,7 +94,7 @@ export const useChatStore = defineStore('chat', () => {
 
     // 标记该会话的消息为已读
     if (conversation) {
-      markConversationAsRead(conversation.id);
+      void markConversationAsRead(conversation.id);
     }
   }
 

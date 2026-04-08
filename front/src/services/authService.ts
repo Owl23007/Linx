@@ -84,7 +84,7 @@ class AuthService {
    */
   async switchToMainWindow() {
     if (isElectron()) {
-      await sendIpc('set-main-window');
+      sendIpc('set-main-window');
     }
   }
 }

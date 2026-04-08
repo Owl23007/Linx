@@ -54,7 +54,7 @@ function ensureDir(dirPath) {
 
     return true;
   } catch (error) {
-    logger.error('APP_SETUP', `无法创建目录: ${dirPath}`, { error: error.message });
+    void logger.error('APP_SETUP', `无法创建目录: ${dirPath}`, { error: error.message });
 
     return false;
   }
@@ -167,7 +167,7 @@ function tryAcquireLock(lockFile) {
       stalePid: state.stalePid
     };
   } catch (error) {
-    logger.error('APP_SETUP', `锁操作失败: ${error.message}`);
+    void logger.error('APP_SETUP', `锁操作失败: ${error.message}`);
 
     return { success: false, isStale: state.isStale, stalePid: state.stalePid };
   }
@@ -296,7 +296,7 @@ export function initializeUserData() {
       app.setPath('userData', baseDir);
     }
   } catch (error) {
-    logger.error('APP_SETUP', '初始化失败', { error: error.message });
+    void logger.error('APP_SETUP', '初始化失败', { error: error.message });
   }
 }
 

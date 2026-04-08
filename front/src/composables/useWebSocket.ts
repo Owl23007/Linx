@@ -31,7 +31,7 @@ export function useWebSocket() {
     // 清理旧连接
     if (client.value) {
       try {
-        client.value.deactivate();
+        void client.value.deactivate();
       } catch {
         // 忽略清理错误
       }
@@ -105,7 +105,7 @@ export function useWebSocket() {
 
         // 清理客户端,避免使用过期的 ticket 重连
         if (client.value) {
-          client.value.deactivate();
+          void client.value.deactivate();
           client.value = null;
         }
 
@@ -124,7 +124,7 @@ export function useWebSocket() {
 
         // 清理客户端
         if (client.value) {
-          client.value.deactivate();
+          void client.value.deactivate();
           client.value = null;
         }
       };
@@ -150,7 +150,7 @@ export function useWebSocket() {
 
       // 清理客户端
       if (client.value) {
-        client.value.deactivate();
+        void client.value.deactivate();
         client.value = null;
       }
 
@@ -283,7 +283,7 @@ export function useWebSocket() {
    */
   function disconnect() {
     if (client.value) {
-      client.value.deactivate();
+      void client.value.deactivate();
       client.value = null;
       connected.value = false;
       chatStore.setWsConnected(false);

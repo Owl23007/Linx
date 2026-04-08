@@ -39,7 +39,7 @@ class WindowManager {
 
     // 开发环境加载 Vite dev server，生产环境加载打包后的文件
     if (config.isDev) {
-      this.mainWindow.loadURL(`http://localhost:${config.vitePort}${route}`);
+      void this.mainWindow.loadURL(`http://localhost:${config.vitePort}${route}`);
     } else {
       // 生产环境使用打包后的文件
       const currentDir = getCurrentDir(import.meta.url);
@@ -51,9 +51,9 @@ class WindowManager {
         // 将路径转换为 Windows 兼容的 file:// URL
         const normalizedPath = indexPath.replace(/\\/g, '/');
         const fileUrl = `file:///${normalizedPath}#${route}`;
-        this.mainWindow.loadURL(fileUrl);
+        void this.mainWindow.loadURL(fileUrl);
       } else {
-        this.mainWindow.loadFile(indexPath);
+        void this.mainWindow.loadFile(indexPath);
       }
     }
   }

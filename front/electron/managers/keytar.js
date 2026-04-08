@@ -90,7 +90,7 @@ class KeytarManager {
       32
     );
 
-    return derived.toString('hex');
+    return Buffer.from(derived).toString('hex');
   }
 
   // ================ 4. 用户凭据管理 ================

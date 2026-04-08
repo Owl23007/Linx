@@ -110,7 +110,7 @@ export function useAsyncData<T>(
   }
 
   if (options?.immediate !== false) {
-    execute();
+    void execute();
   }
 
   return {

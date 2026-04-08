@@ -49,7 +49,7 @@ export function useAppInitialize() {
 
   // 自动初始化
   onMounted(() => {
-    initialize();
+    void initialize();
   });
 
   return {
