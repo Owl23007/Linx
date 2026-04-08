@@ -24,9 +24,7 @@
 
         <main class="min-h-0 overflow-auto bg-white/14 p-2.5 sm:p-3.5 md:p-4">
           <div class="space-y-4">
-            <PanelCard v-if="isEasyTierView" title="EasyTier 设置" subtitle="在主界面内调整组网参数，无需弹窗。">
-              <EasyTierPanel />
-            </PanelCard>
+            <EasyTierPanel v-if="isEasyTierView" />
 
             <QuickActions v-if="isHomeView && !isEasyTierView" :actions="quickActions" @select="handleQuickAction" />
 

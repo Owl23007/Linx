@@ -22,14 +22,43 @@
       </template>
 
       <div v-if="status.running" class="et-running-panel">
-        <el-result icon="success" title="服务运行正常" sub-title="EasyTier 虚拟网络已连接">
-          <template #extra>
-            <div class="et-running-actions">
-              <el-button type="primary" @click="showPeers">查看房间成员</el-button>
-              <el-button type="danger" @click="stop" :loading="loading" plain>停止服务</el-button>
-            </div>
-          </template>
-        </el-result>
+        <div class="et-running-summary">
+          <div class="et-running-summary-text">
+            <span class="et-running-dot"></span>
+            <span>服务运行正常，EasyTier 虚拟网络已连接</span>
+          </div>
+          <div class="et-running-actions">
+            <el-button type="danger" @click="stop" :loading="loading" plain>停止服务</el-button>
+          </div>
+        </div>
+
+        <el-divider content-position="left">Peer 列表</el-divider>
+        <div class="mb-3 text-sm text-slate-600">本机虚拟 IP：<strong>{{ localVirtualIp }}</strong></div>
+        <el-table :data="peersList" stripe style="width: 100%" v-loading="peersLoading" max-height="360">
+          <el-table-column prop="peerId" label="Peer ID" width="140" />
+          <el-table-column label="类型" width="110">
+            <template #default="{ row }">
+              <el-tag v-if="row.isLocal" type="info" effect="plain" size="small">本机</el-tag>
+              <el-tag v-else-if="row.isRelayLike" type="warning" effect="light" size="small">中继</el-tag>
+              <el-tag v-else type="success" effect="light" size="small">终端</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="ipv4" label="IPv4" width="160" />
+          <el-table-column prop="hostname" label="主机名" />
+          <el-table-column prop="cost" label="链路" width="110" />
+          <el-table-column prop="latencyMs" label="延迟 (ms)" width="120">
+            <template #default="{ row }">
+              <span :class="getLatencyClass(row.latencyMs)">
+                {{ formatLatency(row.latencyMs) }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="lossRatePercent" label="丢包率" width="100">
+            <template #default="{ row }">
+              {{ formatLossRate(row.lossRatePercent) }}
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
 
       <div v-else>
@@ -125,28 +154,6 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="peersVisible" title="房间成员列表" width="min(900px, 92vw)" append-to-body>
-      <el-table :data="peersList" stripe style="width: 100%" v-loading="peersLoading">
-        <el-table-column prop="peer_id" label="Peer ID" width="120" />
-        <el-table-column prop="ipv4" label="IPv4" width="140" />
-        <el-table-column prop="hostname" label="主机名" />
-        <el-table-column prop="latency_ms" label="延迟 (ms)" width="100">
-          <template #default="{ row }">
-            <span :class="getLatencyClass(row.latency_ms)">
-              {{ row.latency_ms !== null && row.latency_ms !== undefined ? row.latency_ms.toFixed(1) : '-' }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="loss_rate" label="丢包率" width="100">
-          <template #default="{ row }">
-            {{ row.loss_rate !== null && row.loss_rate !== undefined ? (row.loss_rate * 100).toFixed(1) + '%' : '0%' }}
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="flex justify-end mt-4">
-        <el-button @click="showPeers" :loading="peersLoading" icon="Refresh">刷新</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -154,7 +161,7 @@
 import { easyTierService, type EasyTierConfig, type EasyTierStatus } from '@/services/easytierService';
 import { Connection } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { onMounted, onUnmounted, reactive, ref } from 'vue';
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
 const status = ref<EasyTierStatus>({ running: false, pid: null });
 const loading = ref(false);
@@ -187,10 +194,176 @@ const listenersInput = ref('');
 const error = ref('');
 const advancedActive = ref<string[]>([]);
 
-const peersVisible = ref(false);
 const peersLoading = ref(false);
-const peersList = ref<any[]>([]);
+const localVirtualIp = ref('-');
+const peersList = ref<Array<{
+  peerId: string
+  ipv4: string
+  hostname: string
+  cost: string
+  latencyMs: number | null
+  lossRatePercent: number | null
+  isLocal: boolean
+  isRelayLike: boolean
+}>>([]);
 let statusTimer: ReturnType<typeof setInterval> | null = null;
+let peersTimer: ReturnType<typeof setInterval> | null = null;
+let peersFetching = false;
+const PEERS_POLL_INTERVAL_MS = 5000;
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === '-' || trimmed.toLowerCase() === 'nan') {
+      return null;
+    }
+
+    const parsed = Number(trimmed);
+
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function normalizeText(value: unknown, fallback = '-'): string {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  const text = String(value).trim();
+
+  return text ? text : fallback;
+}
+
+function toPercentNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null;
+
+    return value > 1 ? value : value * 100;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === '-') {
+      return null;
+    }
+
+    const normalized = trimmed.replace('%', '');
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed)) {
+      return null;
+    }
+
+    return trimmed.includes('%') ? parsed : parsed > 1 ? parsed : parsed * 100;
+  }
+
+  return null;
+}
+
+function normalizePeers(raw: unknown) {
+  const list = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === 'object' && Array.isArray((raw as any).peers)
+      ? (raw as any).peers
+      : [];
+
+  return list.map((item: any) => ({
+    peerId: String(item.peer_id ?? item.peerId ?? item.id ?? item.peer ?? '-'),
+    ipv4: normalizeText(item.ipv4 ?? item.ip ?? item.virtual_ip),
+    hostname: normalizeText(item.hostname ?? item.host_name ?? item.name),
+    cost: normalizeText(item.cost),
+    latencyMs: toFiniteNumber(item.lat_ms ?? item.latency_ms ?? item.latencyMs ?? item.latency),
+    lossRatePercent: toPercentNumber(item.loss_rate ?? item.lossRate ?? item.packet_loss ?? item.loss),
+    isLocal: String(item.cost ?? '').toLowerCase() === 'local',
+    isRelayLike: /publicserver/i.test(String(item.hostname ?? '')) || /relay|public/i.test(String(item.cost ?? ''))
+  }));
+}
+
+function findIPv4Like(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const text = value.trim();
+  if (!text || text === '-') {
+    return null;
+  }
+
+  const matched = text.match(/^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/);
+
+  return matched ? text : null;
+}
+
+function extractVirtualIpFromNodeInfo(raw: unknown): string | null {
+  const directCandidates = [
+    (raw as any)?.ipv4,
+    (raw as any)?.virtual_ipv4,
+    (raw as any)?.virtualIp,
+    (raw as any)?.my_ipv4,
+    (raw as any)?.node_ipv4,
+    (raw as any)?.tun_ipv4
+  ];
+
+  for (const candidate of directCandidates) {
+    const ip = findIPv4Like(candidate);
+    if (ip) {
+      return ip;
+    }
+  }
+
+  const walk = (input: unknown): string | null => {
+    if (!input || typeof input !== 'object') {
+      return null;
+    }
+
+    for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+      if (/stun|public|listener|rpc|port|endpoint/i.test(key)) {
+        continue;
+      }
+
+      const shouldCheckThisKey = /virtual|ipv4|tun|node|my/i.test(key);
+      if (shouldCheckThisKey) {
+        const ip = findIPv4Like(value);
+        if (ip) {
+          return ip;
+        }
+      }
+
+      if (value && typeof value === 'object') {
+        const child = walk(value);
+        if (child) {
+          return child;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  return walk(raw);
+}
+
+function resolveLocalVirtualIp(nodeInfo: unknown, normalizedPeers: Array<{ isLocal: boolean; ipv4: string }>): string {
+  const fromNodeInfo = extractVirtualIpFromNodeInfo(nodeInfo);
+  if (fromNodeInfo) {
+    return fromNodeInfo;
+  }
+
+  const fromLocalPeer = normalizedPeers.find((item) => item.isLocal && item.ipv4 !== '-')?.ipv4;
+  if (fromLocalPeer) {
+    return fromLocalPeer;
+  }
+
+  if (config.ipv4 && config.ipv4.trim()) {
+    return config.ipv4.trim();
+  }
+
+  return '-';
+}
 
 const updateStatus = async () => {
   const res = await easyTierService.getStatus();
@@ -246,41 +419,99 @@ const stop = async () => {
   }
 };
 
-const showPeers = async () => {
-  peersVisible.value = true;
-  peersLoading.value = true;
+const fetchPeers = async (silent = false) => {
+  if (peersFetching) {
+    return;
+  }
+
+  peersFetching = true;
+  if (!silent) {
+    peersLoading.value = true;
+  }
+
   try {
-    const res = await easyTierService.getPeers();
-    if (res.success) {
-      const data: any = res.data;
-      if (Array.isArray(data)) {
-        peersList.value = data;
-      } else if (data && Array.isArray(data.peers)) {
-        peersList.value = data.peers;
-      } else {
-        peersList.value = [];
-      }
-    } else {
-      ElMessage.error(res.error || '获取成员列表失败');
+    const [peersRes, nodeInfoRes] = await Promise.all([
+      easyTierService.getPeers(),
+      easyTierService.getNodeInfo()
+    ]);
+
+    if (peersRes.success) {
+      const normalized = normalizePeers(peersRes.data);
+      peersList.value = normalized;
+      localVirtualIp.value = resolveLocalVirtualIp(nodeInfoRes.success ? nodeInfoRes.data : null, normalized);
+    } else if (!silent) {
+      ElMessage.error(peersRes.error || '获取 Peer 列表失败');
     }
   } catch (e: any) {
-    ElMessage.error(e.message || '获取成员列表失败');
+    if (!silent) {
+      ElMessage.error(e.message || '获取 Peer 列表失败');
+    }
   } finally {
-    peersLoading.value = false;
+    if (!silent) {
+      peersLoading.value = false;
+    }
+    peersFetching = false;
   }
 };
 
-const getLatencyClass = (latency: number) => {
-  if (!latency) return '';
+const stopPeersPolling = () => {
+  if (peersTimer) {
+    clearInterval(peersTimer);
+    peersTimer = null;
+  }
+};
+
+const startPeersPolling = () => {
+  stopPeersPolling();
+  void fetchPeers(false);
+  peersTimer = setInterval(() => {
+    if (!status.value.running) {
+      return;
+    }
+    void fetchPeers(true);
+  }, PEERS_POLL_INTERVAL_MS);
+};
+
+watch(() => status.value.running, (running) => {
+  if (running) {
+    startPeersPolling();
+  } else {
+    stopPeersPolling();
+    peersList.value = [];
+    localVirtualIp.value = '-';
+  }
+});
+
+const getLatencyClass = (latency: number | null) => {
+  if (latency === null || latency === undefined || !Number.isFinite(latency)) return '';
   if (latency < 50) return 'text-green-500 font-bold';
   if (latency < 150) return 'text-yellow-500 font-bold';
 
   return 'text-red-500 font-bold';
 };
 
+const formatLatency = (latency: number | null) => {
+  if (latency === null || !Number.isFinite(latency)) {
+    return '-';
+  }
+
+  return latency.toFixed(1);
+};
+
+const formatLossRate = (lossRatePercent: number | null) => {
+  if (lossRatePercent === null || !Number.isFinite(lossRatePercent)) {
+    return '-';
+  }
+
+  return `${lossRatePercent.toFixed(1)}%`;
+};
+
 onMounted(() => {
   updateStatus();
   statusTimer = setInterval(updateStatus, 5000);
+  if (status.value.running) {
+    startPeersPolling();
+  }
 });
 
 onUnmounted(() => {
@@ -288,12 +519,13 @@ onUnmounted(() => {
     clearInterval(statusTimer);
     statusTimer = null;
   }
+  stopPeersPolling();
 });
 </script>
 
 <style scoped>
 .et-wrap {
-  padding: 16px;
+  padding: 12px;
 }
 
 .et-card {
@@ -324,7 +556,7 @@ onUnmounted(() => {
 }
 
 .et-title {
-  font-size: 30px;
+  font-size: 24px;
   line-height: 1.2;
   font-weight: 700;
   color: #1f2937;
@@ -343,14 +575,43 @@ onUnmounted(() => {
 }
 
 .et-running-panel {
-  padding: 10px 0 2px;
+  padding: 6px 0 0;
+}
+
+.et-running-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border: 1px solid #e5f4df;
+  background: #f6fff2;
+  border-radius: 10px;
+}
+
+.et-running-summary-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #2f6f35;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.et-running-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #67c23a;
+  box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.2);
 }
 
 .et-running-actions {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .et-form {
@@ -429,7 +690,15 @@ onUnmounted(() => {
   }
 
   .et-title {
-    font-size: 24px;
+    font-size: 22px;
+  }
+
+  .et-running-summary {
+    padding: 8px;
+  }
+
+  :deep(.el-table__inner-wrapper) {
+    font-size: 12px;
   }
 
   .et-grid-basic,
@@ -444,12 +713,12 @@ onUnmounted(() => {
 }
 
 :deep(.el-card__header) {
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-bottom: 1px solid #e7edf6;
 }
 
 :deep(.el-card__body) {
-  padding: 14px 16px 16px;
+  padding: 12px 14px 14px;
 }
 
 :deep(.el-collapse-item__header) {

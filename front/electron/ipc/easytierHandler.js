@@ -44,4 +44,14 @@ export function setupEasyTierHandlers(easyTierManager) {
       return { success: false, error: error.message };
     }
   });
+
+  ipcMain.handle('easytier:getNodeInfo', async () => {
+    try {
+      const info = await easyTierManager.getNodeInfo();
+
+      return { success: true, data: info };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
 }
