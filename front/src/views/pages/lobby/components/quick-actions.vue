@@ -13,7 +13,7 @@
           </div>
           <span
             class="rounded-full border border-white/80 bg-white/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Action
+            {{ getActionLabel(action.key) }}
           </span>
         </div>
 
@@ -70,6 +70,21 @@ function getIconClasses(accent: LobbyQuickAction['accent']) {
     case 'sky':
     default:
       return 'bg-sky-500 shadow-sky-200/80';
+  }
+}
+
+function getActionLabel(actionKey: string) {
+  switch (actionKey) {
+    case 'create-room':
+      return 'Create';
+    case 'join-room':
+      return 'Join';
+    case 'refresh-rooms':
+      return 'Sync';
+    case 'network-settings':
+      return 'Settings';
+    default:
+      return 'Action';
   }
 }
 </script>

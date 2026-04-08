@@ -2,28 +2,18 @@
   <el-dialog v-model="visible" title="创建房间" width="520px" class="create-room-dialog" destroy-on-close>
     <el-form label-position="top">
       <div class="grid gap-x-3 sm:grid-cols-2">
-        <el-form-item label="房间名">
+        <el-form-item label="房间名" required>
           <el-input v-model="form.name" maxlength="32" placeholder="例如：周末联机房" />
         </el-form-item>
-        <el-form-item label="房间密码">
+        <el-form-item label="房间密码" required>
           <el-input v-model="form.roomPassword" maxlength="64" show-password placeholder="请输入房间密码" />
         </el-form-item>
       </div>
 
       <div class="grid gap-x-3 sm:grid-cols-2">
-        <el-form-item label="中继地址">
-          <el-select
-            v-model="form.relayAddresses"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            clearable
-            collapse-tags
-            collapse-tags-tooltip
-            class="w-full"
-            placeholder="可多选，回车可添加自定义地址"
-          >
+        <el-form-item label="中继地址" required>
+          <el-select v-model="form.relayAddresses" multiple filterable allow-create default-first-option clearable
+            collapse-tags collapse-tags-tooltip class="w-full" placeholder="输入添加自定义地址">
             <el-option v-for="item in relayAddressOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
