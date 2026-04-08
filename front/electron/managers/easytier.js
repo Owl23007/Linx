@@ -270,7 +270,7 @@ class EasyTierManager {
 
       const stdout = (result.stdout || '').trim();
 
-      return stdout.includes(`,\"${pid}\",`) || stdout.includes(`,${pid},`);
+      return stdout.includes(`,"${pid}",`) || stdout.includes(`,${pid},`);
     }
 
     try {

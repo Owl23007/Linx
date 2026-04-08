@@ -13,6 +13,20 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 const BIN_DIR = path.join(ROOT_DIR, 'electron', 'bin', 'easytier');
 
+function getExpectedBinaries() {
+  if (process.platform === 'win32') {
+    return ['easytier-core.exe', 'easytier-cli.exe'];
+  }
+
+  return ['easytier-core', 'easytier-cli'];
+}
+
+function hasAllBinaries(binDir) {
+  const expected = getExpectedBinaries();
+
+  return expected.every((name) => fs.existsSync(path.join(binDir, name)));
+}
+
 // 确保 bin 目录存在
 if (!fs.existsSync(BIN_DIR)) {
   fs.mkdirSync(BIN_DIR, { recursive: true });
@@ -47,6 +61,12 @@ const tempFilePath = path.join(BIN_DIR, fileName);
 
 // 解析代理参数
 const args = process.argv.slice(2);
+const forceDownload = args.includes('--force');
+
+if (!forceDownload && hasAllBinaries(BIN_DIR)) {
+  console.log('Detected existing EasyTier binaries. Skipping download. Use --force to re-download.');
+  process.exit(0);
+}
 
 // 优先从环境变量获取代理
 let proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || null;
@@ -148,7 +168,9 @@ function extractFile(zipPath, targetDir) {
     console.log('Extraction completed.');
 
     // 清理 zip 文件
-    fs.unlinkSync(zipPath);
+    if (fs.existsSync(zipPath)) {
+      fs.unlinkSync(zipPath);
+    }
 
     // 整理文件：EasyTier 解压后通常会在一个子文件夹里
     // 例如 easytier-windows-x86_64-v2.4.5/easytier-core.exe
@@ -203,6 +225,11 @@ function organizeBinaries(targetDir) {
   } else {
     // 可能是直接解压在当前目录（不太可能，但以防万一）
     console.log('No subfolder found, checking for binary in root...');
+  }
+
+  if (!hasAllBinaries(targetDir)) {
+    console.error('EasyTier binaries are incomplete after extraction.');
+    process.exit(1);
   }
 
   console.log('EasyTier binary setup complete.');
