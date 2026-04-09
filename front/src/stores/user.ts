@@ -43,7 +43,7 @@ function toDisplaySuccessMessage(message: unknown, fallback: string): string {
     return fallback;
   }
 
-  return text;
+  return text ?? fallback;
 }
 
 function formatFileSize(bytes: number): string {
