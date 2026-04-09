@@ -11,6 +11,7 @@ class DatabaseManager {
     this.keytarManager = keytarManager;
     this.appDb = null;
     this.userDatabases = new Map(); // 缓存用户数据库连接
+    this.maxBackupFilesPerDb = 10;
   }
 
   async getInstance() {
@@ -36,30 +37,49 @@ class DatabaseManager {
 
       // 检查数据库文件是否已存在且可能损坏
       const dbExists = fs.existsSync(appDbPath);
-
-      this.appDb = new Database(appDbPath);
-
-      // 设置数据库加密
       const dbPassword = await this.getDatabasePassword('app');
-      this.appDb.pragma('cipher = sqlcipher');
-      this.appDb.pragma(`key = '${dbPassword}'`);
-      this.appDb.pragma('journal_mode = WAL'); // 启用 WAL 模式以支持多实例并发
+
+      try {
+        this.appDb = this.openDatabaseWithValidation(appDbPath, dbPassword);
+      } catch (openError) {
+        const isNotADB = this.isNotDatabaseError(openError);
+        if (isNotADB && dbExists) {
+          this.Logger.warn('APP_DB', '检测到损坏的数据库文件（pragma阶段），尝试静默恢复');
+          try {
+            this.appDb?.close();
+          } catch {
+            // 忽略关闭失败
+          }
+
+          const recovered = this.trySilentRestoreDatabase(appDbPath, dbPassword, 'APP_DB');
+          if (recovered) {
+            this.appDb = recovered;
+          } else {
+            this.backupDatabaseForRecovery(appDbPath, 'pragma-not-a-database', 'APP_DB');
+            this.appDb = this.openDatabaseWithValidation(appDbPath, dbPassword);
+          }
+        } else {
+          throw openError;
+        }
+      }
 
       try {
         // 尝试测试数据库连接
         this.appDb.prepare('SELECT 1').get();
       } catch (testError) {
-        if (testError.code === 'SQLITE_NOTADB' && dbExists) {
-          // 数据库文件损坏，删除并重新创建
-          this.Logger.warn('APP_DB', '检测到损坏的数据库文件，正在删除并重新创建');
+        const isNotADB = this.isNotDatabaseError(testError);
+        if (isNotADB && dbExists) {
+          // 数据库文件损坏，优先静默恢复
+          this.Logger.warn('APP_DB', '检测到损坏的数据库文件（连通性测试阶段），尝试静默恢复');
           this.appDb.close();
-          fs.unlinkSync(appDbPath);
 
-          // 重新创建数据库
-          this.appDb = new Database(appDbPath);
-          this.appDb.pragma('cipher = sqlcipher');
-          this.appDb.pragma(`key = '${dbPassword}'`);
-          this.appDb.pragma('journal_mode = WAL');
+          const recovered = this.trySilentRestoreDatabase(appDbPath, dbPassword, 'APP_DB');
+          if (recovered) {
+            this.appDb = recovered;
+          } else {
+            this.backupDatabaseForRecovery(appDbPath, 'test-query-not-a-database', 'APP_DB');
+            this.appDb = this.openDatabaseWithValidation(appDbPath, dbPassword);
+          }
         } else {
           throw testError;
         }
@@ -150,11 +170,20 @@ class DatabaseManager {
         // 测试数据库连接
         userDb.prepare('SELECT 1').get();
       } catch (testError) {
-        if (testError.code === 'SQLITE_NOTADB') {
-          // 数据库文件损坏，删除并重新创建
-          this.Logger.warn('USER_DB', `用户 ${userId} 数据库文件损坏，正在重新创建`);
+        const isNotADB = this.isNotDatabaseError(testError);
+        if (isNotADB) {
+          // 数据库文件损坏，优先静默恢复
+          this.Logger.warn('USER_DB', `用户 ${userId} 数据库文件损坏，尝试静默恢复`);
           userDb.close();
-          fs.unlinkSync(userDbPath);
+
+          const recovered = this.trySilentRestoreDatabase(userDbPath, dbPassword, 'USER_DB');
+          if (recovered) {
+            this.userDatabases.set(userId, recovered);
+
+            return recovered;
+          }
+
+          this.backupDatabaseForRecovery(userDbPath, `user-${userId}-not-a-database`, 'USER_DB');
 
           return await this.initUserDatabase(userId);
         } else {
@@ -275,6 +304,183 @@ class DatabaseManager {
   // ================ 工具方法 ================
   ensureDir(dir) {
     fs.mkdirSync(dir, { recursive: true });
+  }
+
+  isNotDatabaseError(error) {
+    return error?.code === 'SQLITE_NOTADB' || String(error?.message || '').includes('not a database');
+  }
+
+  openDatabaseWithValidation(dbPath, dbPassword) {
+    const db = new Database(dbPath);
+    db.pragma('cipher = sqlcipher');
+    db.pragma(`key = '${dbPassword}'`);
+    db.pragma('journal_mode = WAL');
+    db.prepare('SELECT 1').get();
+
+    return db;
+  }
+
+  getBackupRoot(dbPath) {
+    return path.join(path.dirname(dbPath), 'db-backups');
+  }
+
+  getBackupManifests(dbPath) {
+    const backupRoot = this.getBackupRoot(dbPath);
+    if (!fs.existsSync(backupRoot)) {
+      return [];
+    }
+
+    const dbBaseName = path.basename(dbPath);
+
+    return fs.readdirSync(backupRoot)
+      .filter((name) => name.startsWith(`${dbBaseName}.bak.`) && name.endsWith('.manifest.json'))
+      .map((name) => {
+        const fullPath = path.join(backupRoot, name);
+
+        return {
+          fullPath,
+          mtimeMs: fs.statSync(fullPath).mtimeMs
+        };
+      })
+      .sort((a, b) => b.mtimeMs - a.mtimeMs)
+      .map((item) => item.fullPath);
+  }
+
+  createBackupBaseName(dbPath, reason) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+    return `${path.basename(dbPath)}.bak.${stamp}.${reason}`;
+  }
+
+  moveFileSafe(sourcePath, targetPath) {
+    if (!fs.existsSync(sourcePath)) {
+      return false;
+    }
+
+    try {
+      fs.renameSync(sourcePath, targetPath);
+
+      return true;
+    } catch {
+      // 跨分区或占用时，降级为复制再删除
+      fs.copyFileSync(sourcePath, targetPath);
+      fs.unlinkSync(sourcePath);
+
+      return true;
+    }
+  }
+
+  cleanupOldBackups(backupRoot, dbBaseName, logTag) {
+    if (!fs.existsSync(backupRoot)) {
+      return;
+    }
+
+    const entries = fs.readdirSync(backupRoot)
+      .filter((name) => name.startsWith(`${dbBaseName}.bak.`))
+      .map((name) => ({
+        name,
+        fullPath: path.join(backupRoot, name),
+        mtimeMs: fs.statSync(path.join(backupRoot, name)).mtimeMs
+      }))
+      .sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+    const stale = entries.slice(this.maxBackupFilesPerDb);
+    for (const item of stale) {
+      try {
+        fs.rmSync(item.fullPath, { force: true });
+      } catch (err) {
+        this.Logger.warn(logTag, `清理旧备份失败: ${item.name} (${err.message})`);
+      }
+    }
+  }
+
+  backupDatabaseForRecovery(dbPath, reason, logTag = 'DB_RECOVERY') {
+    if (!fs.existsSync(dbPath)) {
+      return null;
+    }
+
+    const backupRoot = this.getBackupRoot(dbPath);
+    this.ensureDir(backupRoot);
+
+    const dbBaseName = path.basename(dbPath);
+    const backupBaseName = this.createBackupBaseName(dbPath, reason);
+    const movedFiles = [];
+    const sidecars = ['', '-wal', '-shm'];
+
+    for (const suffix of sidecars) {
+      const src = `${dbPath}${suffix}`;
+      const dest = path.join(backupRoot, `${backupBaseName}${suffix}`);
+      const moved = this.moveFileSafe(src, dest);
+      if (moved) {
+        movedFiles.push(dest);
+      }
+    }
+
+    const manifestPath = path.join(backupRoot, `${backupBaseName}.manifest.json`);
+    const manifest = {
+      originalPath: dbPath,
+      reason,
+      createdAt: new Date().toISOString(),
+      files: movedFiles
+    };
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
+
+    this.cleanupOldBackups(backupRoot, dbBaseName, logTag);
+    this.Logger.warn(logTag, `数据库已备份到: ${backupRoot}`);
+
+    return { backupRoot, manifestPath, files: movedFiles };
+  }
+
+  restoreDatabaseFromManifest(manifestPath, logTag = 'DB_RECOVERY', copyOnly = false) {
+    if (!fs.existsSync(manifestPath)) {
+      throw new Error(`备份清单不存在: ${manifestPath}`);
+    }
+
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    const originalPath = manifest.originalPath;
+    if (!originalPath) {
+      throw new Error('备份清单缺少 originalPath');
+    }
+
+    const sidecars = ['', '-wal', '-shm'];
+    for (const suffix of sidecars) {
+      const sourceName = `${path.basename(manifestPath).replace('.manifest.json', '')}${suffix}`;
+      const sourcePath = path.join(path.dirname(manifestPath), sourceName);
+      const targetPath = `${originalPath}${suffix}`;
+
+      if (fs.existsSync(sourcePath)) {
+        if (copyOnly) {
+          fs.copyFileSync(sourcePath, targetPath);
+        } else {
+          this.moveFileSafe(sourcePath, targetPath);
+        }
+      }
+    }
+
+    this.Logger.info(logTag, `已从备份清单恢复数据库: ${manifestPath}`);
+  }
+
+  trySilentRestoreDatabase(dbPath, dbPassword, logTag = 'DB_RECOVERY') {
+    const manifests = this.getBackupManifests(dbPath);
+    if (manifests.length === 0) {
+      this.Logger.warn(logTag, `未找到可用于静默恢复的备份: ${dbPath}`);
+
+      return null;
+    }
+
+    for (const manifestPath of manifests) {
+      try {
+        this.restoreDatabaseFromManifest(manifestPath, logTag, true);
+        const db = this.openDatabaseWithValidation(dbPath, dbPassword);
+        this.Logger.info(logTag, `静默恢复成功: ${manifestPath}`);
+
+        return db;
+      } catch (restoreError) {
+        this.Logger.warn(logTag, `静默恢复失败: ${manifestPath} (${restoreError.message})`);
+      }
+    }
+
+    return null;
   }
 
   async getDatabasePassword(identifier) {
