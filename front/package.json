@@ -46,7 +46,7 @@
     "@stomp/stompjs": "^7.3.0",
     "axios": "^1.14.0",
     "better-sqlite3-multiple-ciphers": "^12.8.0",
-    "element-plus": "^2.13.6",
+    "element-plus": "^2.13.7",
     "keytar": "^7.9.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.31",
