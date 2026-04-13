@@ -67,7 +67,7 @@
     "typescript": "~6.0.2",
     "vite": "catalog:",
     "vue-tsc": "^3.2.6",
-    "wait-on": "^9.0.4",
+    "wait-on": "^9.0.5",
     "vite-plus": "catalog:"
   },
   "build": {
