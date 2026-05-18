@@ -44,7 +44,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "@stomp/stompjs": "^7.3.0",
-    "axios": "^1.14.0",
+    "axios": "^1.16.1",
     "better-sqlite3-multiple-ciphers": "^12.8.0",
     "element-plus": "^2.13.6",
     "keytar": "^7.9.0",
